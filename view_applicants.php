@@ -20,7 +20,8 @@ if(!$job){ header("Location: employer_manage_jobs.php"); exit(); }
 
 $applicants_query = "
     SELECT ja.*, u.username, u.email, u.phone, u.fullname,
-           fp.skill, fp.experience, fp.rating, fp.location
+           fp.skill, fp.experience, fp.rating, fp.location,
+           (SELECT file_name FROM resume WHERE freelancer_id=ja.freelancer_id ORDER BY resume_id DESC LIMIT 1) AS resume_file
     FROM job_application ja
     JOIN users u ON ja.freelancer_id = u.user_id
     LEFT JOIN freelancer_profile fp ON u.user_id = fp.user_id
@@ -372,7 +373,7 @@ $stmt2->close();
       <div class="modal-section" id="m-resume-wrap" style="display:none;">
         <div class="modal-section-title"><i class="bi bi-file-earmark-pdf"></i> Resume</div>
         <a href="#" id="m-resume-link" target="_blank" class="btn-resume">
-          <i class="bi bi-filetype-pdf"></i> ดู Resume
+          <i class="bi bi-filetype-pdf"></i> ดู Resume PDF
         </a>
       </div>
 
@@ -432,7 +433,15 @@ function openModal(ap){
       </div>`;
   }
 
-  checkSave(currentId);
+  // Resume
+  const resumeWrap = document.getElementById('m-resume-wrap');
+  const resumeLink = document.getElementById('m-resume-link');
+  if(ap.resume_file){
+    resumeWrap.style.display = '';
+    resumeLink.href = 'uploads/' + ap.resume_file;
+  } else {
+    resumeWrap.style.display = 'none';
+  }
   document.getElementById('fl-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
