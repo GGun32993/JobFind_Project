@@ -3,7 +3,7 @@ session_start();
 include "config.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
-    header("Location: login.php");
+    header("Location: /JobFind_Project/login.php");  // ✅ ระบุ path ชัดเจน
     exit();
 }
 
