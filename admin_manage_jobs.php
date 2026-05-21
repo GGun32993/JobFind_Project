@@ -66,6 +66,12 @@ while($r = mysqli_fetch_assoc($result)){
     --blue:   #0ea5e9;  --radius: 14px;
   }
 
+  .btn-detail:hover { 
+  background:#4f46e5; 
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(99,102,241,.3);
+  }
+
   body { font-family:'Sora',sans-serif; background:var(--light); color:var(--text); display:flex; min-height:100vh; }
 
   /* ── Sidebar ── */
@@ -320,6 +326,12 @@ while($r = mysqli_fetch_assoc($result)){
     </div>
 
     <div class="jc-footer">
+      <a href="admin_job_detail.php?id=<?php echo $row['job_id']; ?>" 
+          class="btn-detail" 
+          style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;text-decoration:none;transition:all .15s;">
+        <i class="bi bi-eye"></i> Detail
+      </a>
+
       <div class="actions-wrap">
         <?php if($status === 'pending'): ?>
           <button class="btn-approve"

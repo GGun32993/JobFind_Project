@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 20, 2026 at 06:39 PM
+-- Generation Time: May 21, 2026 at 08:46 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -102,7 +102,7 @@ CREATE TABLE `employer_profile` (
 --
 
 INSERT INTO `employer_profile` (`employer_id`, `user_id`, `employer_name`, `employer_description`, `like_count`, `created_at`) VALUES
-(1, 2, 'Guntinan Company', '', 0, '2026-05-16 13:39:30');
+(1, 2, 'Guntinan Company', 'บริษัทของกันต์', 0, '2026-05-16 13:39:30');
 
 -- --------------------------------------------------------
 
@@ -226,16 +226,16 @@ CREATE TABLE `job` (
   `status` enum('open','in_progress','completed','closed') DEFAULT 'open',
   `admin_status` enum('pending','approved','rejected') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `category` varchar(100) DEFAULT NULL
+  `category` varchar(100) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `job`
 --
 
-INSERT INTO `job` (`job_id`, `employer_id`, `title`, `description`, `location`, `salary`, `latitude`, `longitude`, `deadline`, `status`, `admin_status`, `created_at`, `category`) VALUES
-(6, 2, 'IT ทั่วไป', 'ทำงานทั่วไป', '', 2700.00, NULL, NULL, '2026-05-18 00:00:00', 'closed', 'approved', '2026-05-17 06:42:57', 'IT'),
-(7, 2, '123', '123', '', 0.00, NULL, NULL, '0000-00-00 00:00:00', '', 'approved', '2026-05-19 03:51:41', 'Design');
+INSERT INTO `job` (`job_id`, `employer_id`, `title`, `description`, `location`, `salary`, `latitude`, `longitude`, `deadline`, `status`, `admin_status`, `created_at`, `category`, `updated_at`) VALUES
+(8, 2, 'แก้ไขข้อมูลการรับสมัครงาน', 'เพิ่มปุ่มแก้ไขที่ตัวงาน', '', 2000.00, NULL, NULL, '2026-05-26 00:00:00', '', 'approved', '2026-05-21 05:41:22', 'IT', '2026-05-21 06:39:14');
 
 -- --------------------------------------------------------
 
@@ -329,7 +329,7 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `fullname`, `phone`, `role`, `created_at`, `latitude`, `longitude`) VALUES
 (1, 'NonFreelance', 'non@non.com', '1234', 'Non', '1234567890', 'freelancer', '2026-02-25 10:05:27', 13.7563, 100.5018),
 (2, 'GuntinanCompany', 'gun@company.com', '1234', 'Guntinan Company', '1234567890', 'employer', '2026-02-25 10:08:15', NULL, NULL),
-(3, 'test3', 'admin@admin.com', '1234', 'tester3', '1234567890', 'admin', '2026-02-25 10:13:45', NULL, NULL),
+(3, 'Admin', 'admin@admin.com', '1234', 'tester3', '1234567890', 'admin', '2026-02-25 10:13:45', NULL, NULL),
 (4, 'test4', 'test@test4.com', '1234', 'tester4', '1234567890', 'freelancer', '2026-02-25 13:53:32', NULL, NULL);
 
 --
@@ -472,7 +472,7 @@ ALTER TABLE `freelancer_review`
 -- AUTO_INCREMENT for table `job`
 --
 ALTER TABLE `job`
-  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `job_application`

@@ -311,23 +311,25 @@ while($r = mysqli_fetch_assoc($result)){
 
     <div class="ac-top">
       <div class="ac-user">
-        <div class="ac-avatar"><?php echo $init; ?></div>
-        <div>
-          <div class="ac-name"><?php echo htmlspecialchars($row['username']); ?></div>
-          <div class="ac-meta">
-            <?php if(!empty($row['location'])): ?>
-            <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($row['location']); ?></span>
-            <?php endif; ?>
-            <?php if(!empty($row['skill'])): ?>
-            <span><i class="bi bi-tools"></i><?php echo htmlspecialchars($row['skill']); ?></span>
-            <?php endif; ?>
-            <?php if($avg_r > 0): ?>
-            <span>
-              <span class="star-row">★</span>
-              <?php echo $avg_r; ?> (<?php echo $total_r; ?> รีวิว)
-            </span>
-            <?php endif; ?>
-          </div>
+        <!-- คลิกชื่อเพื่อเปิดโปรไฟล์ -->
+        <div class="ac-name" style="cursor:pointer; color:var(--accent);" 
+             onclick="openProfileModal(<?php echo $row['freelancer_id']; ?>)">
+          <?php echo htmlspecialchars($row['username']); ?>
+          <i class="bi bi-eye" style="font-size:11px; margin-left:4px; opacity:0.7;"></i>
+        </div>
+        <div class="ac-meta">
+          <?php if(!empty($row['location'])): ?>
+          <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($row['location']); ?></span>
+          <?php endif; ?>
+          <?php if(!empty($row['skill'])): ?>
+          <span><i class="bi bi-tools"></i><?php echo htmlspecialchars($row['skill']); ?></span>
+          <?php endif; ?>
+          <?php if($avg_r > 0): ?>
+          <span>
+            <span class="star-row">★</span>
+            <?php echo $avg_r; ?> (<?php echo $total_r; ?> รีวิว)
+          </span>
+          <?php endif; ?>
         </div>
       </div>
       <span class="s-pill <?php echo $sp_class; ?>">
@@ -410,6 +412,54 @@ while($r = mysqli_fetch_assoc($result)){
     const ef = document.getElementById('empty-filter');
     if(ef) ef.style.display = visible === 0 && cards.length > 0 ? 'block' : 'none';
   }
+</script>
+
+<!-- Modal Styles -->
+<style>
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; }
+  .modal-overlay.show { display:flex; }
+  .modal-box { background:#fff; border-radius:16px; width:90%; max-width:700px; max-height:85vh; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+  .modal-header { display:flex; justify-content:flex-end; padding:12px 16px; border-bottom:1px solid var(--border); }
+  .modal-close { background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .modal-close:hover { background:var(--light); color:var(--text); }
+  .modal-iframe { width:100%; height:calc(85vh - 56px); border:none; }
+</style>
+
+<!-- Modal HTML -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeProfileModal()"><i class="bi bi-x"></i></button>
+    </div>
+    <iframe class="modal-iframe" id="profileFrame" src=""></iframe>
+  </div>
+</div>
+
+<!-- Modal Script -->
+<script>
+function openProfileModal(freelancerId) {
+  const modal = document.getElementById('profileModal');
+  const frame = document.getElementById('profileFrame');
+  frame.src = 'view_freelancer_profile.php?id=' + freelancerId;
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('profileModal');
+  const frame = document.getElementById('profileFrame');
+  modal.classList.remove('show');
+  frame.src = '';
+  document.body.style.overflow = '';
+}
+
+document.getElementById('profileModal').addEventListener('click', function(e) {
+  if(e.target === this) closeProfileModal();
+});
+
+document.addEventListener('keydown', function(e) {
+  if(e.key === 'Escape') closeProfileModal();
+});
 </script>
 </body>
 </html>
