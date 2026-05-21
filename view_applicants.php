@@ -1,17 +1,14 @@
 <?php
 session_start();
-include "config.php";  // ✅ ใช้ config.php เหมือนไฟล์อื่น
+include "config.php";
 
-// ✅ ตรวจสอบด้วย $_SESSION['role']
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
-    header("Location: /JobFind_Project/login.php");
-    exit();
+    header("Location: /JobFind_Project/login.php"); exit();
 }
 
-$job_id = $_GET['job_id'] ?? 0;
+$job_id      = $_GET['job_id'] ?? 0;
 $employer_id = $_SESSION['user_id'];
 
-// ✅ ใช้ตาราง 'job' และคีย์ 'job_id'
 $job_query = "SELECT * FROM job WHERE job_id = ? AND employer_id = ?";
 $stmt = $conn->prepare($job_query);
 $stmt->bind_param("ii", $job_id, $employer_id);
@@ -19,13 +16,8 @@ $stmt->execute();
 $job = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$job) {
-    header("Location: employer_manage_jobs.php");
-    exit();
-}
+if(!$job){ header("Location: employer_manage_jobs.php"); exit(); }
 
-// ดึงผู้สมัครจากตาราง 'job_application'
-// ตัด u.location ออก เพราะไม่มีในตาราง users
 $applicants_query = "
     SELECT ja.*, u.username, u.email, u.phone, u.fullname,
            fp.skill, fp.experience, fp.rating, fp.location
@@ -35,129 +27,188 @@ $applicants_query = "
     WHERE ja.job_id = ?
     ORDER BY ja.apply_date DESC
 ";
-
 $stmt = $conn->prepare($applicants_query);
 $stmt->bind_param("i", $job_id);
 $stmt->execute();
 $applicants = $stmt->get_result();
 $stmt->close();
 
-// ✅ ฟังก์ชันตรวจสอบการบันทึก (ใช้ user_id)
-function isFreelancerSaved($conn, $employer_id, $freelancer_id) {
+function isFreelancerSaved($conn, $employer_id, $freelancer_id){
     $query = "SELECT id FROM saved_freelancers WHERE employer_id = ? AND freelancer_id = ?";
-    $stmt = $conn->prepare($query);
+    $stmt  = $conn->prepare($query);
     $stmt->bind_param("ii", $employer_id, $freelancer_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $is_saved = $result->num_rows > 0;
+    $is_saved = $stmt->get_result()->num_rows > 0;
     $stmt->close();
     return $is_saved;
 }
-?>
 
+// นับสถิติ
+$all_rows = []; $cnt_pending = 0; $cnt_accepted = 0; $cnt_rejected = 0;
+$tmp = $conn->prepare($applicants_query);
+$tmp->bind_param("i", $job_id);
+$tmp->execute();
+$tmp_res = $tmp->get_result();
+while($r = $tmp_res->fetch_assoc()){
+    $all_rows[] = $r;
+    $s = strtolower($r['status']);
+    if($s==='pending') $cnt_pending++;
+    elseif($s==='accepted'||$s==='hired') $cnt_accepted++;
+    elseif($s==='rejected') $cnt_rejected++;
+}
+$tmp->close();
+$cnt_all = count($all_rows);
+
+// reset pointer
+$stmt2 = $conn->prepare($applicants_query);
+$stmt2->bind_param("i", $job_id);
+$stmt2->execute();
+$applicants = $stmt2->get_result();
+$stmt2->close();
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ผู้สมัคร - <?php echo htmlspecialchars($job['title']); ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
-        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-        :root {
-            --navy: #0f172a; --navy2: #1e293b; --navy3: #334155;
-            --accent: #6366f1; --light: #f1f5f9; --white: #ffffff;
-            --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
-            --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
-            --radius: 14px;
-        }
-        body { font-family:'Sora',sans-serif; background:var(--light); color:var(--text); display:flex; min-height:100vh; }
-        
-        /* Sidebar - ใช้แบบเดียวกับ employer_manage_jobs.php */
-        .sidebar { width:240px; min-height:100vh; background:var(--navy); display:flex; flex-direction:column; padding:28px 0; position:fixed; top:0; left:0; z-index:100; }
-        .sidebar-brand { padding:0 24px 28px; border-bottom:1px solid var(--navy3); }
-        .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
-        .logo-icon { width:36px; height:36px; background:var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; }
-        .logo-text { font-size:15px; font-weight:600; color:#fff; line-height:1.2; }
-        .logo-sub { font-size:11px; color:var(--navy3); }
-        .sidebar-nav { padding:20px 12px; flex:1; display:flex; flex-direction:column; gap:4px; }
-        .nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; color:#94a3b8; text-decoration:none; font-size:13.5px; font-weight:500; transition:background .15s,color .15s; }
-        .nav-item:hover { background:var(--navy2); color:#e2e8f0; }
-        .nav-item.active { background:var(--accent); color:#fff; }
-        .nav-item i { font-size:17px; width:20px; text-align:center; }
-        .sidebar-footer { padding:16px 12px 0; }
-        .nav-logout { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; color:#f87171; text-decoration:none; font-size:13.5px; font-weight:500; }
-        .nav-logout:hover { background:rgba(239,68,68,.12); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ผู้สมัครงาน — <?php echo htmlspecialchars($job['title']); ?></title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#0f172a;--navy2:#1e293b;--navy3:#334155;
+    --accent:#6366f1;--light:#f1f5f9;--white:#ffffff;
+    --text:#0f172a;--muted:#64748b;--border:#e2e8f0;
+    --green:#10b981;--yellow:#f59e0b;--red:#ef4444;--blue:#0ea5e9;--radius:14px;
+  }
+  body{font-family:'Sora',sans-serif;background:var(--light);color:var(--text);display:flex;min-height:100vh;}
 
-        .main { margin-left:240px; flex:1; padding:36px 40px; }
-        .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
-        .page-title { font-size:22px; font-weight:600; margin-bottom:5px; }
-        .page-subtitle { font-size:13px; color:var(--muted); }
-        
-        .back-btn { display:inline-flex; align-items:center; gap:7px; padding:10px 18px; background:var(--white); color:var(--accent); border:1px solid var(--accent); border-radius:10px; text-decoration:none; font-size:13.5px; font-weight:500; transition:all .15s; }
-        .back-btn:hover { background:var(--accent); color:#fff; }
+  /* ── Sidebar ── */
+  .sidebar{width:240px;min-height:100vh;background:var(--navy);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;z-index:100;}
+  .sidebar-brand{padding:0 24px 28px;border-bottom:1px solid var(--navy3);}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+  .logo-icon{width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;}
+  .logo-text{font-size:15px;font-weight:600;color:#fff;line-height:1.2;}
+  .logo-sub{font-size:11px;color:var(--navy3);}
+  .sidebar-nav{padding:20px 12px;flex:1;display:flex;flex-direction:column;gap:4px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:#94a3b8;text-decoration:none;font-size:13.5px;font-weight:500;transition:background .15s,color .15s;}
+  .nav-item:hover{background:var(--navy2);color:#e2e8f0;}
+  .nav-item.active{background:var(--accent);color:#fff;}
+  .nav-item i{font-size:17px;width:20px;text-align:center;}
+  .nav-divider{height:1px;background:var(--navy3);margin:10px 14px;}
+  .sidebar-footer{padding:16px 12px 0;}
+  .nav-logout{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:#f87171;text-decoration:none;font-size:13.5px;font-weight:500;transition:background .15s;}
+  .nav-logout:hover{background:rgba(239,68,68,.12);}
 
-        .applicants-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; }
-        
-        .applicant-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px; transition:box-shadow .2s,border-color .2s; cursor:pointer; }
-        .applicant-card:hover { box-shadow:0 4px 20px rgba(0,0,0,.07); border-color:#a5b4fc; }
-        
-        .applicant-header { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
-        .applicant-avatar { width:56px; height:56px; background:linear-gradient(135deg,#6366f1,#8b5cf6); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:600; flex-shrink:0; }
-        .applicant-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
-        
-        .applicant-info h4 { font-size:16px; font-weight:600; color:var(--text); margin-bottom:4px; }
-        .applicant-meta { display:flex; gap:12px; font-size:12.5px; color:var(--muted); flex-wrap:wrap; }
-        .rating { color:#f59e0b; }
-        
-        .view-btn { width:100%; padding:10px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-size:13.5px; font-weight:500; cursor:pointer; transition:opacity .15s; margin-top:8px; }
-        .view-btn:hover { opacity:.9; }
+  /* ── Main ── */
+  .main{margin-left:240px;flex:1;padding:36px 40px;}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+  .topbar h2{font-size:22px;font-weight:600;}
+  .topbar p{font-size:13px;color:var(--muted);margin-top:2px;}
+  .btn-back{display:inline-flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:500;text-decoration:none;transition:background .15s;white-space:nowrap;}
+  .btn-back:hover{background:var(--light);color:var(--text);}
 
-        /* Modal */
-        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:1000; align-items:center; justify-content:center; padding:20px; }
-        .modal-overlay.show { display:flex; }
-        .modal-content { background:var(--white); border-radius:var(--radius); max-width:680px; width:100%; max-height:90vh; overflow-y:auto; }
-        
-        .modal-header-custom { background:linear-gradient(135deg,#6366f1,#8b5cf6); padding:24px 28px; color:#fff; position:relative; display:flex; justify-content:space-between; align-items:flex-start; }
-        .modal-close { background:rgba(255,255,255,.2); border:none; width:34px; height:34px; border-radius:50%; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
-        .modal-close:hover { background:rgba(255,255,255,.3); }
-        
-        .modal-header-info { display:flex; gap:16px; align-items:center; }
-        .modal-avatar { width:70px; height:70px; border-radius:50%; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:600; }
-        .modal-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
-        .modal-name { font-size:22px; font-weight:600; margin-bottom:6px; }
-        .modal-meta { display:flex; gap:14px; font-size:13px; opacity:.9; }
-        
-        /* Save Button */
-        .btn-save { background:rgba(255,255,255,.2); border:2px solid #fff; color:#fff; padding:7px 15px; border-radius:20px; cursor:pointer; font-size:13px; font-weight:500; display:inline-flex; align-items:center; gap:5px; transition:all .2s; }
-        .btn-save:hover { background:#fff; color:#6366f1; }
-        .btn-save.saved { background:#fff; color:#6366f1; }
+  /* Toast */
+  .toast-notif{position:fixed;top:24px;right:24px;z-index:9999;padding:13px 20px;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);animation:slideIn .3s ease;transition:opacity .4s;}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 
-        .modal-body-custom { padding:24px 28px; }
-        .section-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:7px; }
-        
-        .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
-        .info-item { background:var(--light); padding:14px; border-radius:10px; }
-        .info-label { font-size:12px; color:var(--muted); margin-bottom:4px; }
-        .info-value { font-size:14px; color:var(--text); font-weight:500; }
-        
-        .skills-container { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
-        .skill-badge { background:#eef2ff; color:var(--accent); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:500; }
-        
-        .action-buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; }
-        .btn-accept { background:var(--green); color:#fff; border:none; padding:11px; border-radius:10px; font-weight:500; cursor:pointer; transition:opacity .15s; }
-        .btn-reject { background:var(--red); color:#fff; border:none; padding:11px; border-radius:10px; font-weight:500; cursor:pointer; transition:opacity .15s; }
-        .btn-accept:hover, .btn-reject:hover { opacity:.9; }
+  /* Job banner */
+  .job-banner{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 24px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .jb-title{font-size:16px;font-weight:600;}
+  .jb-meta{font-size:12.5px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin-top:3px;}
+  .jb-meta span{display:flex;align-items:center;gap:4px;}
 
-        /* Notification */
-        .notification { position:fixed; top:20px; right:20px; background:var(--green); color:#fff; padding:12px 20px; border-radius:10px; z-index:9999; animation:slideIn .3s ease; }
-        .notification.error { background:var(--red); }
-        @keyframes slideIn { from{opacity:0;transform:translateX(100px)} to{opacity:1;transform:translateX(0)} }
+  /* Stats */
+  .stat-row{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap;}
+  .stat-mini{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:12px;flex:1;min-width:100px;}
+  .sm-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .sm-val{font-size:20px;font-weight:600;line-height:1;}
+  .sm-lbl{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .si-purple{background:#eef2ff;color:var(--accent);}
+  .si-yellow{background:#fef9c3;color:#854d0e;}
+  .si-green{background:#d1fae5;color:var(--green);}
+  .si-red{background:#fee2e2;color:var(--red);}
 
-        @media(max-width:768px){ .sidebar{display:none;} .main{margin-left:0;padding:20px 16px;} .info-grid{grid-template-columns:1fr;} }
-    </style>
+  /* Cards grid */
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+
+  .app-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:box-shadow .2s,border-color .2s,transform .15s;}
+  .app-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.09);border-color:#c7d2fe;transform:translateY(-2px);}
+
+  .card-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+  .card-avatar{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .card-name{font-size:15px;font-weight:600;margin-bottom:3px;}
+  .card-meta{font-size:12.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;}
+  .card-meta span{display:flex;align-items:center;gap:3px;}
+
+  .card-skills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .skill-tag{font-size:11px;padding:3px 10px;border-radius:20px;background:#eef2ff;color:var(--accent);font-weight:500;}
+  .skill-more{font-size:11px;color:var(--muted);}
+
+  .status-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;}
+  .sp-pending{background:#fef9c3;color:#854d0e;}
+  .sp-accepted,.sp-hired{background:#d1fae5;color:#065f46;}
+  .sp-rejected{background:#fee2e2;color:#991b1b;}
+
+  .card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);margin-top:4px;}
+  .card-date{font-size:12px;color:var(--muted);}
+  .btn-detail{display:inline-flex;align-items:center;gap:5px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:500;font-family:'Sora',sans-serif;cursor:pointer;transition:background .15s;}
+  .btn-detail:hover{background:#4f46e5;}
+
+  /* Empty */
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);background:var(--white);border-radius:var(--radius);border:1px solid var(--border);}
+  .empty-state i{font-size:44px;color:#c7d2fe;margin-bottom:12px;display:block;}
+
+  /* ── Modal ── */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:200;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:var(--white);border-radius:20px;max-width:660px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.24);}
+
+  /* Modal header */
+  .modal-head{background:var(--navy);padding:28px;border-radius:20px 20px 0 0;display:flex;gap:18px;align-items:flex-start;position:relative;}
+  .modal-av{width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid rgba(255,255,255,.2);}
+  .modal-head-info{flex:1;}
+  .modal-head-name{font-size:20px;font-weight:600;color:#fff;margin-bottom:4px;}
+  .modal-head-meta{display:flex;gap:14px;font-size:13px;color:#94a3b8;flex-wrap:wrap;}
+  .modal-close-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;width:32px;height:32px;border-radius:50%;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background .15s;}
+  .modal-close-btn:hover{background:rgba(255,255,255,.25);}
+
+  /* Save button */
+  .btn-save-fl{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;border:2px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'Sora',sans-serif;}
+  .btn-save-fl:hover,.btn-save-fl.saved{background:#fff;color:var(--accent);border-color:#fff;}
+
+  /* Modal body */
+  .modal-body{padding:24px 28px;}
+  .modal-section{margin-bottom:20px;}
+  .modal-section-title{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+  .modal-section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .info-box{background:var(--light);border-radius:10px;padding:14px;}
+  .info-box .lbl{font-size:12px;color:var(--muted);margin-bottom:4px;}
+  .info-box .val{font-size:14px;font-weight:500;color:var(--text);}
+
+  .exp-box{background:var(--light);border-radius:10px;padding:14px;font-size:13.5px;color:var(--text);line-height:1.7;border-left:3px solid var(--accent);}
+
+  .modal-skills{display:flex;flex-wrap:wrap;gap:7px;}
+  .modal-skill{font-size:12px;font-weight:500;padding:4px 12px;border-radius:20px;background:#eef2ff;color:var(--accent);}
+
+  /* Resume link */
+  .btn-resume{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;background:#e0f2fe;color:#0369a1;font-size:13px;font-weight:500;text-decoration:none;transition:opacity .15s;}
+  .btn-resume:hover{opacity:.85;color:#0369a1;}
+
+  /* Action buttons */
+  .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);}
+  .btn-accept{padding:11px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;}
+  .btn-accept:hover{opacity:.85;}
+  .btn-reject{padding:11px;background:#fee2e2;color:#991b1b;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;}
+  .btn-reject:hover{opacity:.85;}
+  .btn-hired-done{padding:11px;background:var(--light);color:var(--muted);border:1px solid var(--border);border-radius:10px;font-family:'Sora',sans-serif;font-size:14px;font-weight:500;cursor:default;display:flex;align-items:center;justify-content:center;gap:6px;grid-column:1/-1;}
+
+  @media(max-width:768px){.sidebar{display:none;}.main{margin-left:0;padding:20px 16px;}.info-grid{grid-template-columns:1fr;}.modal-actions{grid-template-columns:1fr;}}
+</style>
 </head>
 <body>
 
@@ -166,20 +217,17 @@ function isFreelancerSaved($conn, $employer_id, $freelancer_id) {
   <div class="sidebar-brand">
     <a href="#" class="logo">
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
-      <div>
-        <div class="logo-text">FreelanceHub</div>
-        <div class="logo-sub">Employer</div>
-      </div>
+      <div><div class="logo-text">FreelanceHub</div><div class="logo-sub">Employer</div></div>
     </a>
   </div>
   <nav class="sidebar-nav">
-    <a href="employer_dashboard.php" class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
-    <a href="post_job.php" class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
+    <a href="employer_dashboard.php"   class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
+    <a href="post_job.php"             class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
     <a href="employer_manage_jobs.php" class="nav-item active"><i class="bi bi-briefcase"></i> Manage Jobs</a>
-    <a href="employer_reviews.php" class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
-    <a href="employer_profile.php" class="nav-item"><i class="bi bi-person-circle"></i> My Profile</a>
-    <div style="height:1px;background:var(--navy3);margin:10px 14px;"></div>
-    <a href="support_chat.php" class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>
+    <a href="employer_reviews.php"     class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
+    <a href="employer_profile.php"     class="nav-item"><i class="bi bi-person-circle"></i> My Profile</a>
+    <div class="nav-divider"></div>
+    <a href="support_chat.php"         class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>
   </nav>
   <div class="sidebar-footer">
     <a href="logout.php" class="nav-logout"><i class="bi bi-box-arrow-left"></i> Logout</a>
@@ -188,267 +236,260 @@ function isFreelancerSaved($conn, $employer_id, $freelancer_id) {
 
 <!-- Main -->
 <main class="main">
-  <div class="page-header">
+
+  <div class="topbar">
     <div>
-      <h1 class="page-title">ผู้สมัครงาน</h1>
-      <p class="page-subtitle">Freelancer ที่สมัครงาน "<?php echo htmlspecialchars($job['title']); ?>"</p>
+      <h2>ผู้สมัครงาน</h2>
+      <p>รายชื่อ Freelancer ที่สมัครมาทั้งหมด</p>
     </div>
-    <a href="employer_manage_jobs.php" class="back-btn">
+    <a href="employer_manage_jobs.php" class="btn-back">
       <i class="bi bi-arrow-left"></i> กลับ Manage Jobs
     </a>
   </div>
 
-  <div class="applicants-grid">
-    <?php while ($applicant = $applicants->fetch_assoc()): ?>
-      <?php 
-      $initials = strtoupper(mb_substr($applicant['username'], 0, 2, 'UTF-8'));
-      $is_saved = isFreelancerSaved($conn, $employer_id, $applicant['freelancer_id']);
-      ?>
-      <div class="applicant-card" onclick='openModal(<?php echo json_encode($applicant, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS); ?>)'>
-        <div class="applicant-header">
-          <div class="applicant-avatar">
-            <?php if(!empty($applicant['profile_picture'])): ?>
-              <img src="<?php echo htmlspecialchars($applicant['profile_picture']); ?>" alt="">
-            <?php else: ?>
-              <?php echo $initials; ?>
-            <?php endif; ?>
-          </div>
-          <div class="applicant-info">
-            <h4><?php echo htmlspecialchars($applicant['username']); ?></h4>
-            <div class="applicant-meta">
-              <span><i class="bi bi-geo-alt"></i> <?php echo htmlspecialchars($applicant['location'] ?? 'ไม่ระบุ'); ?></span>
-              <?php if($applicant['rating']): ?>
-                <span class="rating"><i class="bi bi-star-fill"></i> <?php echo number_format($applicant['rating'], 1); ?></span>
-              <?php endif; ?>
-            </div>
-          </div>
-        </div>
-        <div style="margin-bottom:10px;">
-          <small style="color:var(--muted);">
-            <i class="bi bi-clock"></i> สมัครเมื่อ <?php echo date('d/m/Y', strtotime($applicant['apply_date'])); ?>
-          </small>
-        </div>
-        <button class="view-btn">ดูรายละเอียด</button>
+  <!-- Job banner -->
+  <div class="job-banner">
+    <span style="font-size:28px;">💼</span>
+    <div>
+      <div class="jb-title"><?php echo htmlspecialchars($job['title']); ?></div>
+      <div class="jb-meta">
+        <?php if(!empty($job['location'])): ?><span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($job['location']); ?></span><?php endif; ?>
+        <?php if(!empty($job['salary'])): ?><span><i class="bi bi-currency-dollar"></i><?php echo htmlspecialchars($job['salary']); ?></span><?php endif; ?>
+        <span><i class="bi bi-people"></i><?php echo $cnt_all; ?> คนสมัคร</span>
       </div>
-    <?php endwhile; ?>
-    
-    <?php if($applicants->num_rows == 0): ?>
-      <div style="grid-column:1/-1;text-align:center;padding:40px;background:var(--white);border-radius:var(--radius);">
-        <i class="bi bi-clock"></i> สมัครเมื่อ <?php echo date('d/m/Y', strtotime($applicant['apply_date'])); ?>
-        <p style="margin-top:12px;color:var(--muted);">ยังไม่มีผู้สมัครงานนี้</p>
-      </div>
-    <?php endif; ?>
+    </div>
   </div>
+
+  <!-- Stats -->
+  <div class="stat-row">
+    <div class="stat-mini"><div class="sm-icon si-purple"><i class="bi bi-people"></i></div><div><div class="sm-val"><?php echo $cnt_all; ?></div><div class="sm-lbl">ทั้งหมด</div></div></div>
+    <div class="stat-mini"><div class="sm-icon si-yellow"><i class="bi bi-hourglass-split"></i></div><div><div class="sm-val"><?php echo $cnt_pending; ?></div><div class="sm-lbl">รอพิจารณา</div></div></div>
+    <div class="stat-mini"><div class="sm-icon si-green"><i class="bi bi-check-circle"></i></div><div><div class="sm-val"><?php echo $cnt_accepted; ?></div><div class="sm-lbl">รับแล้ว</div></div></div>
+    <div class="stat-mini"><div class="sm-icon si-red"><i class="bi bi-x-circle"></i></div><div><div class="sm-val"><?php echo $cnt_rejected; ?></div><div class="sm-lbl">ไม่ผ่าน</div></div></div>
+  </div>
+
+  <!-- Cards -->
+  <?php if($cnt_all === 0): ?>
+  <div class="empty-state">
+    <i class="bi bi-inbox"></i>
+    <p>ยังไม่มีผู้สมัครงานนี้</p>
+  </div>
+  <?php else: ?>
+  <div class="cards-grid">
+  <?php
+  $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
+  foreach($all_rows as $row):
+    $init     = strtoupper(mb_substr($row['username'],0,2,'UTF-8'));
+    $status   = strtolower($row['status']);
+    $sp_class = match($status){ 'accepted','hired'=>'sp-accepted','rejected'=>'sp-rejected',default=>'sp-pending' };
+    $sp_label = match($status){ 'accepted','hired'=>'รับแล้ว','rejected'=>'ไม่ผ่าน',default=>'รอพิจารณา' };
+    $avg_r    = round($row['rating'] ?? 0, 1);
+    $skills   = !empty($row['skill']) ? array_map('trim', explode(',', $row['skill'])) : [];
+    $date_str = !empty($row['apply_date']) ? date('d M Y', strtotime($row['apply_date'])) : '';
+    $is_saved = isFreelancerSaved($conn, $employer_id, $row['freelancer_id']);
+    $data_json = htmlspecialchars(json_encode($row, JSON_UNESCAPED_UNICODE), ENT_QUOTES);
+  ?>
+  <div class="app-card" onclick='openModal(<?php echo $data_json; ?>)'>
+    <div class="card-top">
+      <div class="card-avatar"><?php echo $init; ?></div>
+      <div style="flex:1;min-width:0;">
+        <div class="card-name"><?php echo htmlspecialchars($row['username']); ?></div>
+        <div class="card-meta">
+          <?php if(!empty($row['location'])): ?><span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($row['location']); ?></span><?php endif; ?>
+          <?php if($avg_r > 0): ?><span style="color:var(--yellow);"><i class="bi bi-star-fill"></i><?php echo $avg_r; ?></span><?php endif; ?>
+        </div>
+      </div>
+      <span class="status-pill <?php echo $sp_class; ?>"><?php echo $sp_label; ?></span>
+    </div>
+
+    <?php if(!empty($skills)): ?>
+    <div class="card-skills">
+      <?php foreach(array_slice($skills,0,3) as $sk): ?>
+      <span class="skill-tag"><?php echo htmlspecialchars($sk); ?></span>
+      <?php endforeach; ?>
+      <?php if(count($skills)>3): ?><span class="skill-more">+<?php echo count($skills)-3; ?> อื่นๆ</span><?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <div class="card-footer">
+      <span class="card-date"><i class="bi bi-clock" style="font-size:11px;"></i> <?php echo $date_str; ?></span>
+      <button class="btn-detail" onclick="event.stopPropagation();openModal(<?php echo $data_json; ?>)">
+        <i class="bi bi-eye"></i> ดูรายละเอียด
+      </button>
+    </div>
+  </div>
+  <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
 </main>
 
 <!-- Modal -->
-<div id="freelancerModal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-header-custom">
-      <button type="button" class="modal-close" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
-      
-      <div class="modal-header-info">
-        <div id="modalAvatar" class="modal-avatar"></div>
-        <div>
-          <h2 id="modalName" class="modal-name"></h2>
-          <div class="modal-meta">
-            <span id="modalLocation"></span>
-            <span id="modalRating"></span>
-          </div>
+<div class="modal-overlay" id="fl-modal">
+  <div class="modal-box">
+
+    <!-- Header -->
+    <div class="modal-head">
+      <button class="modal-close-btn" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+      <div class="modal-av" id="m-av"></div>
+      <div class="modal-head-info">
+        <div class="modal-head-name" id="m-name"></div>
+        <div class="modal-head-meta">
+          <span id="m-location"></span>
+          <span id="m-rating"></span>
+          <span id="m-status-badge"></span>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn-save-fl" id="save-btn" onclick="toggleSave()">
+            <i class="bi bi-bookmark" id="save-icon"></i>
+            <span id="save-text">บันทึก</span>
+          </button>
         </div>
       </div>
-      
-      <!-- ปุ่มบันทึก -->
-      <button id="saveBtn" class="btn-save" onclick="toggleSave()">
-        <i class="bi bi-bookmark" id="saveIcon"></i>
-        <span id="saveText">บันทึก</span>
-      </button>
     </div>
-    
-    <div class="modal-body-custom">
-      <div class="section-title"><i class="bi bi-envelope"></i> ข้อมูลติดต่อ</div>
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="info-label">Email</div>
-          <div class="info-value" id="modalEmail"></div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Phone</div>
-          <div class="info-value" id="modalPhone"></div>
+
+    <!-- Body -->
+    <div class="modal-body">
+
+      <div class="modal-section">
+        <div class="modal-section-title"><i class="bi bi-envelope"></i> ข้อมูลติดต่อ</div>
+        <div class="info-grid">
+          <div class="info-box"><div class="lbl">Email</div><div class="val" id="m-email"></div></div>
+          <div class="info-box"><div class="lbl">Phone</div><div class="val" id="m-phone"></div></div>
         </div>
       </div>
 
-      <div class="section-title"><i class="bi bi-person-workspace"></i> ข้อมูล Freelancer</div>
-      
-      <div style="margin-bottom:20px;">
-        <div class="info-label" style="margin-bottom:8px;">Skills</div>
-        <div id="modalSkills" class="skills-container"></div>
+      <div class="modal-section">
+        <div class="modal-section-title"><i class="bi bi-tools"></i> ทักษะ</div>
+        <div class="modal-skills" id="m-skills"></div>
       </div>
 
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="info-label">Experience</div>
-          <div class="info-value" id="modalExperience"></div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Location</div>
-          <div class="info-value" id="modalLocation2"></div>
-        </div>
+      <div class="modal-section" id="m-exp-wrap">
+        <div class="modal-section-title"><i class="bi bi-briefcase"></i> ประสบการณ์</div>
+        <div class="exp-box" id="m-exp"></div>
       </div>
 
-      <div class="info-item" style="margin-bottom:20px;">
-        <div class="info-label">About</div>
-        <div class="info-value" id="modalAbout" style="line-height:1.6;"></div>
+      <div class="modal-section" id="m-resume-wrap" style="display:none;">
+        <div class="modal-section-title"><i class="bi bi-file-earmark-pdf"></i> Resume</div>
+        <a href="#" id="m-resume-link" target="_blank" class="btn-resume">
+          <i class="bi bi-filetype-pdf"></i> ดู Resume
+        </a>
       </div>
 
-      <div class="action-buttons">
-        <button class="btn-accept" onclick="acceptApplicant()"><i class="bi bi-check-lg"></i> ยอมรับ</button>
-        <button class="btn-reject" onclick="rejectApplicant()"><i class="bi bi-x-lg"></i> ปฏิเสธ</button>
-      </div>
+      <!-- Actions -->
+      <div id="m-actions"></div>
+
     </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-let currentFreelancerId = null;
-let currentJobId = <?php echo $job_id; ?>;
-let isSaved = false;
+let currentId = null, currentJobId = <?php echo intval($job_id); ?>, isSaved = false;
 
-// ต้องมี function openModal(applicant) { ครอบไว้ครับ
-function openModal(applicant) {
-    currentFreelancerId = applicant.freelancer_id;
+function openModal(ap){
+  currentId = ap.freelancer_id;
+  const status = (ap.status||'').toLowerCase();
 
-    // แก้ตรงส่วนนี้
-    const loc = applicant.location || 'ไม่ระบุ'; 
-    
-    document.getElementById('modalName').textContent = applicant.username;
-    document.getElementById('modalEmail').textContent = applicant.email;
-    document.getElementById('modalPhone').textContent = applicant.phone || 'ไม่ระบุ';
-    document.getElementById('modalLocation').textContent = '📍 ' + loc;
-    document.getElementById('modalLocation2').textContent = loc;
-    document.getElementById('modalExperience').textContent = applicant.experience || 'ไม่ระบุ';
-    document.getElementById('modalAbout').textContent = 'ไม่มีข้อมูลเพิ่มเติม';
-    
-    const avatar = document.getElementById('modalAvatar');
-    if (applicant.profile_picture) {
-        avatar.innerHTML = `<img src="${applicant.profile_picture}" alt="">`;
-    } else {
-        avatar.textContent = applicant.username.substring(0,2).toUpperCase();
-    }
-    
-    if (applicant.rating) {
-        // ตารางไม่มี review_count ให้ใส่เป็น 0 ไปก่อนครับ
-        document.getElementById('modalRating').textContent = `⭐ ${parseFloat(applicant.rating).toFixed(1)}`;
-    } else {
-        document.getElementById('modalRating').textContent = '⭐ ยังไม่มีรีวิว';
-    }
-    
-    // แก้ส่วน skills container
-    const skillsContainer = document.getElementById('modalSkills');
-    skillsContainer.innerHTML = '';
-    if (applicant.skill) {  
-        applicant.skill.split(',').forEach(skill => {
-            const badge = document.createElement('span');
-            badge.className = 'skill-badge';
-            badge.textContent = skill.trim();
-            skillsContainer.appendChild(badge);
-        });
-    } else {
-        skillsContainer.innerHTML = '<span style="color:var(--muted);">ยังไม่มีทักษะ</span>';
-    }
-    
-    checkSaveStatus(applicant.freelancer_id);
-    document.getElementById('freelancerModal').classList.add('show');
-    document.body.style.overflow = 'hidden';
-} // ปิดฟังก์ชันตรงนี้
+  document.getElementById('m-av').textContent   = ap.username.substring(0,2).toUpperCase();
+  document.getElementById('m-name').textContent  = ap.username;
+  document.getElementById('m-email').textContent = ap.email || '—';
+  document.getElementById('m-phone').textContent = ap.phone || 'ไม่ระบุ';
+  document.getElementById('m-location').textContent = ap.location ? '📍 '+ap.location : '';
+  document.getElementById('m-rating').textContent   = ap.rating ? '⭐ '+parseFloat(ap.rating).toFixed(1) : '';
 
-function closeModal() {
-// ... (โค้ดเดิมด้านล่างปล่อยไว้ได้เลยครับ)
-    document.getElementById('freelancerModal').classList.remove('show');
-    document.body.style.overflow = 'auto';
-}
+  const badges = {accepted:'✅ รับแล้ว', hired:'✅ รับแล้ว', rejected:'❌ ไม่ผ่าน', pending:'⏳ รอพิจารณา'};
+  document.getElementById('m-status-badge').textContent = badges[status] || '';
 
-function checkSaveStatus(freelancerId) {
-    fetch('check_saved_freelancer.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `freelancer_id=${freelancerId}`
-    })
-    .then(r => r.json())
-    .then(data => {
-        isSaved = data.is_saved;
-        updateSaveButton();
+  // Skills
+  const sc = document.getElementById('m-skills');
+  sc.innerHTML = '';
+  if(ap.skill){
+    ap.skill.split(',').forEach(s => {
+      const b = document.createElement('span');
+      b.className = 'modal-skill';
+      b.textContent = s.trim();
+      sc.appendChild(b);
     });
+  } else { sc.innerHTML = '<span style="color:var(--muted);">ไม่มีข้อมูล</span>'; }
+
+  // Experience
+  const expEl = document.getElementById('m-exp');
+  expEl.textContent = ap.experience || 'ไม่ระบุ';
+
+  // Actions
+  const actEl = document.getElementById('m-actions');
+  const isHired = status==='accepted'||status==='hired';
+  const isRejected = status==='rejected';
+  if(isHired){
+    actEl.innerHTML = `<div class="btn-hired-done"><i class="bi bi-check-circle-fill" style="color:var(--green);"></i> รับเข้าทำงานแล้ว</div>`;
+  } else if(isRejected){
+    actEl.innerHTML = `<div class="btn-hired-done"><i class="bi bi-x-circle-fill" style="color:var(--red);"></i> ปฏิเสธแล้ว</div>`;
+  } else {
+    actEl.innerHTML = `
+      <div class="modal-actions">
+        <button class="btn-accept" onclick="acceptApplicant(${ap.application_id})"><i class="bi bi-person-check"></i> รับเข้าทำงาน</button>
+        <button class="btn-reject" onclick="rejectApplicant(${ap.application_id})"><i class="bi bi-x-lg"></i> ปฏิเสธ</button>
+      </div>`;
+  }
+
+  checkSave(currentId);
+  document.getElementById('fl-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
 }
 
-function toggleSave() {
-    if (!currentFreelancerId) return;
-    const action = isSaved ? 'unsave' : 'save';
-    
-    fetch('save_freelancer.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `freelancer_id=${currentFreelancerId}&action=${action}`
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            isSaved = !isSaved;
-            updateSaveButton();
-            showNotification(isSaved ? 'บันทึกแล้ว ✓' : 'ยกเลิกการบันทึก', isSaved ? 'success' : 'success');
-        } else {
-            showNotification(data.message || 'เกิดข้อผิดพลาด', 'error');
-        }
-    });
+function closeModal(){
+  document.getElementById('fl-modal').classList.remove('show');
+  document.body.style.overflow = '';
 }
 
-function updateSaveButton() {
-    const btn = document.getElementById('saveBtn');
-    const icon = document.getElementById('saveIcon');
-    const text = document.getElementById('saveText');
-    
-    if (isSaved) {
-        btn.classList.add('saved');
-        icon.className = 'bi bi-bookmark-check-fill';
-        text.textContent = 'บันทึกแล้ว';
-    } else {
-        btn.classList.remove('saved');
-        icon.className = 'bi bi-bookmark';
-        text.textContent = 'บันทึก';
-    }
+function checkSave(fid){
+  fetch('check_saved_freelancer.php', {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`freelancer_id=${fid}`
+  }).then(r=>r.json()).then(d=>{ isSaved=d.is_saved; updateSaveBtn(); });
 }
 
-function showNotification(msg, type) {
-    const n = document.createElement('div');
-    n.className = `notification ${type==='error'?'error':''}`;
-    n.textContent = msg;
-    document.body.appendChild(n);
-    setTimeout(() => n.remove(), 3000);
+function toggleSave(){
+  if(!currentId) return;
+  fetch('save_freelancer.php', {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`freelancer_id=${currentId}&action=${isSaved?'unsave':'save'}`
+  }).then(r=>r.json()).then(d=>{
+    if(d.success){ isSaved=!isSaved; updateSaveBtn(); showToast(isSaved?'บันทึกแล้ว ✓':'ยกเลิกการบันทึกแล้ว','#0f172a'); }
+    else showToast(d.message||'เกิดข้อผิดพลาด','#ef4444');
+  });
 }
 
-function acceptApplicant() {
-    if (!currentFreelancerId) return;
-    if (confirm('ยอมรับผู้สมัครคนนี้?')) {
-        showNotification('ยอมรับแล้ว ✓');
-        closeModal();
-        // เพิ่ม AJAX สำหรับอัปเดตสถานะที่นี่
-    }
+function updateSaveBtn(){
+  const btn=document.getElementById('save-btn');
+  const icon=document.getElementById('save-icon');
+  const txt=document.getElementById('save-text');
+  if(isSaved){ btn.classList.add('saved'); icon.className='bi bi-bookmark-check-fill'; txt.textContent='บันทึกแล้ว'; }
+  else { btn.classList.remove('saved'); icon.className='bi bi-bookmark'; txt.textContent='บันทึก'; }
 }
 
-function rejectApplicant() {
-    if (!currentFreelancerId) return;
-    if (confirm('ปฏิเสธผู้สมัครคนนี้?')) {
-        showNotification('ปฏิเสธแล้ว');
-        closeModal();
-        // เพิ่ม AJAX สำหรับอัปเดตสถานะที่นี่
-    }
+function acceptApplicant(appId){
+  if(!confirm('รับ Freelancer คนนี้เข้าทำงาน?')) return;
+  window.location.href = `hire.php?application_id=${appId}`;
 }
 
-document.getElementById('freelancerModal').addEventListener('click', e => {
-    if (e.target.id === 'freelancerModal') closeModal();
-});
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+function rejectApplicant(appId){
+  if(!confirm('ปฏิเสธผู้สมัครคนนี้?')) return;
+  window.location.href = `reject_applicant.php?application_id=${appId}`;
+}
+
+function showToast(msg, bg){
+  const t = document.createElement('div');
+  t.className = 'toast-notif';
+  t.style.background = bg||'#0f172a';
+  t.style.color = '#fff';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 2500);
+}
+
+document.getElementById('fl-modal').addEventListener('click', e=>{ if(e.target.id==='fl-modal') closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 </script>
 </body>
 </html>
