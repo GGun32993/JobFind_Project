@@ -37,6 +37,36 @@ if($user_location != ""){
         LIMIT 5
     ");
 }
+
+$popular_employers = mysqli_query($conn,"
+    SELECT u.user_id,
+           COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS company_name,
+           COALESCE(l.total_likes,0) AS total_likes,
+           COALESCE(r.total_reviews,0) AS total_reviews,
+           COALESCE(r.avg_rating,0) AS avg_rating,
+           COALESCE(j.total_jobs,0) AS total_jobs
+    FROM users u
+    LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
+    LEFT JOIN (
+        SELECT employer_id, COUNT(*) AS total_likes
+        FROM like_employer
+        GROUP BY employer_id
+    ) l ON l.employer_id = u.user_id
+    LEFT JOIN (
+        SELECT employer_id, COUNT(*) AS total_reviews, AVG(rating) AS avg_rating
+        FROM employer_review
+        GROUP BY employer_id
+    ) r ON r.employer_id = u.user_id
+    LEFT JOIN (
+        SELECT employer_id, COUNT(*) AS total_jobs
+        FROM job
+        WHERE admin_status='approved'
+        GROUP BY employer_id
+    ) j ON j.employer_id = u.user_id
+    WHERE u.role='employer'
+    ORDER BY total_likes DESC, avg_rating DESC, total_reviews DESC, total_jobs DESC, company_name ASC
+    LIMIT 5
+");
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -272,11 +302,67 @@ if($user_location != ""){
   .empty-state i { font-size: 40px; margin-bottom: 12px; display: block; }
   .empty-state p { font-size: 14px; }
 
+  .popular-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 28px;
+  }
+  .popular-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 16px;
+  }
+  .popular-head h4 { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0; }
+  .popular-head h4 i { color: var(--accent); }
+  .popular-top-label {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    background: #eef2ff; border: 1px solid #c7d2fe;
+    padding: 4px 10px; border-radius: 999px;
+  }
+  .popular-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .popular-item {
+    display: flex; flex-direction: column; gap: 10px;
+    min-width: 0; padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text); text-decoration: none;
+    background: #fff;
+    transition: border-color .15s, box-shadow .2s, transform .15s;
+  }
+  .popular-item:hover { color: var(--text); border-color: #c7d2fe; box-shadow: 0 6px 18px rgba(99,102,241,.12); transform: translateY(-1px); }
+  .popular-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .popular-rank {
+    width: 28px; height: 28px; border-radius: 9px;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .popular-avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--light); color: var(--accent);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+  .popular-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .popular-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .popular-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    background: var(--light); border-radius: 999px;
+    padding: 4px 8px;
+  }
+  .popular-pill i { color: var(--accent); font-size: 12px; }
+  .popular-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 24px; font-size: 13px; }
+
+  @media(max-width: 1200px){ .popular-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media(max-width: 768px){
     .sidebar { display: none; }
     .main { margin-left: 0; padding: 20px 16px; }
     .job-card { flex-wrap: wrap; }
     .btn-apply { width: 100%; justify-content: center; margin-top: 8px; }
+    .popular-list { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -341,6 +427,41 @@ if($user_location != ""){
       <?php echo strtoupper(substr($username, 0, 1)); ?>
     </div>
   </div>
+
+  <!-- Popular Employers -->
+  <section class="popular-card">
+    <div class="popular-head">
+      <h4><i class="bi bi-trophy"></i> ผู้ว่าจ้างยอดนิยม</h4>
+      <span class="popular-top-label">Top 5</span>
+    </div>
+
+    <div class="popular-list">
+      <?php
+        $rank = 1;
+        $hasPopular = false;
+        while($emp = mysqli_fetch_assoc($popular_employers)):
+          $hasPopular = true;
+          $rating = round($emp['avg_rating'] ?? 0, 1);
+      ?>
+      <a href="employer_profile.php?employer_id=<?php echo (int)$emp['user_id']; ?>" class="popular-item">
+        <div class="popular-top">
+          <div class="popular-rank"><?php echo $rank; ?></div>
+          <div class="popular-avatar"><i class="bi bi-building"></i></div>
+          <div class="popular-name"><?php echo htmlspecialchars($emp['company_name']); ?></div>
+        </div>
+        <div class="popular-stats">
+          <span class="popular-pill"><i class="bi bi-heart-fill"></i><?php echo (int)$emp['total_likes']; ?> ไลก์</span>
+          <span class="popular-pill"><i class="bi bi-star-fill"></i><?php echo $rating > 0 ? $rating : '-'; ?></span>
+          <span class="popular-pill"><i class="bi bi-briefcase-fill"></i><?php echo (int)$emp['total_jobs']; ?> งาน</span>
+        </div>
+      </a>
+      <?php $rank++; endwhile; ?>
+
+      <?php if(!$hasPopular): ?>
+      <div class="popular-empty">ยังไม่มีข้อมูลผู้ว่าจ้าง</div>
+      <?php endif; ?>
+    </div>
+  </section>
 
   <!-- Recommended Jobs -->
   <div class="section-header">

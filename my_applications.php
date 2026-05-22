@@ -13,6 +13,7 @@ $result = mysqli_query($conn,"
            job.job_id,
            job.title,
            job.description,
+           job.category,
            job.location,
            job.salary,
            job.status AS job_status,
@@ -240,9 +241,20 @@ while($r = mysqli_fetch_assoc($result)) {
   <?php else: ?>
 
   <?php
-  $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','','💰'];
+  $categoryIcons = [
+    'IT & Software' => '💻',
+    'Design' => '🎨',
+    'Marketing' => '📢',
+    'Writing' => '✍️',
+    'Finance' => '💰',
+    'Education' => '🎓',
+    'Other' => '📦',
+  ];
+  $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
   foreach($rows as $row):
-    $icon = $icons[crc32($row['title']) % count($icons)];
+    $category = trim($row['category'] ?? '');
+    $icon = $categoryIcons[$category] ?? $icons[crc32($row['title']) % count($icons)] ?? '💼';
+    if($icon === '') $icon = '💼';
     $job_id = $row['job_id'];
     $app_status  = strtolower($row['status']);
     $job_status  = strtolower($row['job_status']);

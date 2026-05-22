@@ -232,8 +232,11 @@ if($is_public){
       <a href="employer_profile.php"     class="nav-item active"><i class="bi bi-person-circle"></i> My Profile</a>
     <?php else: ?>
       <a href="freelancer_dashboard.php" class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
-      <a href="browse_jobs.php"          class="nav-item"><i class="bi bi-briefcase"></i> Browse Jobs</a>
-      <a href="my_applications.php"      class="nav-item active"><i class="bi bi-file-earmark-text"></i> My Applications</a>
+      <a href="browse_jobs.php"          class="nav-item active"><i class="bi bi-briefcase"></i> Browse Jobs</a>
+      <a href="my_applications.php"      class="nav-item"><i class="bi bi-file-earmark-text"></i> My Applications</a>
+      <a href="my_profile.php"           class="nav-item"><i class="bi bi-person-circle"></i> My Profile</a>
+      <a href="freelancer_reviews.php"   class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
+      <a href="upload_resume.php"        class="nav-item"><i class="bi bi-cloud-upload"></i> Upload Resume</a>
     <?php endif; ?>
     <div class="nav-divider"></div>
     <a href="support_chat.php" class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>

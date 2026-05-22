@@ -290,9 +290,20 @@ while($r = mysqli_fetch_assoc($result)){
   <?php else: ?>
 
   <?php
+  $categoryIcons = [
+    'IT & Software' => '💻',
+    'Design' => '🎨',
+    'Marketing' => '📢',
+    'Writing' => '✍️',
+    'Finance' => '💰',
+    'Education' => '🎓',
+    'Other' => '📦',
+  ];
   $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
   foreach($rows as $row):
-    $icon       = $icons[crc32($row['title']) % count($icons)];
+    $category   = trim($row['category'] ?? '');
+    $icon       = $categoryIcons[$category] ?? $icons[crc32($row['title']) % count($icons)] ?? '💼';
+    if($icon === '') $icon = '💼';
     $adm        = $row['admin_status'];
     $sts        = $row['status'];
     $total_apps = $row['total_apps'];
