@@ -54,7 +54,7 @@ if(isset($_POST['submit']) && !$already){
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rate / Review Employer</title>
+<title>รีวิวงาน</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
@@ -72,7 +72,7 @@ if(isset($_POST['submit']) && !$already){
 
   body { font-family:'Sora',sans-serif; background:var(--light); color:var(--text); display:flex; min-height:100vh; }
 
-  /* ── Sidebar ── */
+  /* ── Sidebar  */
   .sidebar { width:240px; min-height:100vh; background:var(--navy); display:flex; flex-direction:column; padding:28px 0; position:fixed; top:0; left:0; z-index:100; }
   .sidebar-brand { padding:0 24px 28px; border-bottom:1px solid var(--navy3); }
   .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
@@ -90,7 +90,7 @@ if(isset($_POST['submit']) && !$already){
   .nav-logout:hover { background:rgba(239,68,68,.12); }
   .nav-logout i { font-size:17px; }
 
-  /* ── Main ── */
+  /* ── Main ─ */
   .main { margin-left:240px; flex:1; padding:36px 40px; display:flex; align-items:flex-start; justify-content:center; }
   .content-wrap { width:100%; max-width:560px; }
 
@@ -101,11 +101,25 @@ if(isset($_POST['submit']) && !$already){
   .btn-back { display:inline-flex; align-items:center; gap:7px; background:var(--white); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:9px 18px; font-size:13.5px; font-weight:500; text-decoration:none; transition:background .15s; white-space:nowrap; }
   .btn-back:hover { background:var(--light); color:var(--text); }
 
-  /* ── Company card ── */
-  .company-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:20px; display:flex; align-items:center; gap:16px; }
+  /* ── Company card (Updated) ── */
+  .company-card { 
+    background:var(--white); border:1px solid var(--border); border-radius:var(--radius); 
+    padding:20px 24px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; 
+  }
+  .co-left { display:flex; align-items:center; gap:16px; flex:1; min-width:0; }
   .co-avatar { width:52px; height:52px; border-radius:12px; background:var(--navy); color:#fff; font-size:19px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .co-name { font-size:15px; font-weight:600; }
   .co-job  { font-size:13px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:5px; }
+  
+  /* ปุ่มรีวิวบริษัท */
+  .btn-company-review {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--light); color:var(--accent); border:1px solid var(--border);
+    border-radius:10px; padding:8px 16px;
+    font-size:13px; font-weight:600; text-decoration:none;
+    transition:all .15s; white-space:nowrap;
+  }
+  .btn-company-review:hover { border-color:var(--accent); color:var(--accent); background:#eef2ff; }
 
   /* ── Already reviewed ── */
   .reviewed-box { background:#d1fae5; border:1px solid #6ee7b7; border-radius:var(--radius); padding:20px 24px; display:flex; align-items:center; gap:12px; font-size:14px; color:#065f46; font-weight:500; }
@@ -141,12 +155,17 @@ if(isset($_POST['submit']) && !$already){
   .btn-submit { width:100%; padding:13px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'Sora',sans-serif; font-size:15px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:background .15s,transform .1s; }
   .btn-submit:hover { background:#4f46e5; transform:translateY(-1px); }
 
-  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
+  @media(max-width:768px){ 
+    .sidebar { display:none; } 
+    .main { margin-left:0; padding:20px 16px; }
+    .company-card { flex-wrap:wrap; }
+    .btn-company-review { width:100%; justify-content:center; margin-top:14px; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ── Sidebar ── -->
+<!-- ── Sidebar ─ -->
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="#" class="logo">
@@ -172,14 +191,14 @@ if(isset($_POST['submit']) && !$already){
   </div>
 </aside>
 
-<!-- ── Main ── -->
+<!-- ── Main ─ -->
 <main class="main">
 <div class="content-wrap">
 
   <div class="topbar">
     <div>
-      <h2>รีวิวบริษัท</h2>
-      <p>แบ่งปันประสบการณ์การทำงานร่วมกัน</p>
+      <h2>รีวิวงาน</h2>
+      <p>แบ่งปันประสบการณ์การทำงานในโปรเจกต์นี้</p>
     </div>
     <a href="my_applications.php" class="btn-back">
       <i class="bi bi-arrow-left"></i> กลับ
@@ -188,20 +207,27 @@ if(isset($_POST['submit']) && !$already){
 
   <!-- Company info -->
   <div class="company-card">
-    <div class="co-avatar"><?php echo strtoupper(substr($job['company_name'] ?? '?', 0, 2)); ?></div>
-    <div>
-      <div class="co-name"><?php echo htmlspecialchars($job['company_name'] ?? 'Unknown'); ?></div>
-      <div class="co-job">
-        <i class="bi bi-briefcase" style="font-size:12px;"></i>
-        <?php echo htmlspecialchars($job['title'] ?? 'Unknown Job'); ?>
+    <div class="co-left">
+      <div class="co-avatar"><?php echo strtoupper(substr($job['company_name'] ?? '?', 0, 2)); ?></div>
+      <div>
+        <div class="co-name"><?php echo htmlspecialchars($job['company_name'] ?? 'Unknown'); ?></div>
+        <div class="co-job">
+          <i class="bi bi-briefcase" style="font-size:12px;"></i>
+          <?php echo htmlspecialchars($job['title'] ?? 'Unknown Job'); ?>
+        </div>
       </div>
     </div>
+    <!-- ✅ ปุ่มรีวิวบริษัท (ตรงตำแหน่งวงแดง) -->
+        <!-- ✅ ปุ่มรีวิวบริษัท (เปลี่ยนลิงก์ไปหน้าฟอร์มรีวิวบริษัท) -->
+    <a href="employer_review_form.php?employer_id=<?php echo $employer_id; ?>&job_id=<?php echo $job_id; ?>" class="btn-company-review">
+      <i class="bi bi-building"></i> รีวิวผู้ว่าจ้าง
+    </a>
   </div>
 
   <?php if($already): ?>
   <div class="reviewed-box">
     <i class="bi bi-check-circle-fill" style="font-size:22px;"></i>
-    คุณได้รีวิวบริษัทนี้ในงานนี้ไปแล้ว
+    คุณได้รีวิวงานนี้ไปแล้ว
   </div>
 
   <?php else: ?>
@@ -216,7 +242,7 @@ if(isset($_POST['submit']) && !$already){
   <form method="POST">
   <div class="form-card">
 
-    <div class="section-title"><i class="bi bi-star"></i> ให้คะแนนบริษัท</div>
+    <div class="section-title"><i class="bi bi-star"></i> ให้คะแนนงาน</div>
 
     <!-- Star picker -->
     <div class="star-rating">
@@ -232,7 +258,7 @@ if(isset($_POST['submit']) && !$already){
     <div class="field-group">
       <label>ความคิดเห็น <span>(ไม่บังคับ)</span></label>
       <textarea name="comment" id="comment-input" class="form-input"
-                placeholder="เล่าประสบการณ์ทำงานกับบริษัทนี้ ความเป็นมืออาชีพ การสื่อสาร การจ่ายเงิน ฯลฯ"
+                placeholder="เล่าประสบการณ์การทำงานในโปรเจกต์นี้ ความเป็นมืออาชีพ การสื่อสาร การจ่ายเงิน ฯลฯ"
                 maxlength="500"
                 oninput="updateCount()"><?php echo htmlspecialchars($_POST['comment'] ?? ''); ?></textarea>
       <div class="char-count"><span id="char-count">0</span> / 500</div>

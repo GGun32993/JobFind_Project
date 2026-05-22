@@ -157,7 +157,9 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
     <a href="employer_dashboard.php"   class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
     <a href="post_job.php"             class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
     <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs</a>
+    <a href="saved_freelancers.php"    class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php"     class="nav-item active"><i class="bi bi-star"></i> My Reviews</a>
+    <a href="employer_review.php"      class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>
     <a href="employer_profile.php"     class="nav-item"><i class="bi bi-person-circle"></i> My Profile</a>
     <div class="nav-divider"></div>
     <a href="support_chat.php"         class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>
@@ -171,8 +173,8 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
 <main class="main">
 
   <div class="topbar">
-    <h2>My Reviews</h2>
-    <p>รีวิวที่ได้รับจาก Freelancer ทั้งหมด</p>
+    <h2>รีวิวงาน</h2>
+    <p>รีวิวงานที่ได้รับจาก Freelancer</p>
   </div>
 
   <?php if($total > 0): ?>

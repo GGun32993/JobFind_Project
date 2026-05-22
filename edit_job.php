@@ -162,7 +162,9 @@ if(empty($cats)){
     <a href="employer_dashboard.php" class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
     <a href="post_job.php" class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
     <a href="employer_manage_jobs.php" class="nav-item active"><i class="bi bi-briefcase"></i> Manage Jobs</a>
+    <a href="saved_freelancers.php" class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php" class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
+    <a href="employer_review.php" class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>
     <a href="employer_profile.php" class="nav-item"><i class="bi bi-person-circle"></i> My Profile</a>
     <div class="nav-divider"></div>
     <a href="support_chat.php" class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>
@@ -189,11 +191,6 @@ if(empty($cats)){
   <div class="job-badge badge-<?php echo $job['admin_status']; ?>">
     <i class="bi bi-<?php echo $job['admin_status']==='approved'?'check-circle':($job['admin_status']==='rejected'?'x-circle':'hourglass-split'); ?>"></i>
     <?php echo ucfirst($job['admin_status']); ?>
-  </div>
-
-  <div class="info-box">
-    <i class="bi bi-info-circle-fill"></i>
-    <p>งานที่แก้ไขจะถูกส่งให้ Admin ตรวจสอบอีกครั้ง (หากงานได้รับการอนุมัติแล้ว)</p>
   </div>
 
   <form method="POST">

@@ -306,6 +306,19 @@ INSERT INTO `resume` (`resume_id`, `freelancer_id`, `file_name`, `upload_date`) 
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `saved_freelancers`
+--
+
+CREATE TABLE `saved_freelancers` (
+  `id` int(11) NOT NULL,
+  `employer_id` int(11) NOT NULL,
+  `freelancer_id` int(11) NOT NULL,
+  `saved_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -411,6 +424,15 @@ ALTER TABLE `resume`
   ADD PRIMARY KEY (`resume_id`);
 
 --
+-- Indexes for table `saved_freelancers`
+--
+
+ALTER TABLE `saved_freelancers`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_save` (`employer_id`,`freelancer_id`),
+  ADD KEY `freelancer_id` (`freelancer_id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -491,6 +513,13 @@ ALTER TABLE `like_employer`
 --
 ALTER TABLE `resume`
   MODIFY `resume_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `saved_freelancers`
+--
+
+ALTER TABLE `saved_freelancers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`

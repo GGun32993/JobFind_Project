@@ -187,8 +187,13 @@ while($r = mysqli_fetch_assoc($result)) {
   </div>
 </aside>
 
-<!-- ── Main ── -->
+<!-- ── Main ─ -->
 <main class="main">
+
+  <!-- ✅ ปุ่มย้อนกลับ -->
+  <a href="job_review.php" class="btn-back" style="display:inline-flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:500;text-decoration:none;margin-bottom:16px;transition:background .15s;">
+    <i class="bi bi-arrow-left"></i> กลับไปรีวิวงาน
+  </a>
 
   <div class="topbar">
     <div>
@@ -235,7 +240,7 @@ while($r = mysqli_fetch_assoc($result)) {
   <?php else: ?>
 
   <?php
-  $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
+  $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','','💰'];
   foreach($rows as $row):
     $icon = $icons[crc32($row['title']) % count($icons)];
     $job_id = $row['job_id'];
@@ -303,8 +308,9 @@ while($r = mysqli_fetch_assoc($result)) {
       <?php if($can_review): ?>
       <div class="app-actions">
         <?php if(!$already_reviewed): ?>
-        <a href="rate_employer.php?job_id=<?php echo (int)$job_id; ?>" class="btn-rate">
-          <i class="bi bi-star-fill"></i> รีวิวบริษัท
+        <!-- ใหม่ -->
+        <a href="job_review.php?job_id=<?php echo (int)$job_id; ?>" class="btn-rate">
+          <i class="bi bi-star-fill"></i> รีวิวงาน
         </a>
         <?php else: ?>
         <span class="badge-pill bp-reviewed">

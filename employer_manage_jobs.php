@@ -227,7 +227,9 @@ while($r = mysqli_fetch_assoc($result)){
       <i class="bi bi-briefcase"></i> Manage Jobs
       <?php if($cnt_pending > 0): ?><span class="nav-badge"><?php echo $cnt_pending; ?></span><?php endif; ?>
     </a>
+    <a href="saved_freelancers.php"    class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php"     class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
+    <a href="employer_review.php"      class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>
     <a href="employer_profile.php"     class="nav-item"><i class="bi bi-person-circle"></i> My Profile</a>
     <div class="nav-divider"></div>
     <a href="support_chat.php"         class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>

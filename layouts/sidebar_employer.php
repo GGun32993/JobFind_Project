@@ -12,16 +12,28 @@ Dashboard
 Post Job
 </a>
 
-<a href="manage_jobs.php" style="color:white;display:block;margin-bottom:10px;">
+<a href="employer_manage_jobs.php" style="color:white;display:block;margin-bottom:10px;">
 Manage Jobs
 </a>
 
-<a href="view_applicants.php" style="color:white;display:block;margin-bottom:10px;">
-Applicants
+<a href="saved_freelancers.php" style="color:white;display:block;margin-bottom:10px;">
+Saved Freelancers
+</a>
+
+<a href="employer_reviews.php" style="color:white;display:block;margin-bottom:10px;">
+My Reviews
+</a>
+
+<a href="employer_review.php" style="color:white;display:block;margin-bottom:10px;">
+รีวิวบริษัท
 </a>
 
 <a href="employer_profile.php" style="color:white;display:block;margin-bottom:10px;">
 My Profile
+</a>
+
+<a href="support_chat.php" style="color:white;display:block;margin-bottom:10px;">
+Support Chat
 </a>
 
 <a href="logout.php" style="color:white;">
