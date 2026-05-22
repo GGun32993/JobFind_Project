@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 21, 2026 at 08:46 AM
+-- Generation Time: May 22, 2026 at 10:58 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -134,6 +134,14 @@ CREATE TABLE `employer_review` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `employer_review`
+--
+
+INSERT INTO `employer_review` (`review_id`, `employer_id`, `freelancer_id`, `job_id`, `rating`, `comment`, `created_at`) VALUES
+(2, 2, 1, NULL, 5, 'บริษัทดี', '2026-05-22 06:20:28'),
+(3, 2, 1, 8, 5, 'งานดีๆ', '2026-05-22 07:29:45');
+
 -- --------------------------------------------------------
 
 --
@@ -235,7 +243,8 @@ CREATE TABLE `job` (
 --
 
 INSERT INTO `job` (`job_id`, `employer_id`, `title`, `description`, `location`, `salary`, `latitude`, `longitude`, `deadline`, `status`, `admin_status`, `created_at`, `category`, `updated_at`) VALUES
-(8, 2, 'แก้ไขข้อมูลการรับสมัครงาน', 'เพิ่มปุ่มแก้ไขที่ตัวงาน', '', 2000.00, NULL, NULL, '2026-05-26 00:00:00', '', 'approved', '2026-05-21 05:41:22', 'IT', '2026-05-21 06:39:14');
+(8, 2, 'แก้ไขข้อมูลการรับสมัครงาน', 'เพิ่มปุ่มแก้ไขที่ตัวงาน', '', 2000.00, NULL, NULL, '2026-05-26 00:00:00', 'closed', 'approved', '2026-05-21 05:41:22', 'IT', '2026-05-21 06:39:14'),
+(9, 2, 'Graphic', 'กินเงินเดือน', '', 20000.00, NULL, NULL, '2026-05-25 00:00:00', 'closed', 'approved', '2026-05-22 05:41:27', 'Design', NULL);
 
 -- --------------------------------------------------------
 
@@ -260,7 +269,9 @@ INSERT INTO `job_application` (`application_id`, `job_id`, `freelancer_id`, `app
 (2, 5, 4, '2026-05-17 05:46:56', 'rejected'),
 (3, 6, 1, '2026-05-17 06:43:42', 'accepted'),
 (4, 6, 4, '2026-05-17 06:43:58', 'rejected'),
-(5, 7, 1, '2026-05-19 03:53:27', 'pending');
+(5, 7, 1, '2026-05-19 03:53:27', 'pending'),
+(6, 8, 1, '2026-05-21 06:55:45', 'accepted'),
+(7, 9, 1, '2026-05-22 08:55:26', 'accepted');
 
 -- --------------------------------------------------------
 
@@ -314,7 +325,7 @@ CREATE TABLE `saved_freelancers` (
   `employer_id` int(11) NOT NULL,
   `freelancer_id` int(11) NOT NULL,
   `saved_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -332,18 +343,19 @@ CREATE TABLE `users` (
   `role` enum('admin','employer','freelancer') DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `latitude` double DEFAULT NULL,
-  `longitude` double DEFAULT NULL
+  `longitude` double DEFAULT NULL,
+  `company_details` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `fullname`, `phone`, `role`, `created_at`, `latitude`, `longitude`) VALUES
-(1, 'NonFreelance', 'non@non.com', '1234', 'Non', '1234567890', 'freelancer', '2026-02-25 10:05:27', 13.7563, 100.5018),
-(2, 'GuntinanCompany', 'gun@company.com', '1234', 'Guntinan Company', '1234567890', 'employer', '2026-02-25 10:08:15', NULL, NULL),
-(3, 'Admin', 'admin@admin.com', '1234', 'tester3', '1234567890', 'admin', '2026-02-25 10:13:45', NULL, NULL),
-(4, 'test4', 'test@test4.com', '1234', 'tester4', '1234567890', 'freelancer', '2026-02-25 13:53:32', NULL, NULL);
+INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `fullname`, `phone`, `role`, `created_at`, `latitude`, `longitude`, `company_details`) VALUES
+(1, 'NonFreelance', 'non@non.com', '1234', 'Non', '1234567890', 'freelancer', '2026-02-25 10:05:27', 13.7563, 100.5018, NULL),
+(2, 'GuntinanCompany', 'gun@company.com', '1234', 'Guntinan Company', '1234567890', 'employer', '2026-02-25 10:08:15', NULL, NULL, NULL),
+(3, 'Admin', 'admin@admin.com', '1234', 'tester3', '1234567890', 'admin', '2026-02-25 10:13:45', NULL, NULL, NULL),
+(4, 'test4', 'test@test4.com', '1234', 'tester4', '1234567890', 'freelancer', '2026-02-25 13:53:32', NULL, NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -426,7 +438,6 @@ ALTER TABLE `resume`
 --
 -- Indexes for table `saved_freelancers`
 --
-
 ALTER TABLE `saved_freelancers`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_save` (`employer_id`,`freelancer_id`),
@@ -470,7 +481,7 @@ ALTER TABLE `employer_rating`
 -- AUTO_INCREMENT for table `employer_review`
 --
 ALTER TABLE `employer_review`
-  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `freelancer_profile`
@@ -494,13 +505,13 @@ ALTER TABLE `freelancer_review`
 -- AUTO_INCREMENT for table `job`
 --
 ALTER TABLE `job`
-  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `job_application`
 --
 ALTER TABLE `job_application`
-  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `like_employer`
@@ -517,9 +528,8 @@ ALTER TABLE `resume`
 --
 -- AUTO_INCREMENT for table `saved_freelancers`
 --
-
 ALTER TABLE `saved_freelancers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -542,6 +552,13 @@ ALTER TABLE `employer_review`
 --
 ALTER TABLE `job`
   ADD CONSTRAINT `job_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `saved_freelancers`
+--
+ALTER TABLE `saved_freelancers`
+  ADD CONSTRAINT `saved_freelancers_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `saved_freelancers_ibfk_2` FOREIGN KEY (`freelancer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
