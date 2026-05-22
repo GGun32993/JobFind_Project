@@ -235,6 +235,20 @@ $result = mysqli_query($conn, $query);
   }
   .btn-apply:hover { background: #4f46e5; color: #fff; transform: translateY(-1px); }
 
+  .btn-detail {
+    flex-shrink: 0; align-self: center;
+    background: var(--white); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 22px; font-size: 13px; font-weight: 600;
+    text-decoration: none; white-space: nowrap;
+    transition: background .15s, transform .1s;
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-right: 8px;
+  }
+  .btn-detail:hover {
+      background: var(--light);
+}
+
   /* ── Empty state ── */
   .empty-state {
     text-align: center; padding: 60px 20px; color: var(--muted);
@@ -460,6 +474,10 @@ $result = mysqli_query($conn, $query);
         </span>
       </div>
     </div>
+
+    <a href="view_job.php?job_id=<?php echo (int)$row['job_id']; ?>" class="btn-detail">
+      <i class="bi bi-info-circle"></i> Detail
+    </a>
 
     <a href="apply_job.php?job_id=<?php echo (int)$row['job_id']; ?>" class="btn-apply">
       <i class="bi bi-send"></i> Apply
