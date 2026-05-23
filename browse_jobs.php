@@ -8,6 +8,9 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
 
 $user_id = $_SESSION['user_id'];
 
+// ตรวจสอบ category จาก URL parameter
+$selected_category = isset($_GET['category']) ? trim($_GET['category']) : '';
+
 // ดึง categories จาก DB
 $browse_cats = [];
 $cat_check = mysqli_query($conn,"SHOW TABLES LIKE 'categories'");
@@ -17,10 +20,10 @@ if($cat_check && mysqli_num_rows($cat_check) > 0){
 }
 if(empty($browse_cats)){
     $browse_cats = [
-        ['name'=>'IT & Software','icon'=>'💻'],['name'=>'Design','icon'=>'🎨'],
-        ['name'=>'Marketing','icon'=>'📢'],    ['name'=>'Writing','icon'=>'✍️'],
-        ['name'=>'Finance','icon'=>'💰'],      ['name'=>'Education','icon'=>'🎓'],
-        ['name'=>'Other','icon'=>'📦'],
+        ['name'=>'IT','icon'=>'💻'],
+        ['name'=>'Design','icon'=>'🎨'],
+        ['name'=>'Marketing','icon'=>'📢'],
+        ['name'=>'Accounting','icon'=>'💰'],
     ];
 }
 
@@ -505,7 +508,7 @@ $result = mysqli_query($conn, $query);
 </main>
 
 <script>
-  let currentCat = '';
+  let currentCat = <?php echo json_encode($selected_category, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
   let salMin = 0, salMax = 0; // 0,0 = ทั้งหมด
   const cards = document.querySelectorAll('.job-card');
   const countEl = document.getElementById('result-count');
@@ -513,10 +516,29 @@ $result = mysqli_query($conn, $query);
 
   countEl.textContent = cards.length;
 
+  // เมื่อหน้า load ให้อัปเดต UI ตาม URL parameter
+  document.addEventListener('DOMContentLoaded', function(){
+    if(currentCat){
+      const activePill = Array.from(document.querySelectorAll('.cat-pill')).find(p => p.dataset.cat === currentCat);
+      if(activePill){
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        activePill.classList.add('active');
+      }
+    }
+    filterJobs();
+  });
+
   function setCategory(el) {
     document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
     el.classList.add('active');
     currentCat = el.dataset.cat;
+    const url = new URL(window.location.href);
+    if(currentCat){
+      url.searchParams.set('category', currentCat);
+    } else {
+      url.searchParams.delete('category');
+    }
+    window.history.replaceState({}, '', url);
     filterJobs();
   }
 

@@ -7,6 +7,27 @@ if(!isset($_SESSION['user_id'])){ header("Location: login.php"); exit(); }
 $current_user_id = $_SESSION['user_id'];
 $current_role    = $_SESSION['role'];
 
+function safe_return_url($url, $fallback = ''){
+    $url = trim((string)$url);
+    if($url === '' || preg_match('/[\r\n]/', $url)){
+        return $fallback;
+    }
+
+    $parts = parse_url($url);
+    if($parts === false || isset($parts['scheme']) || isset($parts['host']) || strpos($url, '//') === 0){
+        return $fallback;
+    }
+
+    if(!preg_match('/^[A-Za-z0-9_\/.-]+\.php(\?[A-Za-z0-9_%=&.\-\/]*)?$/', $url)){
+        return $fallback;
+    }
+
+    return $url;
+}
+
+$return_url = safe_return_url($_GET['return_url'] ?? '');
+$return_query = $return_url !== '' ? '&return_url=' . urlencode($return_url) : '';
+
 // ตรวจสอบโหมด: ดูสาธารณะ (Freelancer) หรือ แก้ไขตัวเอง (Employer)
 $view_emp_id = intval($_GET['emp'] ?? $_GET['employer_id'] ?? 0);
 $is_public   = ($view_emp_id > 0 && ($current_role != 'employer' || $view_emp_id != $current_user_id));
@@ -250,7 +271,7 @@ if($is_public){
 <div class="content-wrap">
 
   <?php if($is_public): ?>
-    <a href="javascript:history.back()" class="btn-back"><i class="bi bi-arrow-left"></i> กลับ</a>
+    <a href="<?php echo htmlspecialchars($return_url ?: 'javascript:history.back()', ENT_QUOTES, 'UTF-8'); ?>" class="btn-back"><i class="bi bi-arrow-left"></i> กลับ</a>
   <?php endif; ?>
 
   <div class="topbar">
@@ -274,7 +295,7 @@ if($is_public){
       </div>
       <div class="banner-actions">
         <?php if($is_public): ?>
-        <a href="employer_review_form.php?employer_id=<?php echo $target_id; ?>" class="btn-company-review">
+        <a href="employer_review_form.php?employer_id=<?php echo $target_id; ?><?php echo htmlspecialchars($return_query, ENT_QUOTES, 'UTF-8'); ?>" class="btn-company-review">
           <i class="bi bi-building"></i> รีวิวผู้ว่าจ้าง
         </a>
         <?php endif; ?>

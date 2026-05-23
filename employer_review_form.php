@@ -11,10 +11,41 @@ $freelancer_id = $_SESSION['user_id'];
 $employer_id   = intval($_GET['employer_id'] ?? 0);
 $job_id        = isset($_GET['job_id']) ? intval($_GET['job_id']) : null;
 
-if(!$employer_id){ header("Location: browse_jobs.php"); exit(); }
+function safe_return_url($url, $fallback = ''){
+    $url = trim((string)$url);
+    if($url === '' || preg_match('/[\r\n]/', $url)){
+        return $fallback;
+    }
+
+    $parts = parse_url($url);
+    if($parts === false || isset($parts['scheme']) || isset($parts['host']) || strpos($url, '//') === 0){
+        return $fallback;
+    }
+
+    if(!preg_match('/^[A-Za-z0-9_\/.-]+\.php(\?[A-Za-z0-9_%=&.\-\/]*)?$/', $url)){
+        return $fallback;
+    }
+
+    return $url;
+}
+
+$return_url = safe_return_url($_GET['return_url'] ?? ($_POST['return_url'] ?? ''));
+$return_query = $return_url !== '' ? '&return_url=' . urlencode($return_url) : '';
+
+if(!$employer_id){ header("Location: " . ($return_url ?: "browse_jobs.php")); exit(); }
 
 $employer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT u.user_id, COALESCE(ep.employer_name, u.username) AS company_name FROM users u LEFT JOIN employer_profile ep ON ep.user_id = u.user_id WHERE u.user_id='$employer_id'"));
 if(!$employer){ header("Location: browse_jobs.php"); exit(); }
+
+$profile_url = "employer_profile.php?employer_id=$employer_id" . $return_query;
+$back_url = $return_url ?: $profile_url;
+$liked = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT 1
+    FROM like_employer
+    WHERE freelancer_id='$freelancer_id'
+    AND employer_id='$employer_id'
+    LIMIT 1
+")) ? true : false;
 
 // ตรวจสอบว่ารีวิวไปแล้วหรือยัง (แยกกรณีมี job_id กับ ไม่มี job_id)
 if($job_id){
@@ -35,7 +66,7 @@ if(isset($_POST['submit']) && !$already){
     } else {
         $job_val = $job_id ? "'$job_id'" : "NULL";
         mysqli_query($conn, "INSERT INTO employer_review (employer_id, freelancer_id, job_id, rating, comment) VALUES ('$employer_id','$freelancer_id',$job_val,'$rating','$comment')");
-        header("Location: employer_profile.php?employer_id=$employer_id&reviewed=1");
+        header("Location: employer_profile.php?employer_id=$employer_id&reviewed=1" . $return_query);
         exit();
     }
 }
@@ -155,7 +186,7 @@ if(isset($_POST['submit']) && !$already){
       <h2>รีวิวผู้ว่าจ้าง</h2>
       <p>แชร์ประสบการณ์การทำงานกับผู้ว่าจ้างนี้</p>
     </div>
-    <a href="my_applications.php" class="btn-back"><i class="bi bi-arrow-left"></i> กลับ</a>
+    <a href="<?php echo htmlspecialchars($back_url, ENT_QUOTES, 'UTF-8'); ?>" class="btn-back"><i class="bi bi-arrow-left"></i> กลับ</a>
   </div>
 
   <div class="company-card">
@@ -166,9 +197,9 @@ if(isset($_POST['submit']) && !$already){
         <?php if($job_id): ?><div class="co-job">จากงาน ID <?php echo $job_id; ?></div><?php endif; ?>
       </div>
     </div>
-    <button class="btn-like" onclick="likeEmployer(<?php echo $employer_id; ?>)">
-      <i class="bi bi-heart"></i>
-      <span id="like-text">ถูกใจ</span>
+    <button type="button" class="btn-like <?php echo $liked ? 'liked' : ''; ?>" onclick="likeEmployer(<?php echo $employer_id; ?>)">
+      <i class="bi <?php echo $liked ? 'bi-heart-fill' : 'bi-heart'; ?>"></i>
+      <span id="like-text"><?php echo $liked ? 'ถูกใจแล้ว' : 'ถูกใจ'; ?></span>
     </button>
   </div>
 
@@ -188,6 +219,9 @@ if(isset($_POST['submit']) && !$already){
   <?php endif; ?>
 
   <form method="POST">
+  <?php if($return_url !== ''): ?>
+  <input type="hidden" name="return_url" value="<?php echo htmlspecialchars($return_url, ENT_QUOTES, 'UTF-8'); ?>">
+  <?php endif; ?>
   <div class="form-card">
 
     <div class="section-title"><i class="bi bi-star"></i> ให้คะแนน</div>
@@ -239,7 +273,7 @@ if(isset($_POST['submit']) && !$already){
   // Like functionality
   function likeEmployer(employerId) {
     const btn = document.querySelector('.btn-like');
-    const isLiked = btn.classList.contains('liked');
+    const icon = btn.querySelector('i');
     
     btn.style.opacity = '0.6';
     btn.style.pointerEvents = 'none';
@@ -250,9 +284,11 @@ if(isset($_POST['submit']) && !$already){
         if(data.success) {
           if(data.liked) {
             btn.classList.add('liked');
+            icon.className = 'bi bi-heart-fill';
             document.getElementById('like-text').textContent = 'ถูกใจแล้ว';
           } else {
             btn.classList.remove('liked');
+            icon.className = 'bi bi-heart';
             document.getElementById('like-text').textContent = 'ถูกใจ';
           }
         } else {
@@ -277,8 +313,16 @@ if(isset($_POST['submit']) && !$already){
       .then(data => {
         if(data.liked) {
           const btn = document.querySelector('.btn-like');
+          const icon = btn.querySelector('i');
           btn.classList.add('liked');
+          icon.className = 'bi bi-heart-fill';
           document.getElementById('like-text').textContent = 'ถูกใจแล้ว';
+        } else {
+          const btn = document.querySelector('.btn-like');
+          const icon = btn.querySelector('i');
+          btn.classList.remove('liked');
+          icon.className = 'bi bi-heart';
+          document.getElementById('like-text').textContent = 'ถูกใจ';
         }
       })
       .catch(error => console.error('Error checking like:', error));
