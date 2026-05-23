@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config.php";
+require_once "job_image_helpers.php";
 
 // ตรวจสอบว่าเป็น Freelancer หรือไม่
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
@@ -9,6 +10,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
 }
 
 $job_id = $_GET['job_id'] ?? 0;
+ensure_job_image_schema($conn);
 
 // ดึงข้อมูลงาน
 $job_query = "SELECT * FROM job WHERE job_id = ?";
@@ -23,6 +25,7 @@ if (!$job) {
     exit();
 }
 
+$job_images = get_job_images($conn, $job_id);
 $job_status = trim($job['status'] ?? '') ?: 'open';
 
 // ✅ ดึงข้อมูลนายจ้าง + รายละเอียดบริษัท (JOIN 2 ตาราง)
@@ -402,6 +405,38 @@ $employer_js_data = [
         
         .salary-highlight i {
             font-size: 22px;
+        }
+
+        .job-image-section {
+            margin: -12px 0 32px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--light);
+        }
+
+        .job-image-section img {
+            width: 100%;
+            max-height: 360px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .job-image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin: -12px 0 32px;
+        }
+
+        .job-image-gallery img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--light);
         }
         
         /* ========== Section ========== */
@@ -1043,6 +1078,40 @@ $employer_js_data = [
         </div>
 
         <div class="job-detail">
+        <div class="section">
+            <h2 class="section-title">
+                <i class="bi bi-building"></i>
+                ข้อมูลนายจ้าง
+            </h2>
+            <div class="employer-card" onclick="openEmployerModal()">
+                <div class="employer-header">
+                    <div class="employer-avatar"><?php echo strtoupper(substr($employer['username'] ?? 'EM', 0, 2)); ?></div>
+                    <div class="employer-info">
+                        <h4 class="employer-name">
+                            <?php echo htmlspecialchars($employer['username'] ?? 'ไม่ทราบชื่อนายจ้าง'); ?>
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </h4>
+                        <div class="employer-meta">
+                            <span>
+                                <i class="bi bi-envelope-fill"></i>
+                                <?php echo htmlspecialchars($employer['email'] ?? 'ไม่มีอีเมล'); ?>
+                            </span>
+                            <span class="rating-display">
+                                <span class="stars">
+                                    <i class="bi bi-star-fill"></i>
+                                </span>
+                                <?php echo $avg_rating > 0 ? $avg_rating : 'ยังไม่มีรีวิว'; ?>
+                                <span style="color: var(--muted);">(<?php echo count($employer_reviews); ?> รีวิว)</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="employer-hint">
+                    <i class="bi bi-hand-index"></i> คลิกเพื่อดูโปรไฟล์นายจ้างและรีวิวทั้งหมด
+                </div>
+            </div>
+        </div>
+
         <div class="job-header">
             <div class="job-title-section">
                 <div class="job-category-badge">
@@ -1075,6 +1144,18 @@ $employer_js_data = [
                 </div>
             </div>
         </div>
+
+        <?php if(!empty($job_images)): ?>
+        <div class="job-image-gallery">
+            <?php foreach($job_images as $image): ?>
+            <img src="<?php echo htmlspecialchars($image['image_path']); ?>" alt="<?php echo htmlspecialchars($job['title'] ?? 'รูปภาพประกอบ'); ?>">
+            <?php endforeach; ?>
+        </div>
+        <?php elseif(!empty($job['image_path'])): ?>
+        <div class="job-image-section">
+            <img src="<?php echo htmlspecialchars($job['image_path']); ?>" alt="<?php echo htmlspecialchars($job['title'] ?? 'รูปประกอบงาน'); ?>">
+        </div>
+        <?php endif; ?>
 
         <div class="section">
             <h2 class="section-title">
@@ -1117,40 +1198,6 @@ $employer_js_data = [
                         <i class="bi bi-calendar-x"></i>
                         <?php echo !empty($job['deadline']) ? date('d M Y', strtotime($job['deadline'])) : 'ไม่ระบุ'; ?>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">
-                <i class="bi bi-building"></i>
-                ข้อมูลนายจ้าง
-            </h2>
-            <div class="employer-card" onclick="openEmployerModal()">
-                <div class="employer-header">
-                    <div class="employer-avatar"><?php echo strtoupper(substr($employer['username'] ?? 'EM', 0, 2)); ?></div>
-                    <div class="employer-info">
-                        <h4 class="employer-name">
-                            <?php echo htmlspecialchars($employer['username'] ?? 'ไม่ทราบชื่อนายจ้าง'); ?>
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </h4>
-                        <div class="employer-meta">
-                            <span>
-                                <i class="bi bi-envelope-fill"></i>
-                                <?php echo htmlspecialchars($employer['email'] ?? 'ไม่มีอีเมล'); ?>
-                            </span>
-                            <span class="rating-display">
-                                <span class="stars">
-                                    <i class="bi bi-star-fill"></i>
-                                </span>
-                                <?php echo $avg_rating > 0 ? $avg_rating : 'ยังไม่มีรีวิว'; ?>
-                                <span style="color: var(--muted);">(<?php echo count($employer_reviews); ?> รีวิว)</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="employer-hint">
-                    <i class="bi bi-hand-index"></i> คลิกเพื่อดูโปรไฟล์นายจ้างและรีวิวทั้งหมด
                 </div>
             </div>
         </div>

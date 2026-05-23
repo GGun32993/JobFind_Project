@@ -87,6 +87,12 @@ if(isset($_POST['submit']) && !$already){
   .btn-back { display:inline-flex; align-items:center; gap:7px; background:var(--white); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:9px 18px; font-size:13.5px; font-weight:500; text-decoration:none; transition:background .15s; white-space:nowrap; }
   .btn-back:hover { background:var(--light); color:var(--text); }
 
+  .btn-like { display:inline-flex; align-items:center; gap:8px; background:var(--white); border:1px solid var(--border); color:var(--muted); border-radius:10px; padding:10px 18px; font-size:13.5px; font-weight:500; cursor:pointer; transition:all .2s; white-space:nowrap; }
+  .btn-like:hover { border-color:var(--red); color:var(--red); }
+  .btn-like.liked { background:var(--red); color:#fff; border-color:var(--red); }
+  .btn-like i { font-size:16px; transition:transform .2s; }
+  .btn-like.liked i { transform:scale(1.2); }
+
   .company-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
   .co-left { display:flex; align-items:center; gap:16px; flex:1; min-width:0; }
   .co-avatar { width:52px; height:52px; border-radius:12px; background:var(--navy); color:#fff; font-size:19px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -160,6 +166,10 @@ if(isset($_POST['submit']) && !$already){
         <?php if($job_id): ?><div class="co-job">จากงาน ID <?php echo $job_id; ?></div><?php endif; ?>
       </div>
     </div>
+    <button class="btn-like" onclick="likeEmployer(<?php echo $employer_id; ?>)">
+      <i class="bi bi-heart"></i>
+      <span id="like-text">ถูกใจ</span>
+    </button>
   </div>
 
   <?php if($already): ?>
@@ -225,6 +235,56 @@ if(isset($_POST['submit']) && !$already){
     document.getElementById('char-count').textContent = ta ? ta.value.length : 0;
   }
   updateCount();
+
+  // Like functionality
+  function likeEmployer(employerId) {
+    const btn = document.querySelector('.btn-like');
+    const isLiked = btn.classList.contains('liked');
+    
+    btn.style.opacity = '0.6';
+    btn.style.pointerEvents = 'none';
+    
+    fetch('like_employer.php?employer_id=' + employerId)
+      .then(response => response.json())
+      .then(data => {
+        if(data.success) {
+          if(data.liked) {
+            btn.classList.add('liked');
+            document.getElementById('like-text').textContent = 'ถูกใจแล้ว';
+          } else {
+            btn.classList.remove('liked');
+            document.getElementById('like-text').textContent = 'ถูกใจ';
+          }
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + data.message);
+        }
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('เกิดข้อผิดพลาด');
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      });
+  }
+
+  // Check if already liked
+  function checkLiked() {
+    const employerId = <?php echo $employer_id; ?>;
+    fetch('check_liked.php?employer_id=' + employerId)
+      .then(response => response.json())
+      .then(data => {
+        if(data.liked) {
+          const btn = document.querySelector('.btn-like');
+          btn.classList.add('liked');
+          document.getElementById('like-text').textContent = 'ถูกใจแล้ว';
+        }
+      })
+      .catch(error => console.error('Error checking like:', error));
+  }
+
+  checkLiked();
 </script>
 </body>
 </html>

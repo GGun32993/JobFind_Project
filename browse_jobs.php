@@ -196,7 +196,10 @@ $result = mysqli_query($conn, $query);
     border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
     font-size: 24px;
+    overflow: hidden;
   }
+  .job-logo.has-image { background: var(--white); }
+  .job-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   .job-body { flex: 1; min-width: 0; }
   .job-top  { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -415,6 +418,7 @@ $result = mysqli_query($conn, $query);
       $total_reviews= $rating_data['total_reviews'];
 
       $icon = $icons[crc32($row['title']) % count($icons)];
+      $job_image = trim($row['image_path'] ?? '');
 
       // ---- category: ดึงจาก DB (ถ้ามี field 'category') หรือ fallback ว่าง
       $cat = isset($row['category']) ? htmlspecialchars($row['category']) : '';
@@ -443,7 +447,13 @@ $result = mysqli_query($conn, $query);
        data-cat="<?php echo $cat; ?>"
        data-salary="<?php echo $salary_num; ?>">
 
-    <div class="job-logo"><?php echo $icon; ?></div>
+    <div class="job-logo <?php echo $job_image !== '' ? 'has-image' : ''; ?>">
+      <?php if($job_image !== ''): ?>
+      <img src="<?php echo htmlspecialchars($job_image); ?>" alt="<?php echo htmlspecialchars($row['title']); ?>">
+      <?php else: ?>
+      <?php echo $icon; ?>
+      <?php endif; ?>
+    </div>
 
     <div class="job-body">
       <div class="job-top">

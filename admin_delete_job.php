@@ -1,12 +1,27 @@
 <?php
 include "config.php";
+require_once "job_image_helpers.php";
 
-$id = $_GET['id'];
+$id = intval($_GET['id'] ?? 0);
+ensure_job_image_schema($conn);
 
+$image_paths = [];
+$img_res = mysqli_query($conn,"SELECT image_path FROM job_images WHERE job_id='$id'");
+if($img_res){
+    while($img = mysqli_fetch_assoc($img_res)){
+        $image_paths[] = $img['image_path'];
+    }
+}
+
+mysqli_query($conn,"DELETE FROM job_images WHERE job_id='$id'");
 mysqli_query($conn,"
 DELETE FROM job
 WHERE job_id='$id'
 ");
+
+foreach($image_paths as $path){
+    delete_job_image_file($path);
+}
 
 header("Location: admin_manage_jobs.php");
 exit();

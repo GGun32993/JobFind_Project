@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config.php";
+require_once "job_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     header("Location: login.php");
@@ -9,6 +10,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 
 $employer_id = $_SESSION['user_id'];
 $error = '';
+ensure_job_image_schema($conn);
 
 if(isset($_POST['submit'])){
     $title       = mysqli_real_escape_string($conn, $_POST['title']);
@@ -17,17 +19,49 @@ if(isset($_POST['submit'])){
     $salary      = mysqli_real_escape_string($conn, $_POST['salary']);
     $deadline    = mysqli_real_escape_string($conn, $_POST['deadline']);
     $category    = mysqli_real_escape_string($conn, $_POST['category'] ?? '');
+    $job_image_paths = save_uploaded_job_images($_FILES['job_images'] ?? [], $employer_id, $error);
 
-    $result = mysqli_query($conn,"
-        INSERT INTO job (employer_id,title,description,location,salary,deadline,category,status,admin_status)
-        VALUES ('$employer_id','$title','$description','$location','$salary','$deadline','$category','pending','pending')
-    ");
+    if($error === ''){
+        $job_image_path = $job_image_paths[0] ?? '';
+        $job_image_sql = $job_image_path !== '' ? "'" . mysqli_real_escape_string($conn, $job_image_path) . "'" : "NULL";
+        $result = mysqli_query($conn,"
+            INSERT INTO job (employer_id,title,description,location,salary,deadline,category,image_path,status,admin_status)
+            VALUES ('$employer_id','$title','$description','$location','$salary','$deadline','$category',$job_image_sql,'pending','pending')
+        ");
 
-    if($result){
-        header("Location: employer_manage_jobs.php?posted=1");
-        exit();
-    } else {
-        $error = mysqli_error($conn);
+        if($result){
+            $job_id = mysqli_insert_id($conn);
+            $images_saved = true;
+            foreach($job_image_paths as $index => $path){
+                $path_sql = mysqli_real_escape_string($conn, $path);
+                $sort_order = intval($index);
+                $images_saved = mysqli_query($conn, "
+                    INSERT INTO job_images (job_id, image_path, sort_order)
+                    VALUES ('$job_id', '$path_sql', '$sort_order')
+                ");
+                if(!$images_saved){
+                    break;
+                }
+            }
+
+            if(!$images_saved){
+                mysqli_query($conn, "DELETE FROM job_images WHERE job_id='$job_id'");
+                mysqli_query($conn, "DELETE FROM job WHERE job_id='$job_id'");
+                foreach($job_image_paths as $path){
+                    delete_job_image_file($path);
+                }
+                $error = 'บันทึกรูปภาพประกอบไม่สำเร็จ';
+            } else {
+                sync_job_primary_image($conn, $job_id);
+                header("Location: employer_manage_jobs.php?posted=1");
+                exit();
+            }
+        } else {
+            foreach($job_image_paths as $path){
+                delete_job_image_file($path);
+            }
+            $error = mysqli_error($conn);
+        }
     }
 }
 
@@ -121,6 +155,16 @@ if(empty($cats)){
 
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 
+  .file-upload { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:14px; padding:14px 16px; border:1px solid var(--border); border-radius:14px; background:#f8fafc; cursor:pointer; transition:border-color .15s,background .15s,box-shadow .15s; }
+  .file-upload:hover { border-color:var(--accent); background:#eef2ff; box-shadow:0 8px 18px rgba(99,102,241,.10); }
+  .file-upload input { display:none; }
+  .upload-icon { width:48px; height:48px; border-radius:12px; background:#eef2ff; color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+  .upload-title { font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:3px; }
+  .upload-hint { font-size:12px; color:var(--muted); line-height:1.5; }
+  .upload-preview-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; margin-top:10px; }
+  .upload-preview { width:100%; height:64px; border-radius:10px; object-fit:cover; border:1px solid var(--border); display:block; }
+  .upload-action { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:0 16px; border:1px solid var(--accent); border-radius:10px; background:var(--accent); color:#fff; font-size:13px; font-weight:600; white-space:nowrap; box-shadow:0 8px 18px rgba(99,102,241,.18); }
+
   /* ── Info box ── */
   .info-box { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:14px 16px; display:flex; gap:10px; margin-bottom:24px; }
   .info-box i { color:var(--accent); font-size:18px; flex-shrink:0; margin-top:1px; }
@@ -134,7 +178,7 @@ if(empty($cats)){
   /* ── Char counter ── */
   .char-count { font-size:11.5px; color:var(--muted); text-align:right; margin-top:4px; }
 
-  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col { grid-template-columns:1fr; } }
+  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col { grid-template-columns:1fr; } .file-upload { grid-template-columns:auto 1fr; } .upload-action { grid-column:1 / -1; } }
 </style>
 </head>
 <body>
@@ -189,7 +233,7 @@ if(empty($cats)){
     โดยปกติใช้เวลาไม่นาน กรุณากรอกข้อมูลให้ครบถ้วนและชัดเจน</p>
   </div>
 
-  <form method="POST">
+  <form method="POST" enctype="multipart/form-data">
   <div class="form-card">
 
     <!-- ข้อมูลงาน -->
@@ -237,6 +281,20 @@ if(empty($cats)){
 
     <!-- รายละเอียดเพิ่มเติม -->
     <div class="section-title" style="margin-top:8px;"><i class="bi bi-map"></i> สถานที่และค่าตอบแทน</div>
+
+    <div class="field-group">
+      <label>รูปภาพประกอบ</label>
+      <label class="file-upload" for="job-image-input">
+        <div class="upload-icon" id="job-image-icon"><i class="bi bi-image"></i></div>
+        <div>
+          <div class="upload-title" id="job-image-title">เลือกรูปภาพ</div>
+          <div class="upload-hint">เลือกได้หลายรูป รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 5MB ต่อรูป</div>
+        </div>
+        <span class="upload-action"><i class="bi bi-upload"></i> เลือกรูปภาพ</span>
+        <input type="file" name="job_images[]" id="job-image-input" accept="image/jpeg,image/png,image/webp" multiple onchange="previewJobImages(this)">
+      </label>
+      <div class="upload-preview-grid" id="job-image-preview-grid"></div>
+    </div>
 
     <div class="two-col">
       <div class="field-group">
@@ -288,6 +346,32 @@ if(empty($cats)){
     document.getElementById('desc-count').textContent = ta.value.length;
   }
   updateCount();
+
+  function previewJobImages(input){
+    const files = Array.from(input.files || []);
+    const grid = document.getElementById('job-image-preview-grid');
+    const icon = document.getElementById('job-image-icon');
+    const title = document.getElementById('job-image-title');
+
+    grid.innerHTML = '';
+
+    if(files.length === 0){
+      icon.style.display = 'flex';
+      title.textContent = 'เลือกรูปภาพ';
+      return;
+    }
+
+    files.forEach((file) => {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.alt = file.name;
+      img.className = 'upload-preview';
+      grid.appendChild(img);
+    });
+
+    icon.style.display = 'none';
+    title.textContent = files.length + ' รูปที่เลือก';
+  }
 </script>
 </body>
 </html>

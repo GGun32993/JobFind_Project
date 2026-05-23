@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config.php";
+require_once "job_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "employer"){
     header("Location: login.php");
@@ -8,7 +9,19 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "employer"){
 }
 
 $job_id = intval($_GET['job_id'] ?? $_GET['id'] ?? 0);
+$employer_id = intval($_SESSION['user_id']);
 $toast = '';
+ensure_job_image_schema($conn);
+
+$query = mysqli_query($conn, "SELECT * FROM job WHERE job_id='$job_id' AND employer_id='$employer_id'");
+$job = mysqli_fetch_assoc($query);
+
+if(!$job){
+    echo "<script>alert('ไม่พบงานนี้ (ID: $job_id)'); window.location.href='employer_manage_jobs.php';</script>";
+    exit();
+}
+
+$job_images = get_job_images($conn, $job_id);
 
 // ── UPDATE JOB ──
 if(isset($_POST['update'])){
@@ -18,8 +31,26 @@ if(isset($_POST['update'])){
     $salary      = mysqli_real_escape_string($conn, trim($_POST['salary']));
     $deadline    = mysqli_real_escape_string($conn, trim($_POST['deadline']));
     $category    = mysqli_real_escape_string($conn, trim($_POST['category'] ?? ''));
-    
-    mysqli_query($conn, "
+    $image_error = '';
+    $delete_image_ids = array_map('intval', $_POST['delete_image_ids'] ?? []);
+    $uploaded_images = save_uploaded_job_images($_FILES['job_images'] ?? [], $employer_id, $image_error);
+    $remaining_count = count($job_images) - count($delete_image_ids) + count($uploaded_images);
+
+    if($remaining_count > job_image_max_count()){
+        $image_error = 'รูปภาพประกอบใส่ได้ไม่เกิน ' . job_image_max_count() . ' รูปต่อหนึ่งงาน';
+    }
+
+    if($image_error !== ''){
+        foreach($uploaded_images as $path){
+            delete_job_image_file($path);
+        }
+        echo "<script>alert('" . addslashes($image_error) . "'); window.history.back();</script>";
+        exit();
+    }
+
+    mysqli_begin_transaction($conn);
+
+    $updated = mysqli_query($conn, "
         UPDATE job SET 
             title='$title',
             description='$description',
@@ -28,8 +59,61 @@ if(isset($_POST['update'])){
             deadline='$deadline',
             category='$category',
             updated_at=NOW()
-        WHERE job_id='$job_id'
+        WHERE job_id='$job_id' AND employer_id='$employer_id'
     ");
+
+    $delete_paths = [];
+    if($updated && !empty($delete_image_ids)){
+        $ids_sql = implode(',', $delete_image_ids);
+        $delete_res = mysqli_query($conn, "
+            SELECT image_id, image_path
+            FROM job_images
+            WHERE job_id='$job_id' AND image_id IN ($ids_sql)
+        ");
+        if($delete_res){
+            while($img = mysqli_fetch_assoc($delete_res)){
+                $delete_paths[] = $img['image_path'];
+            }
+        }
+        $updated = mysqli_query($conn, "DELETE FROM job_images WHERE job_id='$job_id' AND image_id IN ($ids_sql)");
+    }
+
+    if($updated && !empty($uploaded_images)){
+        $sort_res = mysqli_query($conn, "SELECT COALESCE(MAX(sort_order), -1) AS max_sort FROM job_images WHERE job_id='$job_id'");
+        $sort_row = $sort_res ? mysqli_fetch_assoc($sort_res) : ['max_sort' => -1];
+        $sort_order = intval($sort_row['max_sort']) + 1;
+
+        foreach($uploaded_images as $path){
+            $path_sql = mysqli_real_escape_string($conn, $path);
+            $updated = mysqli_query($conn, "
+                INSERT INTO job_images (job_id, image_path, sort_order)
+                VALUES ('$job_id', '$path_sql', '$sort_order')
+            ");
+            $sort_order++;
+            if(!$updated){
+                break;
+            }
+        }
+    }
+
+    if($updated){
+        $updated = sync_job_primary_image($conn, $job_id);
+    }
+
+    if(!$updated){
+        mysqli_rollback($conn);
+        foreach($uploaded_images as $path){
+            delete_job_image_file($path);
+        }
+        echo "<script>alert('บันทึกการแก้ไขไม่สำเร็จ'); window.history.back();</script>";
+        exit();
+    }
+
+    mysqli_commit($conn);
+
+    foreach($delete_paths as $path){
+        delete_job_image_file($path);
+    }
     
     $toast = 'success';
     header("Location: edit_job.php?job_id=$job_id&toast=$toast");
@@ -37,13 +121,15 @@ if(isset($_POST['update'])){
 }
 
 // ── GET JOB ──
-$query = mysqli_query($conn, "SELECT * FROM job WHERE job_id='$job_id'");
+$query = mysqli_query($conn, "SELECT * FROM job WHERE job_id='$job_id' AND employer_id='$employer_id'");
 $job = mysqli_fetch_assoc($query);
 
 if(!$job){
     echo "<script>alert('ไม่พบงานนี้ (ID: $job_id)'); window.location.href='employer_manage_jobs.php';</script>";
     exit();
 }
+
+$job_images = get_job_images($conn, $job_id);
 
 // ดึง categories
 $cats = [];
@@ -122,6 +208,21 @@ if(empty($cats)){
   .input-icon-wrap i { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--muted); pointer-events:none; }
   .input-icon-wrap .form-input { padding-left:40px; }
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .image-editor { display:flex; flex-direction:column; gap:14px; padding:16px; border:1px solid var(--border); border-radius:14px; background:#f8fafc; }
+  .existing-image-grid,.new-image-preview-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(118px,1fr)); gap:12px; }
+  .existing-image-card,.new-image-preview-card { position:relative; min-height:104px; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--white); }
+  .existing-image-card img,.new-image-preview-card img { width:100%; height:104px; object-fit:cover; display:block; }
+  .image-delete-option { position:absolute; right:8px; bottom:8px; display:inline-grid; grid-auto-flow:column; place-content:center; place-items:center; gap:6px; height:32px; padding:0 10px; border:1px solid #fecaca; border-radius:9px; background:rgba(255,241,242,.94); color:#b91c1c; font-size:12px; font-weight:600; line-height:1; cursor:pointer; margin:0; box-shadow:0 6px 16px rgba(15,23,42,.12); }
+  .image-delete-option input { position:absolute; opacity:0; pointer-events:none; }
+  .image-delete-option.is-marked-delete { background:var(--red); border-color:var(--red); color:#fff; }
+  .image-editor .file-upload { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:12px; width:100%; min-height:72px; padding:12px 14px; margin:0; border:1px dashed #c7d2fe; border-radius:12px; background:var(--white); color:var(--text); cursor:pointer; transition:border-color .15s,background .15s,box-shadow .15s; }
+  .image-editor .file-upload:hover { border-color:var(--accent); background:#eef2ff; box-shadow:0 8px 18px rgba(99,102,241,.10); }
+  .image-editor .file-upload input { display:none; }
+  .upload-icon { width:44px; height:44px; border-radius:12px; background:#eef2ff; color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .upload-title { font-size:13.5px; font-weight:600; color:var(--text); line-height:1.3; }
+  .image-hint { font-size:12px; color:var(--muted); line-height:1.5; margin-top:2px; }
+  .upload-action { display:inline-grid; grid-auto-flow:column; place-content:center; place-items:center; gap:8px; height:42px; padding:0 14px; border-radius:10px; background:var(--accent); color:#fff; font-size:13px; font-weight:600; white-space:nowrap; box-shadow:0 8px 18px rgba(99,102,241,.18); }
+  @media(max-width:560px){ .image-editor .file-upload { grid-template-columns:auto 1fr; } .upload-action { grid-column:1 / -1; } }
   .info-box { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:14px 16px; display:flex; gap:10px; margin-bottom:24px; }
   .info-box i { color:var(--accent); font-size:18px; flex-shrink:0; margin-top:1px; }
   .info-box p { font-size:13px; color:#3730a3; line-height:1.7; margin:0; }
@@ -193,7 +294,7 @@ if(empty($cats)){
     <?php echo ucfirst($job['admin_status']); ?>
   </div>
 
-  <form method="POST">
+  <form method="POST" enctype="multipart/form-data">
   <div class="form-card">
 
     <div class="section-title"><i class="bi bi-briefcase"></i> ข้อมูลงาน</div>
@@ -235,6 +336,37 @@ if(empty($cats)){
     <?php else: ?>
     <input type="hidden" name="category" value="<?php echo htmlspecialchars($job['category'] ?? ''); ?>">
     <?php endif; ?>
+
+    <div class="field-group">
+      <label>รูปภาพประกอบ</label>
+      <div class="image-editor">
+        <?php if(!empty($job_images)): ?>
+        <div class="existing-image-grid">
+          <?php foreach($job_images as $image): ?>
+          <div class="existing-image-card">
+            <img src="<?php echo htmlspecialchars($image['image_path']); ?>" alt="<?php echo htmlspecialchars($job['title']); ?>">
+            <label class="image-delete-option">
+              <i class="bi bi-trash"></i>
+              <input type="checkbox" name="delete_image_ids[]" value="<?php echo (int)$image['image_id']; ?>" onchange="toggleDeleteImage(this)">
+              <span>ลบ</span>
+            </label>
+          </div>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
+        <label class="file-upload" for="job-image-input">
+          <div class="upload-icon"><i class="bi bi-images"></i></div>
+          <div>
+            <div class="upload-title" id="job-image-title">เพิ่มรูปภาพ</div>
+            <div class="image-hint">เลือกเพิ่มได้หลายรูป รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 5MB ต่อรูป</div>
+          </div>
+          <span class="upload-action"><i class="bi bi-upload"></i> เลือกรูปภาพ</span>
+          <input type="file" name="job_images[]" id="job-image-input" accept="image/jpeg,image/png,image/webp" multiple onchange="previewJobImages(this)">
+        </label>
+        <div class="new-image-preview-grid" id="job-image-preview-grid"></div>
+      </div>
+    </div>
 
     <div class="section-title" style="margin-top:8px;"><i class="bi bi-map"></i> สถานที่และค่าตอบแทน</div>
 
@@ -285,5 +417,42 @@ if(empty($cats)){
 </div>
 </main>
 
+<script>
+  function previewJobImages(input){
+    const files = Array.from(input.files || []);
+    const grid = document.getElementById('job-image-preview-grid');
+    const title = document.getElementById('job-image-title');
+
+    grid.innerHTML = '';
+
+    if(files.length === 0){
+      title.textContent = 'เพิ่มรูปภาพ';
+      return;
+    }
+
+    files.forEach((file) => {
+      const card = document.createElement('div');
+      card.className = 'new-image-preview-card';
+
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.alt = file.name;
+      card.appendChild(img);
+      grid.appendChild(card);
+    });
+
+    title.textContent = files.length + ' รูปใหม่ที่เลือก';
+  }
+
+  function toggleDeleteImage(input){
+    const deleteButton = input.closest('.image-delete-option');
+
+    if(input.checked){
+      deleteButton?.classList.add('is-marked-delete');
+    } else {
+      deleteButton?.classList.remove('is-marked-delete');
+    }
+  }
+</script>
 </body>
 </html>

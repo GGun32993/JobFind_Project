@@ -235,6 +235,7 @@ CREATE TABLE `job` (
   `admin_status` enum('pending','approved','rejected') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `category` varchar(100) DEFAULT NULL,
+  `image_path` varchar(255) DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -242,9 +243,23 @@ CREATE TABLE `job` (
 -- Dumping data for table `job`
 --
 
-INSERT INTO `job` (`job_id`, `employer_id`, `title`, `description`, `location`, `salary`, `latitude`, `longitude`, `deadline`, `status`, `admin_status`, `created_at`, `category`, `updated_at`) VALUES
-(8, 2, 'แก้ไขข้อมูลการรับสมัครงาน', 'เพิ่มปุ่มแก้ไขที่ตัวงาน', '', 2000.00, NULL, NULL, '2026-05-26 00:00:00', 'closed', 'approved', '2026-05-21 05:41:22', 'IT', '2026-05-21 06:39:14'),
-(9, 2, 'Graphic', 'กินเงินเดือน', '', 20000.00, NULL, NULL, '2026-05-25 00:00:00', 'closed', 'approved', '2026-05-22 05:41:27', 'Design', NULL);
+INSERT INTO `job` (`job_id`, `employer_id`, `title`, `description`, `location`, `salary`, `latitude`, `longitude`, `deadline`, `status`, `admin_status`, `created_at`, `category`, `image_path`, `updated_at`) VALUES
+(8, 2, 'แก้ไขข้อมูลการรับสมัครงาน', 'เพิ่มปุ่มแก้ไขที่ตัวงาน', '', 2000.00, NULL, NULL, '2026-05-26 00:00:00', 'closed', 'approved', '2026-05-21 05:41:22', 'IT', NULL, '2026-05-21 06:39:14'),
+(9, 2, 'Graphic', 'กินเงินเดือน', '', 20000.00, NULL, NULL, '2026-05-25 00:00:00', 'closed', 'approved', '2026-05-22 05:41:27', 'Design', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `job_images`
+--
+
+CREATE TABLE `job_images` (
+  `image_id` int(11) NOT NULL,
+  `job_id` int(11) NOT NULL,
+  `image_path` varchar(255) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -418,6 +433,13 @@ ALTER TABLE `job`
   ADD KEY `employer_id` (`employer_id`);
 
 --
+-- Indexes for table `job_images`
+--
+ALTER TABLE `job_images`
+  ADD PRIMARY KEY (`image_id`),
+  ADD KEY `job_id` (`job_id`);
+
+--
 -- Indexes for table `job_application`
 --
 ALTER TABLE `job_application`
@@ -508,6 +530,12 @@ ALTER TABLE `job`
   MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
+-- AUTO_INCREMENT for table `job_images`
+--
+ALTER TABLE `job_images`
+  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `job_application`
 --
 ALTER TABLE `job_application`
@@ -552,6 +580,12 @@ ALTER TABLE `employer_review`
 --
 ALTER TABLE `job`
   ADD CONSTRAINT `job_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `job_images`
+--
+ALTER TABLE `job_images`
+  ADD CONSTRAINT `job_images_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`job_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `saved_freelancers`

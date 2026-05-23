@@ -67,6 +67,27 @@ $popular_employers = mysqli_query($conn,"
     ORDER BY total_likes DESC, avg_rating DESC, total_reviews DESC, total_jobs DESC, company_name ASC
     LIMIT 5
 ");
+
+// ── Top Freelancers - Rating สูงสุด 7 วัน ──
+$top_freelancers = mysqli_query($conn,"
+    SELECT u.user_id,
+           u.username,
+           COALESCE(fp.location, 'ไม่ระบุ') AS location,
+           COALESCE(fr.total_reviews, 0) AS total_reviews,
+           COALESCE(fr.avg_rating, 0) AS avg_rating
+    FROM users u
+    LEFT JOIN freelancer_profile fp ON fp.user_id = u.user_id
+    LEFT JOIN (
+        SELECT freelancer_id, COUNT(*) AS total_reviews, AVG(rating) AS avg_rating
+        FROM freelancer_review
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        GROUP BY freelancer_id
+    ) fr ON fr.freelancer_id = u.user_id
+    WHERE u.role='freelancer'
+    AND COALESCE(fr.total_reviews, 0) > 0
+    ORDER BY avg_rating DESC, total_reviews DESC
+    LIMIT 7
+");
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -459,6 +480,41 @@ $popular_employers = mysqli_query($conn,"
 
       <?php if(!$hasPopular): ?>
       <div class="popular-empty">ยังไม่มีข้อมูลผู้ว่าจ้าง</div>
+      <?php endif; ?>
+    </div>
+  </section>
+
+  <!-- Top Freelancers (7 Days) -->
+  <section class="popular-card">
+    <div class="popular-head">
+      <h4><i class="bi bi-person-badge"></i> Freelancers ยอดเยี่ยม (7 วันที่ผ่านมา)</h4>
+      <span class="popular-top-label">Top 7</span>
+    </div>
+
+    <div class="popular-list">
+      <?php
+        $rank = 1;
+        $hasFreelancers = false;
+        while($freelancer = mysqli_fetch_assoc($top_freelancers)):
+          $hasFreelancers = true;
+          $rating = round($freelancer['avg_rating'] ?? 0, 1);
+      ?>
+      <a href="view_freelancer_profile.php?user_id=<?php echo (int)$freelancer['user_id']; ?>" class="popular-item">
+        <div class="popular-top">
+          <div class="popular-rank"><?php echo $rank; ?></div>
+          <div class="popular-avatar"><i class="bi bi-person-circle"></i></div>
+          <div class="popular-name"><?php echo htmlspecialchars($freelancer['username']); ?></div>
+        </div>
+        <div class="popular-stats">
+          <span class="popular-pill"><i class="bi bi-map-fill"></i><?php echo htmlspecialchars($freelancer['location']); ?></span>
+          <span class="popular-pill"><i class="bi bi-star-fill"></i><?php echo $rating > 0 ? $rating : '-'; ?></span>
+          <span class="popular-pill"><i class="bi bi-chat-dots-fill"></i><?php echo (int)$freelancer['total_reviews']; ?> รีวิว</span>
+        </div>
+      </a>
+      <?php $rank++; endwhile; ?>
+
+      <?php if(!$hasFreelancers): ?>
+      <div class="popular-empty">ยังไม่มีข้อมูล Freelancers ในช่วง 7 วันที่ผ่านมา</div>
       <?php endif; ?>
     </div>
   </section>

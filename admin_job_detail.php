@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config.php";
+require_once "job_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
     header("Location: login.php");
@@ -8,6 +9,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
 }
 
 $job_id = intval($_GET['id'] ?? 0);
+ensure_job_image_schema($conn);
 
 // ดึงข้อมูลงาน + ข้อมูล employer
 $result = mysqli_query($conn,"
@@ -22,6 +24,8 @@ if(!$job){
     echo "<script>alert('ไม่พบงานนี้'); window.location.href='admin_manage_jobs.php';</script>";
     exit();
 }
+
+$job_images = get_job_images($conn, $job_id);
 
 // approve / reject action
 if(isset($_GET['approve'])){
@@ -86,6 +90,9 @@ if(isset($_GET['reject'])){
   .job-meta span { display:flex; align-items:center; gap:5px; }
   
   .job-desc { font-size:14px; line-height:1.8; color:var(--text); white-space:pre-wrap; }
+  .job-image-preview { width:100%; max-height:260px; object-fit:cover; display:block; border-radius:12px; border:1px solid var(--border); margin:16px 0 20px; }
+  .job-image-gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin:16px 0 20px; }
+  .job-image-gallery img { width:100%; height:120px; object-fit:cover; display:block; border-radius:12px; border:1px solid var(--border); background:var(--light); }
   
   .info-row { display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
   .info-row:last-child { border-bottom:none; }
@@ -162,6 +169,15 @@ if(isset($_GET['reject'])){
       <h4><i class="bi bi-briefcase" style="color:var(--accent);"></i> ข้อมูลงาน</h4>
       
       <div class="job-title"><?php echo htmlspecialchars($job['title']); ?></div>
+      <?php if(!empty($job_images)): ?>
+      <div class="job-image-gallery">
+        <?php foreach($job_images as $image): ?>
+        <img src="<?php echo htmlspecialchars($image['image_path']); ?>" alt="<?php echo htmlspecialchars($job['title']); ?>">
+        <?php endforeach; ?>
+      </div>
+      <?php elseif(!empty($job['image_path'])): ?>
+      <img src="<?php echo htmlspecialchars($job['image_path']); ?>" alt="<?php echo htmlspecialchars($job['title']); ?>" class="job-image-preview">
+      <?php endif; ?>
       
       <div class="job-meta">
         <?php if(!empty($job['location'])): ?>

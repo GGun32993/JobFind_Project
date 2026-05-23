@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config.php";
+require_once "job_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     header("Location: /JobFind_Project/login.php");  // ✅ ระบุ path ชัดเจน
@@ -8,11 +9,28 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 }
 
 $employer_id = $_SESSION['user_id'];
+ensure_job_image_schema($conn);
 
 // ── 1.4.2.7 ลบประกาศ ──
 if(isset($_GET['delete'])){
     $del_id = intval($_GET['delete']);
+    $image_paths = [];
+    $img_res = mysqli_query($conn,"
+        SELECT ji.image_path
+        FROM job_images ji
+        JOIN job j ON j.job_id = ji.job_id
+        WHERE ji.job_id='$del_id' AND j.employer_id='$employer_id'
+    ");
+    if($img_res){
+        while($img = mysqli_fetch_assoc($img_res)){
+            $image_paths[] = $img['image_path'];
+        }
+    }
+    mysqli_query($conn,"DELETE ji FROM job_images ji JOIN job j ON j.job_id=ji.job_id WHERE ji.job_id='$del_id' AND j.employer_id='$employer_id'");
     mysqli_query($conn,"DELETE FROM job WHERE job_id='$del_id' AND employer_id='$employer_id'");
+    foreach($image_paths as $path){
+        delete_job_image_file($path);
+    }
     header("Location: employer_manage_jobs.php?deleted=1");
     exit();
 }
@@ -142,6 +160,8 @@ while($r = mysqli_fetch_assoc($result)){
   .jc-desc  { font-size:13px; color:var(--muted); line-height:1.7; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:12px; }
   .jc-meta  { display:flex; align-items:center; gap:14px; font-size:12.5px; color:var(--muted); flex-wrap:wrap; }
   .jc-meta span { display:flex; align-items:center; gap:4px; }
+  .jc-media { width:42px; height:42px; border-radius:12px; background:var(--light); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; overflow:hidden; flex-shrink:0; }
+  .jc-media img { width:100%; height:100%; object-fit:cover; display:block; }
 
   .badges { display:flex; gap:6px; flex-wrap:wrap; }
   .pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:4px 11px; border-radius:20px; }
@@ -304,6 +324,7 @@ while($r = mysqli_fetch_assoc($result)){
     $category   = trim($row['category'] ?? '');
     $icon       = $categoryIcons[$category] ?? $icons[crc32($row['title']) % count($icons)] ?? '💼';
     if($icon === '') $icon = '💼';
+    $job_image  = trim($row['image_path'] ?? '');
     $adm        = $row['admin_status'];
     $sts        = $row['status'];
     $total_apps = $row['total_apps'];
@@ -336,7 +357,13 @@ while($r = mysqli_fetch_assoc($result)){
 
     <div class="jc-top">
       <div style="display:flex;align-items:center;gap:12px;">
-        <span style="font-size:26px;"><?php echo $icon; ?></span>
+        <div class="jc-media">
+          <?php if($job_image !== ''): ?>
+          <img src="<?php echo htmlspecialchars($job_image); ?>" alt="<?php echo htmlspecialchars($row['title']); ?>">
+          <?php else: ?>
+          <?php echo $icon; ?>
+          <?php endif; ?>
+        </div>
         <div>
           <div class="jc-title"><?php echo htmlspecialchars($row['title']); ?></div>
           <div class="badges">
