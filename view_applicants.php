@@ -206,6 +206,8 @@ $stmt2->close();
   .btn-accept:hover{opacity:.85;}
   .btn-reject{padding:11px;background:#fee2e2;color:#991b1b;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;}
   .btn-reject:hover{opacity:.85;}
+  .btn-rate{padding:11px;background:var(--yellow);color:#854d0e;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s,transform .1s;}
+  .btn-rate:hover{opacity:.85;transform:translateY(-1px);}
   .btn-hired-done{padding:11px;background:var(--light);color:var(--muted);border:1px solid var(--border);border-radius:10px;font-family:'Sora',sans-serif;font-size:14px;font-weight:500;cursor:default;display:flex;align-items:center;justify-content:center;gap:6px;grid-column:1/-1;}
 
   @media(max-width:768px){.sidebar{display:none;}.main{margin-left:0;padding:20px 16px;}.info-grid{grid-template-columns:1fr;}.modal-actions{grid-template-columns:1fr;}}
@@ -424,7 +426,11 @@ function openModal(ap){
   const isHired = status==='accepted'||status==='hired';
   const isRejected = status==='rejected';
   if(isHired){
-    actEl.innerHTML = `<div class="btn-hired-done"><i class="bi bi-check-circle-fill" style="color:var(--green);"></i> รับเข้าทำงานแล้ว</div>`;
+    actEl.innerHTML = `
+      <div class="modal-actions" style="flex-direction:column;">
+        <div class="btn-hired-done"><i class="bi bi-check-circle-fill" style="color:var(--green);"></i> รับเข้าทำงานแล้ว</div>
+        <button class="btn-rate" onclick="rateFreelancer(${ap.freelancer_id})"><i class="bi bi-star"></i> รีวิว Freelancer</button>
+      </div>`;
   } else if(isRejected){
     actEl.innerHTML = `<div class="btn-hired-done"><i class="bi bi-x-circle-fill" style="color:var(--red);"></i> ปฏิเสธแล้ว</div>`;
   } else {
@@ -487,6 +493,11 @@ function acceptApplicant(appId){
 function rejectApplicant(appId){
   if(!confirm('ปฏิเสธผู้สมัครคนนี้?')) return;
   window.location.href = `reject_applicant.php?application_id=${appId}`;
+}
+
+function rateFreelancer(flId){
+  if(!flId || !currentJobId) return;
+  window.location.href = `rate_freelancer.php?freelancer_id=${flId}&job_id=${currentJobId}`;
 }
 
 function showToast(msg, bg){

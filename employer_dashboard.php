@@ -106,8 +106,45 @@ $top_freelancers = mysqli_query($conn,"
     WHERE u.role='freelancer'
     AND COALESCE(fr.total_reviews, 0) > 0
     ORDER BY avg_rating DESC, total_reviews DESC
-    LIMIT 7
+    LIMIT 5
 ");
+
+function getFreelancerReviewHistory($conn, $freelancer_id){
+    $freelancer_id = (int)$freelancer_id;
+    $reviews = [];
+    $review_query = mysqli_query($conn,"
+        SELECT fr.review_id,
+               fr.rating,
+               COALESCE(NULLIF(fr.comment,''), NULLIF(fr.review,''), '') AS comment,
+               fr.created_at,
+               COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username, 'ไม่ระบุผู้ว่าจ้าง') AS employer_name,
+               COALESCE(NULLIF(j.title,''), 'ไม่ระบุชื่องาน') AS job_title
+        FROM freelancer_review fr
+        LEFT JOIN users u ON u.user_id = fr.employer_id
+        LEFT JOIN employer_profile ep ON ep.user_id = fr.employer_id
+        LEFT JOIN job j ON j.job_id = fr.job_id
+        WHERE fr.freelancer_id = $freelancer_id
+        AND fr.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ORDER BY fr.created_at DESC, fr.review_id DESC
+        LIMIT 10
+    ");
+
+    if($review_query){
+        while($review = mysqli_fetch_assoc($review_query)){
+            $reviews[] = [
+                'review_id' => (int)$review['review_id'],
+                'rating' => (int)$review['rating'],
+                'comment' => $review['comment'] ?? '',
+                'created_at' => $review['created_at'] ?? '',
+                'date' => !empty($review['created_at']) ? date('d M Y', strtotime($review['created_at'])) : '',
+                'employer_name' => $review['employer_name'] ?? 'ไม่ระบุผู้ว่าจ้าง',
+                'job_title' => $review['job_title'] ?? 'ไม่ระบุชื่องาน',
+            ];
+        }
+    }
+
+    return $reviews;
+}
 
 // ── Popular Categories - Rating ในช่วง 7 วัน ──
 $popular_jobs = mysqli_query($conn,"
@@ -309,6 +346,15 @@ $most_applied_count = count($most_applied_jobs_list);
   .profile-skill { font-size:12px; font-weight:600; padding:5px 12px; border-radius:999px; background:#eef2ff; color:var(--accent); }
   .profile-resume-link { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:10px; background:#e0f2fe; color:#0369a1; text-decoration:none; font-size:13px; font-weight:600; }
   .profile-resume-link:hover { color:#0369a1; opacity:.88; }
+  .profile-review-list { display:grid; gap:10px; }
+  .profile-review-card { border:1px solid var(--border); border-radius:12px; background:#fff; padding:14px; }
+  .profile-review-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px; }
+  .profile-review-employer { font-size:13.5px; font-weight:700; color:var(--text); }
+  .profile-review-job { margin-top:3px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+  .profile-review-rating { display:inline-flex; align-items:center; gap:5px; flex-shrink:0; color:#f59e0b; font-size:12.5px; font-weight:800; background:#fffbeb; border-radius:999px; padding:5px 9px; }
+  .profile-review-comment { color:var(--text); background:var(--light); border-left:3px solid var(--accent); border-radius:8px; padding:10px 12px; font-size:13px; line-height:1.6; }
+  .profile-review-date { margin-top:9px; display:flex; align-items:center; gap:5px; color:var(--muted); font-size:11.5px; }
+  .profile-review-empty { color:var(--muted); background:var(--light); border-radius:10px; padding:14px; font-size:13px; text-align:center; }
 
   /* ── Two col ── */
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
@@ -513,7 +559,7 @@ $most_applied_count = count($most_applied_jobs_list);
   <section class="popular-card">
     <div class="popular-head">
       <h4><i class="bi bi-person-badge"></i> Freelancers ยอดเยี่ยม (7 วันที่ผ่านมา)</h4>
-      <span class="popular-top-label">Top 7</span>
+      <span class="popular-top-label">Top 5</span>
     </div>
 
     <div class="popular-list">
@@ -523,7 +569,9 @@ $most_applied_count = count($most_applied_jobs_list);
         while($freelancer = mysqli_fetch_assoc($top_freelancers)):
           $hasFreelancers = true;
           $rating = round($freelancer['avg_rating'] ?? 0, 1);
+          $reviewHistory = getFreelancerReviewHistory($conn, (int)$freelancer['user_id']);
           $profileData = [
+            'freelancer_id' => (int)$freelancer['user_id'],
             'user_id' => (int)$freelancer['user_id'],
             'username' => $freelancer['username'] ?? '',
             'fullname' => $freelancer['fullname'] ?? '',
@@ -535,6 +583,7 @@ $most_applied_count = count($most_applied_jobs_list);
             'resume_file' => $freelancer['resume_file'] ?? '',
             'avg_rating' => $rating,
             'total_reviews' => (int)$freelancer['total_reviews'],
+            'reviews' => $reviewHistory,
           ];
       ?>
       <button type="button" class="popular-item" onclick='openFreelancerProfile(<?php echo htmlspecialchars(json_encode($profileData, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP), ENT_QUOTES, "UTF-8"); ?>)'>
@@ -715,6 +764,10 @@ $most_applied_count = count($most_applied_jobs_list);
           <div class="profile-section-title"><i class="bi bi-briefcase"></i> ประสบการณ์</div>
           <div class="profile-info-box full"><div class="profile-info-value" id="fp-experience"></div></div>
         </div>
+        <div class="profile-section" id="fp-reviews-wrap">
+          <div class="profile-section-title"><i class="bi bi-star"></i> ประวัติรีวิว</div>
+          <div class="profile-review-list" id="fp-review-history"></div>
+        </div>
         <div class="profile-section" id="fp-resume-wrap" style="display:none;">
           <div class="profile-section-title"><i class="bi bi-file-earmark-pdf"></i> Resume</div>
           <a href="#" target="_blank" class="profile-resume-link" id="fp-resume"><i class="bi bi-filetype-pdf"></i> ดู Resume PDF</a>
@@ -725,6 +778,77 @@ $most_applied_count = count($most_applied_jobs_list);
 
 </main>
 <script>
+function renderFreelancerReviewHistory(reviews){
+  const list = document.getElementById('fp-review-history');
+  list.innerHTML = '';
+  const reviewList = Array.isArray(reviews) ? reviews : [];
+
+  if(!reviewList.length){
+    const empty = document.createElement('div');
+    empty.className = 'profile-review-empty';
+    empty.textContent = 'ยังไม่มีประวัติรีวิวในช่วง 7 วันที่ผ่านมา';
+    list.appendChild(empty);
+    return;
+  }
+
+  reviewList.forEach(review => {
+    const ratingValue = Number(review.rating || 0);
+    const card = document.createElement('div');
+    card.className = 'profile-review-card';
+
+    const top = document.createElement('div');
+    top.className = 'profile-review-top';
+
+    const info = document.createElement('div');
+    const employer = document.createElement('div');
+    employer.className = 'profile-review-employer';
+    employer.textContent = review.employer_name || 'ไม่ระบุผู้ว่าจ้าง';
+
+    const job = document.createElement('div');
+    job.className = 'profile-review-job';
+    const jobIcon = document.createElement('i');
+    jobIcon.className = 'bi bi-briefcase';
+    const jobText = document.createElement('span');
+    jobText.textContent = review.job_title || 'ไม่ระบุชื่องาน';
+    job.appendChild(jobIcon);
+    job.appendChild(jobText);
+    info.appendChild(employer);
+    info.appendChild(job);
+
+    const rating = document.createElement('div');
+    rating.className = 'profile-review-rating';
+    const ratingIcon = document.createElement('i');
+    ratingIcon.className = 'bi bi-star-fill';
+    const ratingText = document.createElement('span');
+    ratingText.textContent = ratingValue > 0 ? ratingValue.toFixed(1) : '-';
+    rating.appendChild(ratingIcon);
+    rating.appendChild(ratingText);
+
+    top.appendChild(info);
+    top.appendChild(rating);
+    card.appendChild(top);
+
+    if(review.comment){
+      const comment = document.createElement('div');
+      comment.className = 'profile-review-comment';
+      comment.textContent = review.comment;
+      card.appendChild(comment);
+    }
+
+    const date = document.createElement('div');
+    date.className = 'profile-review-date';
+    const dateIcon = document.createElement('i');
+    dateIcon.className = 'bi bi-clock';
+    const dateText = document.createElement('span');
+    dateText.textContent = review.date || review.created_at || '';
+    date.appendChild(dateIcon);
+    date.appendChild(dateText);
+    card.appendChild(date);
+
+    list.appendChild(card);
+  });
+}
+
 function openFreelancerProfile(data){
   const displayName = data.fullname || data.username || '-';
   document.getElementById('fp-avatar').textContent = (data.username || displayName).substring(0, 2).toUpperCase();
@@ -735,6 +859,7 @@ function openFreelancerProfile(data){
   document.getElementById('fp-email').textContent = data.email || '-';
   document.getElementById('fp-phone').textContent = data.phone || '-';
   document.getElementById('fp-experience').textContent = data.experience || 'ยังไม่ได้ระบุ';
+  renderFreelancerReviewHistory(data.reviews);
 
   const skills = document.getElementById('fp-skills');
   skills.innerHTML = '';

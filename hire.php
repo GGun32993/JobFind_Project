@@ -55,6 +55,9 @@ mysqli_query($conn,"
     AND status = 'pending'
 ");
 
-// ── redirect กลับ view_applicants ──
-header("Location: view_applicants.php?job_id=$job_id&hired=1");
+// ── ดึง freelancer_id ──
+$freelancer_id = $row['freelancer_id'];
+
+// ── redirect ไปรีวิว Freelancer ──
+header("Location: rate_freelancer.php?freelancer_id=$freelancer_id&job_id=$job_id");
 exit();

@@ -51,7 +51,8 @@ mysqli_query($conn,"
 $result = mysqli_query($conn,"
     SELECT j.*,
         (SELECT COUNT(*) FROM job_application WHERE job_id=j.job_id) AS total_apps,
-        (SELECT COUNT(*) FROM job_application WHERE job_id=j.job_id AND status='pending') AS pending_apps
+        (SELECT COUNT(*) FROM job_application WHERE job_id=j.job_id AND status='pending') AS pending_apps,
+        (SELECT freelancer_id FROM job_application WHERE job_id=j.job_id AND status='accepted' LIMIT 1) AS hired_freelancer_id
     FROM job j
     WHERE employer_id='$employer_id'
     ORDER BY job_id DESC
@@ -423,6 +424,13 @@ while($r = mysqli_fetch_assoc($result)){
           onclick="confirmDelete(<?php echo $row['job_id']; ?>,'<?php echo htmlspecialchars($row['title'],ENT_QUOTES); ?>')">
           <i class="bi bi-trash3"></i> ลบ
         </button>
+        <?php endif; ?>
+
+        <!-- Rate Freelancer -->
+        <?php if(($sts === 'completed' || $sts === 'closed') && !empty($row['hired_freelancer_id'])): ?>
+        <a href="rate_freelancer.php?freelancer_id=<?php echo $row['hired_freelancer_id']; ?>&job_id=<?php echo $row['job_id']; ?>" class="act-btn" style="background:#fef9c3;color:#854d0e;">
+          <i class="bi bi-star"></i> รีวิว Freelancer
+        </a>
         <?php endif; ?>
       </div>
     </div>
