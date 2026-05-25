@@ -204,6 +204,7 @@ function getRecommendedJobs($conn, $user_id, $limit = 10, $min_match_score = 40)
             j.title,
             j.description,
             j.location,
+            j.status,
             j.latitude AS job_lat,
             j.longitude AS job_lon,
             j.salary,
@@ -211,6 +212,8 @@ function getRecommendedJobs($conn, $user_id, $limit = 10, $min_match_score = 40)
             j.category,
             j.image_path,
             j.created_at,
+            COALESCE(er.avg_rating, 0) AS avg_rating,
+            COALESCE(er.total_reviews, 0) AS total_reviews,
             COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS company_name,
             ep.address AS employer_address,
             ep.province AS employer_province,
@@ -222,6 +225,11 @@ function getRecommendedJobs($conn, $user_id, $limit = 10, $min_match_score = 40)
         FROM job j
         JOIN users u ON u.user_id = j.employer_id
         LEFT JOIN employer_profile ep ON ep.user_id = j.employer_id
+        LEFT JOIN (
+            SELECT employer_id, AVG(rating) AS avg_rating, COUNT(*) AS total_reviews
+            FROM employer_review
+            GROUP BY employer_id
+        ) er ON er.employer_id = j.employer_id
         WHERE j.admin_status = 'approved'
         AND (j.status IN ('open', 'in_progress') OR j.status IS NULL OR j.status = '')
         ORDER BY j.created_at DESC

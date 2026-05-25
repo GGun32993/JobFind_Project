@@ -153,29 +153,25 @@ $popular_jobs = mysqli_query($conn,"
 ");
 
 $most_applied_jobs = mysqli_query($conn,"
-    SELECT j.job_id,
-           j.title,
-           j.category,
-           j.location,
-           j.salary,
-           COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS company_name,
-           COUNT(ja.application_id) AS applicant_count
+    SELECT COALESCE(NULLIF(j.category,''), 'ไม่ระบุ') AS category,
+           COUNT(DISTINCT j.job_id) AS total_jobs,
+           COUNT(ja.application_id) AS applicant_count,
+           COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
+           MAX(j.created_at) AS latest_job_at
     FROM job j
     JOIN job_application ja ON ja.job_id = j.job_id
-    LEFT JOIN users u ON u.user_id = j.employer_id
-    LEFT JOIN employer_profile ep ON ep.user_id = j.employer_id
     WHERE j.admin_status='approved'
-    GROUP BY j.job_id, j.title, j.category, j.location, j.salary, company_name
-    ORDER BY applicant_count DESC, j.created_at DESC
+    GROUP BY COALESCE(NULLIF(j.category,''), 'ไม่ระบุ')
+    ORDER BY applicant_count DESC, total_jobs DESC, latest_job_at DESC
     LIMIT 5
 ");
 
 $most_applied_jobs_list = [];
-$max_applicants = 0;
 if($most_applied_jobs){
     while($row = mysqli_fetch_assoc($most_applied_jobs)){
         $row['applicant_count'] = (int)$row['applicant_count'];
-        $max_applicants = max($max_applicants, $row['applicant_count']);
+        $row['total_jobs'] = (int)$row['total_jobs'];
+        $row['freelancer_count'] = (int)$row['freelancer_count'];
         $most_applied_jobs_list[] = $row;
     }
 }
@@ -433,62 +429,62 @@ $most_applied_count = count($most_applied_jobs_list);
   .job-card {
     background: var(--white);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px 20px;
+    border-radius: var(--radius);
+    padding: 22px 24px;
     margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    box-shadow: 0 8px 20px rgba(15,23,42,.035);
-    transition: box-shadow .2s, border-color .2s, transform .15s;
+    display: flex; gap: 18px;
+    transition: box-shadow .2s, border-color .2s;
   }
   .job-card:hover {
-    box-shadow: 0 14px 32px rgba(15,23,42,.08);
+    box-shadow: 0 4px 20px rgba(0,0,0,.07);
     border-color: #c7d2fe;
-    transform: translateY(-1px);
   }
 
   .job-logo {
-    width: 50px; height: 50px; flex-shrink: 0;
-    border-radius: 12px;
-    background: #eef2ff;
-    border: 1px solid #c7d2fe;
+    width: 52px; height: 52px; flex-shrink: 0;
+    border-radius: 12px; background: var(--light);
+    border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
+    font-size: 24px;
+    overflow: hidden;
   }
+  .job-logo.has-image { background: var(--white); }
+  .job-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  .job-info { flex: 1; min-width: 0; }
-  .job-title {
-    font-size: 15px; font-weight: 600;
-    color: var(--text); margin-bottom: 4px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  .job-body { flex: 1; min-width: 0; }
+  .job-top  { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .job-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .job-desc {
+    font-size: 13px; color: var(--muted);
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+    margin: 6px 0 10px;
+    line-height: 1.6;
   }
   .job-meta {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
     font-size: 12.5px; color: var(--muted);
   }
   .job-meta span { display: flex; align-items: center; gap: 4px; }
   .job-meta i { font-size: 13px; }
 
   .tag {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: #eef2ff;
-    color: var(--accent);
+    display: inline-block;
     font-size: 11px; font-weight: 600;
-    padding: 3px 10px; border-radius: 20px;
-    margin-top: 8px;
+    padding: 3px 10px; border-radius: 20px; margin-top: 10px; margin-right: 4px;
   }
+  .tag-cat { background: #eef2ff; color: var(--accent); }
+  .tag-status { background: #d1fae5; color: #065f46; }
+  .tag-match { display: inline-flex; align-items: center; gap: 5px; }
+  .stars { color: var(--yellow); font-size: 13px; }
 
   .btn-apply {
-    flex-shrink: 0;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 9px 20px;
+    flex-shrink: 0; align-self: center;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    padding: 10px 22px;
     font-size: 13px; font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
+    text-decoration: none; white-space: nowrap;
     transition: background .15s, transform .1s;
     display: inline-flex; align-items: center; gap: 6px;
   }
@@ -496,6 +492,17 @@ $most_applied_count = count($most_applied_jobs_list);
     background: #4f46e5; color: #fff;
     transform: translateY(-1px);
   }
+  .btn-detail {
+    flex-shrink: 0; align-self: center;
+    background: var(--white); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 22px; font-size: 13px; font-weight: 600;
+    text-decoration: none; white-space: nowrap;
+    transition: background .15s, transform .1s;
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-right: 8px;
+  }
+  .btn-detail:hover { background: var(--light); color: var(--text); }
 
   .empty-state {
     text-align: center; padding: 48px 20px;
@@ -571,42 +578,6 @@ $most_applied_count = count($most_applied_jobs_list);
   .popular-pill i { color: var(--accent); font-size: 12px; }
   .popular-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 24px; font-size: 13px; }
 
-  .application-rank-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
-  .application-rank-item {
-    display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
-    min-width: 0; min-height: 142px; padding: 14px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: #fff;
-    color: var(--text);
-    text-decoration: none;
-    cursor: pointer;
-    transition: border-color .15s, box-shadow .2s, transform .15s;
-  }
-  .application-rank-item:hover { color: var(--text); border-color: #c7d2fe; box-shadow: 0 12px 24px rgba(99,102,241,.12); transform: translateY(-2px); }
-  .application-rank-top { display: flex; gap: 10px; min-width: 0; }
-  .application-rank-no {
-    width: 30px; height: 30px; border-radius: 10px;
-    background: var(--accent); color: #fff;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 800; flex-shrink: 0;
-  }
-  .application-rank-title { font-size: 13.5px; font-weight: 700; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .application-rank-company { font-size: 11.5px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .application-rank-meta { display: flex; flex-wrap: wrap; gap: 6px; }
-  .application-rank-pill {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: var(--light);
-    color: var(--muted);
-    font-size: 11px; font-weight: 700;
-  }
-  .application-rank-pill i { color: var(--accent); font-size: 12px; }
-  .application-rank-category { color: var(--accent); background: #eef2ff; border-color: #c7d2fe; }
-  .application-rank-progress { height: 6px; border-radius: 999px; background: var(--light); overflow: hidden; }
-  .application-rank-progress span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
-
   .profile-modal-overlay { display:none; position:fixed; inset:0; z-index:300; background:rgba(15,23,42,.62); align-items:center; justify-content:center; padding:20px; }
   .profile-modal-overlay.show { display:flex; }
   .profile-modal { width:min(680px,100%); max-height:90vh; overflow:auto; background:var(--white); border-radius:20px; box-shadow:0 24px 70px rgba(15,23,42,.28); }
@@ -641,7 +612,7 @@ $most_applied_count = count($most_applied_jobs_list);
   .profile-review-empty { color:var(--muted); background:var(--light); border-radius:10px; padding:14px; font-size:13px; text-align:center; }
 
   @media(max-width: 1200px){
-    .popular-list,.application-rank-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .popular-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .topbar { align-items: flex-start; }
     .topbar-side { flex-wrap: wrap; justify-content: flex-end; }
   }
@@ -654,8 +625,8 @@ $most_applied_count = count($most_applied_jobs_list);
     .topbar-avatar { margin-left: auto; }
     .section-header { align-items: flex-start; }
     .job-card { flex-wrap: wrap; }
-    .btn-apply { width: 100%; justify-content: center; margin-top: 8px; }
-    .popular-list,.application-rank-list,.profile-info-grid { grid-template-columns: 1fr; }
+    .btn-detail,.btn-apply { width: 100%; justify-content: center; margin-top: 8px; margin-right: 0; }
+    .popular-list,.profile-info-grid { grid-template-columns: 1fr; }
     .profile-info-box.full { grid-column:auto; }
   }
 </style>
@@ -734,44 +705,123 @@ $most_applied_count = count($most_applied_jobs_list);
     </div>
   </div>
 
-  <!-- Most Applied Jobs -->
-  <section class="popular-card">
-    <div class="popular-head">
-      <h4><i class="bi bi-bar-chart-line"></i> ตำแหน่งงานที่มีผู้สมัครมากที่สุด</h4>
-      <span class="popular-top-label">Top <?php echo $most_applied_count; ?></span>
+  <!-- Recommended Jobs -->
+  <div class="section-header">
+    <div>
+      <h4>งานที่แนะนำสำหรับคุณ</h4>
+      <p>งานที่ตรงกับพื้นที่และตำแหน่งของคุณ</p>
+    </div>
+    <span class="badge-count"><i class="bi bi-briefcase"></i><?php echo $recommended_count; ?> งาน</span>
+  </div>
+
+  <?php
+    $hasJobs = false;
+    if (is_array($recommend)) {
+      foreach ($recommend as $job):
+        $hasJobs = true;
+        $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
+        $icon  = $icons[crc32($job['title'] ?? 'job') % count($icons)];
+        $match_score = $job['match_score'] ?? 0;
+        $distance_km = $job['distance_km'] ?? null;
+        $job_image = trim($job['image_path'] ?? '');
+        $cat = trim($job['category'] ?? '');
+        $status = trim($job['status'] ?? '');
+        if ($status === '') {
+          $status = 'open';
+        }
+        $avg_rating = round((float)($job['avg_rating'] ?? 0), 1);
+        $total_reviews = (int)($job['total_reviews'] ?? 0);
+        $stars = '';
+        if ($avg_rating > 0) {
+          $full = floor($avg_rating);
+          $half = ($avg_rating - $full) >= 0.5 ? 1 : 0;
+          $empty = 5 - $full - $half;
+          $stars .= str_repeat('<i class="bi bi-star-fill"></i>', $full);
+          if ($half) $stars .= '<i class="bi bi-star-half"></i>';
+          $stars .= str_repeat('<i class="bi bi-star"></i>', $empty);
+        }
+
+        // Determine match badge style
+        $match_label = 'Nearby Match';
+        $match_style = 'background: #eef2ff; color: #4f46e5;';
+        if ($match_score >= 95) {
+          $match_label = 'Perfect Match';
+          $match_style = 'background: #d1fae5; color: #059669;';
+        } elseif ($match_score >= 85) {
+          $match_label = 'Great Match';
+          $match_style = 'background: #fef3c7; color: #d97706;';
+        } elseif ($match_score >= 70) {
+          $match_label = 'Good Match';
+          $match_style = 'background: #dbeafe; color: #1d4ed8;';
+        }
+  ?>
+  <div class="job-card">
+    <div class="job-logo <?php echo $job_image !== '' ? 'has-image' : ''; ?>">
+      <?php if($job_image !== ''): ?>
+      <img src="<?php echo htmlspecialchars($job_image); ?>" alt="<?php echo htmlspecialchars($job['title'] ?? 'Untitled Job'); ?>">
+      <?php else: ?>
+      <?php echo $icon; ?>
+      <?php endif; ?>
     </div>
 
-    <?php if(!empty($most_applied_jobs_list)): ?>
-    <div class="application-rank-list">
-      <?php foreach($most_applied_jobs_list as $index => $job_rank):
-        $percent = $max_applicants > 0 ? max(12, round(($job_rank['applicant_count'] / $max_applicants) * 100)) : 0;
-        $categoryUrl = (!empty($job_rank['category']) && $job_rank['category'] !== 'ไม่ระบุ')
-            ? 'browse_jobs.php?category=' . urlencode($job_rank['category'])
-            : 'browse_jobs.php';
-      ?>
-      <a href="<?php echo htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8'); ?>" class="application-rank-item">
-        <div class="application-rank-top">
-          <div class="application-rank-no"><?php echo $index + 1; ?></div>
-          <div style="min-width:0;">
-            <div class="application-rank-title"><?php echo htmlspecialchars($job_rank['title']); ?></div>
-            <div class="application-rank-company"><?php echo htmlspecialchars($job_rank['company_name'] ?? 'ไม่ระบุผู้ว่าจ้าง'); ?></div>
-          </div>
-        </div>
-        <div class="application-rank-meta">
-          <span class="application-rank-pill"><i class="bi bi-people-fill"></i><?php echo (int)$job_rank['applicant_count']; ?> ผู้สมัคร</span>
-          <?php if(!empty($job_rank['category']) && $job_rank['category'] !== 'ไม่ระบุ'): ?>
-          <span class="application-rank-pill application-rank-category"><i class="bi bi-tag"></i><?php echo htmlspecialchars($job_rank['category']); ?></span>
+    <div class="job-body">
+      <div class="job-top">
+        <div>
+          <div class="job-title"><?php echo htmlspecialchars($job['title'] ?? 'Untitled Job'); ?></div>
+          <?php if($cat !== ''): ?>
+          <span class="tag tag-cat"><i class="bi bi-tag"></i> <?php echo htmlspecialchars($cat); ?></span>
           <?php endif; ?>
-          <?php if(!empty($job_rank['location'])): ?><span class="application-rank-pill"><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($job_rank['location']); ?></span><?php endif; ?>
+          <span class="tag tag-status"><?php echo htmlspecialchars($status); ?></span>
+          <span class="tag tag-match" style="<?php echo $match_style; ?>">
+            <i class="bi bi-hand-thumbs-up"></i> <?php echo $match_label; ?> (<?php echo (int)$match_score; ?>%)
+          </span>
         </div>
-        <div class="application-rank-progress"><span style="width:<?php echo $percent; ?>%;"></span></div>
-      </a>
-      <?php endforeach; ?>
+      </div>
+
+      <p class="job-desc"><?php echo htmlspecialchars($job['description'] ?? ''); ?></p>
+
+      <div class="job-meta">
+        <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($job['location'] ?? 'ไม่ระบุ'); ?></span>
+        <span><i class="bi bi-currency-dollar"></i><?php echo htmlspecialchars($job['salary'] ?? '0'); ?></span>
+        <?php if (!empty($job['company_name'])): ?>
+        <span><i class="bi bi-briefcase"></i><?php echo htmlspecialchars($job['company_name']); ?></span>
+        <?php endif; ?>
+        <?php if (!empty($job['created_at'])): ?>
+        <span><i class="bi bi-clock"></i><?php echo date('d M Y', strtotime($job['created_at'])); ?></span>
+        <?php endif; ?>
+        <?php if ($distance_km !== null): ?>
+        <span><i class="bi bi-pin"></i><?php echo round($distance_km, 1); ?> กม.</span>
+        <?php endif; ?>
+        <span>
+          <?php if($avg_rating > 0): ?>
+            <span class="stars"><?php echo $stars; ?></span>
+            <?php echo $avg_rating; ?> (<?php echo $total_reviews; ?> reviews)
+          <?php else: ?>
+            <i class="bi bi-star" style="color:var(--yellow)"></i> No rating yet
+          <?php endif; ?>
+        </span>
+      </div>
     </div>
-    <?php else: ?>
-      <div class="popular-empty">ยังไม่มีข้อมูลการสมัครงาน</div>
-    <?php endif; ?>
-  </section>
+
+    <a href="view_job.php?job_id=<?php echo (int)$job['job_id']; ?>" class="btn-detail">
+      <i class="bi bi-info-circle"></i> Detail
+    </a>
+
+    <a href="apply_job.php?job_id=<?php echo (int)$job['job_id']; ?>" class="btn-apply">
+      <i class="bi bi-send"></i> Apply
+    </a>
+  </div>
+  <?php
+      endforeach;
+    }
+  ?>
+
+  <?php if (!$hasJobs): ?>
+  <div class="empty-state">
+    <i class="bi bi-inbox"></i>
+    <p>ยังไม่พบงานแนะนำในขณะนี้<br>กรุณาอัปเดตข้อมูลพื้นที่ของคุณในโปรไฟล์</p>
+  </div>
+  <?php endif; ?>
 
   <!-- Popular Employers -->
   <section class="popular-card">
@@ -896,77 +946,43 @@ $most_applied_count = count($most_applied_jobs_list);
     </div>
   </section>
 
-  <!-- Recommended Jobs -->
-  <div class="section-header">
-    <div>
-      <h4>งานที่แนะนำสำหรับคุณ</h4>
-      <p>งานที่ตรงกับพื้นที่และตำแหน่งของคุณ</p>
-    </div>
-    <span class="badge-count"><i class="bi bi-briefcase"></i><?php echo $recommended_count; ?> งาน</span>
-  </div>
-
-  <?php
-    $hasJobs = false;
-    if (is_array($recommend)) {
-      foreach ($recommend as $job):
-        $hasJobs = true;
-        $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱'];
-        $icon  = $icons[crc32($job['title'] ?? 'job') % count($icons)];
-        $match_score = $job['match_score'] ?? 0;
-        $distance_km = $job['distance_km'] ?? null;
-        
-        // Determine match badge style
-        $match_label = 'Nearby Match';
-        $match_style = 'background: #eef2ff; color: #4f46e5;';
-        if ($match_score >= 95) {
-          $match_label = 'Perfect Match';
-          $match_style = 'background: #d1fae5; color: #059669;';
-        } elseif ($match_score >= 85) {
-          $match_label = 'Great Match';
-          $match_style = 'background: #fef3c7; color: #d97706;';
-        } elseif ($match_score >= 70) {
-          $match_label = 'Good Match';
-          $match_style = 'background: #dbeafe; color: #1d4ed8;';
-        }
-  ?>
-  <div class="job-card">
-    <div class="job-logo"><?php echo $icon; ?></div>
-
-    <div class="job-info">
-      <div class="job-title"><?php echo htmlspecialchars($job['title'] ?? 'Untitled Job'); ?></div>
-      <div class="job-meta">
-        <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($job['location'] ?? 'ไม่ระบุ'); ?></span>
-        <span><i class="bi bi-currency-dollar"></i><?php echo number_format($job['salary'] ?? 0, 0); ?> ฿</span>
-        <?php if (!empty($job['company_name'])): ?>
-        <span><i class="bi bi-briefcase"></i><?php echo htmlspecialchars($job['company_name']); ?></span>
-        <?php endif; ?>
-        <?php if (!empty($job['created_at'])): ?>
-        <span><i class="bi bi-clock"></i><?php echo date('d M Y', strtotime($job['created_at'])); ?></span>
-        <?php endif; ?>
-        <?php if ($distance_km !== null): ?>
-        <span><i class="bi bi-pin"></i><?php echo round($distance_km, 1); ?> กม.</span>
-        <?php endif; ?>
-      </div>
-      <span class="tag" style="<?php echo $match_style; ?>">
-        <i class="bi bi-hand-thumbs-up"></i> <?php echo $match_label; ?> (<?php echo (int)$match_score; ?>%)
-      </span>
+  <!-- Most Applied Jobs -->
+  <section class="popular-card">
+    <div class="popular-head">
+      <h4><i class="bi bi-bar-chart-line"></i> ตำแหน่งงานที่มีผู้สมัครมากที่สุด</h4>
+      <span class="popular-top-label">Top <?php echo $most_applied_count; ?></span>
     </div>
 
-    <a href="apply_job.php?job_id=<?php echo (int)$job['job_id']; ?>" class="btn-apply">
-      <i class="bi bi-send"></i> Apply
-    </a>
-  </div>
-  <?php
-      endforeach;
-    }
-  ?>
-
-  <?php if (!$hasJobs): ?>
-  <div class="empty-state">
-    <i class="bi bi-inbox"></i>
-    <p>ยังไม่พบงานแนะนำในขณะนี้<br>กรุณาอัปเดตข้อมูลพื้นที่ของคุณในโปรไฟล์</p>
-  </div>
-  <?php endif; ?>
+    <?php if(!empty($most_applied_jobs_list)): ?>
+    <div class="popular-list">
+      <?php
+        $rank = 1;
+        $categoryIcons = ['IT' => '💻', 'Design' => '🎨', 'Marketing' => '📢', 'Accounting' => '💰', 'Programmer' => '💻', 'Data Analyst' => '📊', 'Cyber Security' => '🛡️', 'AI Engineer' => '🤖'];
+        foreach($most_applied_jobs_list as $category_rank):
+          $category = $category_rank['category'] ?? 'ไม่ระบุ';
+          $categoryUrl = ($category !== 'ไม่ระบุ')
+              ? 'browse_jobs.php?category=' . urlencode($category)
+              : 'browse_jobs.php';
+          $category_icon = $categoryIcons[$category] ?? '📁';
+      ?>
+      <a href="<?php echo htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8'); ?>" class="popular-item">
+        <div class="popular-top">
+          <div class="popular-rank"><?php echo $rank; ?></div>
+          <div class="popular-avatar" style="font-size: 24px;"><?php echo $category_icon; ?></div>
+          <div class="popular-name"><?php echo htmlspecialchars($category); ?></div>
+        </div>
+        <div class="popular-stats">
+          <span class="popular-pill"><i class="bi bi-people-fill"></i><?php echo (int)$category_rank['applicant_count']; ?> ผู้สมัคร</span>
+          <span class="popular-pill"><i class="bi bi-briefcase"></i><?php echo (int)$category_rank['total_jobs']; ?> งาน</span>
+          <span class="popular-pill"><i class="bi bi-person-check-fill"></i><?php echo (int)$category_rank['freelancer_count']; ?> คน</span>
+        </div>
+      </a>
+      <?php $rank++; endforeach; ?>
+    </div>
+    <?php else: ?>
+      <div class="popular-empty">ยังไม่มีข้อมูลการสมัครงาน</div>
+    <?php endif; ?>
+  </section>
 
   <div class="profile-modal-overlay" id="freelancer-profile-modal">
     <div class="profile-modal">

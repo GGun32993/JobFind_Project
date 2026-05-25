@@ -182,29 +182,25 @@ $popular_jobs = mysqli_query($conn,"
 ");
 
 $most_applied_jobs = mysqli_query($conn,"
-    SELECT j.job_id,
-           j.title,
-           j.category,
-           j.status,
-           j.admin_status,
-           j.created_at,
+    SELECT COALESCE(NULLIF(j.category,''), 'ไม่ระบุ') AS category,
+           COUNT(DISTINCT j.job_id) AS total_jobs,
            COUNT(ja.application_id) AS applicant_count,
-           SUM(CASE WHEN ja.status='pending' THEN 1 ELSE 0 END) AS pending_count
+           SUM(CASE WHEN ja.status='pending' THEN 1 ELSE 0 END) AS pending_count,
+           MAX(j.created_at) AS latest_job_at
     FROM job j
     JOIN job_application ja ON ja.job_id = j.job_id
     WHERE j.employer_id='$user_id'
-    GROUP BY j.job_id, j.title, j.category, j.status, j.admin_status, j.created_at
-    ORDER BY applicant_count DESC, pending_count DESC, j.created_at DESC
+    GROUP BY COALESCE(NULLIF(j.category,''), 'ไม่ระบุ')
+    ORDER BY applicant_count DESC, pending_count DESC, total_jobs DESC, latest_job_at DESC
     LIMIT 5
 ");
 
 $most_applied_jobs_list = [];
-$max_applicants = 0;
 if($most_applied_jobs){
     while($row = mysqli_fetch_assoc($most_applied_jobs)){
         $row['applicant_count'] = (int)$row['applicant_count'];
         $row['pending_count'] = (int)$row['pending_count'];
-        $max_applicants = max($max_applicants, $row['applicant_count']);
+        $row['total_jobs'] = (int)$row['total_jobs'];
         $most_applied_jobs_list[] = $row;
     }
 }
@@ -310,19 +306,6 @@ $most_applied_count = count($most_applied_jobs_list);
   .popular-pill i { color:var(--accent); font-size:12px; }
   .popular-empty { grid-column:1 / -1; text-align:center; color:var(--muted); padding:24px; font-size:13px; }
 
-  .application-rank-list { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
-  .application-rank-item { display:flex; flex-direction:column; justify-content:space-between; gap:12px; min-width:0; min-height:142px; padding:14px; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--text); text-decoration:none; transition:border-color .15s,box-shadow .2s,transform .15s; }
-  .application-rank-item:hover { color:var(--text); border-color:#c7d2fe; box-shadow:0 6px 18px rgba(99,102,241,.12); transform:translateY(-1px); }
-  .application-rank-top { display:flex; gap:10px; min-width:0; }
-  .application-rank-no { width:30px; height:30px; border-radius:10px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
-  .application-rank-title { font-size:13.5px; font-weight:700; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .application-rank-company { font-size:11.5px; color:var(--muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .application-rank-meta { display:flex; flex-wrap:wrap; gap:6px; }
-  .application-rank-pill { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:999px; background:var(--light); color:var(--muted); font-size:11px; font-weight:700; }
-  .application-rank-pill i { color:var(--accent); font-size:12px; }
-  .application-rank-progress { height:6px; border-radius:999px; background:var(--light); overflow:hidden; }
-  .application-rank-progress span { display:block; height:100%; border-radius:inherit; background:var(--accent); }
-
   .profile-modal-overlay { display:none; position:fixed; inset:0; z-index:300; background:rgba(15,23,42,.62); align-items:center; justify-content:center; padding:20px; }
   .profile-modal-overlay.show { display:flex; }
   .profile-modal { width:min(680px,100%); max-height:90vh; overflow:auto; background:var(--white); border-radius:20px; box-shadow:0 24px 70px rgba(15,23,42,.28); }
@@ -377,8 +360,8 @@ $most_applied_count = count($most_applied_jobs_list);
   .sp-accepted { background:#d1fae5; color:#065f46; }
   .empty-td { text-align:center; color:var(--muted); padding:28px !important; font-size:13px; }
 
-  @media(max-width:1100px){ .stat-grid,.quick-grid,.popular-list,.application-rank-list { grid-template-columns:repeat(2,1fr); } }
-  @media(max-width:768px) { .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col,.popular-list,.application-rank-list,.profile-info-grid { grid-template-columns:1fr; } .profile-info-box.full { grid-column:auto; } }
+  @media(max-width:1100px){ .stat-grid,.quick-grid,.popular-list { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:768px) { .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col,.popular-list,.profile-info-grid { grid-template-columns:1fr; } .profile-info-box.full { grid-column:auto; } }
 </style>
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
 
@@ -487,40 +470,6 @@ $most_applied_count = count($most_applied_jobs_list);
       <i class="bi bi-arrow-right qc-arrow"></i>
     </a>
   </div>
-
-  <!-- Most Applied Jobs -->
-  <section class="popular-card">
-    <div class="popular-head">
-      <h4><i class="bi bi-bar-chart-line"></i> ตำแหน่งงานที่มีผู้สมัครมากที่สุด</h4>
-      <span class="popular-top-label">Top <?php echo $most_applied_count; ?></span>
-    </div>
-
-    <?php if(!empty($most_applied_jobs_list)): ?>
-    <div class="application-rank-list">
-      <?php foreach($most_applied_jobs_list as $index => $job_rank):
-        $percent = $max_applicants > 0 ? max(12, round(($job_rank['applicant_count'] / $max_applicants) * 100)) : 0;
-      ?>
-      <a href="view_applicants.php?job_id=<?php echo (int)$job_rank['job_id']; ?>" class="application-rank-item">
-        <div class="application-rank-top">
-          <div class="application-rank-no"><?php echo $index + 1; ?></div>
-          <div style="min-width:0;">
-            <div class="application-rank-title"><?php echo htmlspecialchars($job_rank['title']); ?></div>
-            <div class="application-rank-company"><?php echo !empty($job_rank['category']) ? htmlspecialchars($job_rank['category']) : 'ไม่ระบุหมวดหมู่'; ?></div>
-          </div>
-        </div>
-        <div class="application-rank-meta">
-          <span class="application-rank-pill"><i class="bi bi-people-fill"></i><?php echo (int)$job_rank['applicant_count']; ?> ผู้สมัคร</span>
-          <span class="application-rank-pill"><i class="bi bi-hourglass-split"></i><?php echo (int)$job_rank['pending_count']; ?> รอพิจารณา</span>
-          <span class="application-rank-pill"><i class="bi bi-shield-check"></i><?php echo htmlspecialchars(ucfirst($job_rank['admin_status'])); ?></span>
-        </div>
-        <div class="application-rank-progress"><span style="width:<?php echo $percent; ?>%;"></span></div>
-      </a>
-      <?php endforeach; ?>
-    </div>
-    <?php else: ?>
-      <div class="popular-empty">ยังไม่มีตำแหน่งงานที่มีผู้สมัคร</div>
-    <?php endif; ?>
-  </section>
 
   <!-- Popular Employers -->
   <section class="popular-card">
@@ -643,6 +592,41 @@ $most_applied_count = count($most_applied_jobs_list);
       <div class="popular-empty">ยังไม่มีข้อมูลหมวดงานยอดนิยมในช่วง 7 วันที่ผ่านมา</div>
       <?php endif; ?>
     </div>
+  </section>
+
+  <!-- Most Applied Jobs -->
+  <section class="popular-card">
+    <div class="popular-head">
+      <h4><i class="bi bi-bar-chart-line"></i> ตำแหน่งงานที่มีผู้สมัครมากที่สุด</h4>
+      <span class="popular-top-label">Top <?php echo $most_applied_count; ?></span>
+    </div>
+
+    <?php if(!empty($most_applied_jobs_list)): ?>
+    <div class="popular-list">
+      <?php
+        $rank = 1;
+        $categoryIcons = ['IT' => '💻', 'Design' => '🎨', 'Marketing' => '📢', 'Accounting' => '💰', 'Programmer' => '💻', 'Data Analyst' => '📊', 'Cyber Security' => '🛡️', 'AI Engineer' => '🤖'];
+        foreach($most_applied_jobs_list as $category_rank):
+          $category = $category_rank['category'] ?? 'ไม่ระบุ';
+          $category_icon = $categoryIcons[$category] ?? '📁';
+      ?>
+      <a href="employer_manage_jobs.php" class="popular-item">
+        <div class="popular-top">
+          <div class="popular-rank"><?php echo $rank; ?></div>
+          <div class="popular-avatar" style="font-size: 24px;"><?php echo $category_icon; ?></div>
+          <div class="popular-name"><?php echo htmlspecialchars($category); ?></div>
+        </div>
+        <div class="popular-stats">
+          <span class="popular-pill"><i class="bi bi-people-fill"></i><?php echo (int)$category_rank['applicant_count']; ?> ผู้สมัคร</span>
+          <span class="popular-pill"><i class="bi bi-hourglass-split"></i><?php echo (int)$category_rank['pending_count']; ?> รอพิจารณา</span>
+          <span class="popular-pill"><i class="bi bi-briefcase"></i><?php echo (int)$category_rank['total_jobs']; ?> งาน</span>
+        </div>
+      </a>
+      <?php $rank++; endforeach; ?>
+    </div>
+    <?php else: ?>
+      <div class="popular-empty">ยังไม่มีตำแหน่งงานที่มีผู้สมัคร</div>
+    <?php endif; ?>
   </section>
 
   <!-- Rating summary (ถ้ามีรีวิว) -->
