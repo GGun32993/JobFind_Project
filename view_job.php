@@ -1023,6 +1023,8 @@ $employer_js_data = [
             }
         }
     </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

@@ -62,6 +62,8 @@ $rating_count = $rating_data['count'] ?? 0;
   .star-rating { color:#f59e0b; }
   @media(max-width:600px) { .info-grid { grid-template-columns:1fr; } }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

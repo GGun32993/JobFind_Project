@@ -1,6 +1,9 @@
 <?php
 session_start();
 include("config.php");
+require_once "location_schema.php";
+
+ensure_location_schema($conn);
 
 if(!isset($_SESSION['user_id'])){ header("Location: login.php"); exit(); }
 
@@ -42,6 +45,14 @@ if(!$is_public && isset($_POST['update'])){
     $email        = mysqli_real_escape_string($conn, trim($_POST['email']));
     $phone        = mysqli_real_escape_string($conn, $_POST['phone']);
     $description  = mysqli_real_escape_string($conn, $_POST['description']);
+    $address      = mysqli_real_escape_string($conn, $_POST['address'] ?? '');
+    $province     = mysqli_real_escape_string($conn, $_POST['province'] ?? '');
+    $district     = mysqli_real_escape_string($conn, $_POST['district'] ?? '');
+    $postal_code  = mysqli_real_escape_string($conn, $_POST['postal_code'] ?? '');
+    $latitude     = !empty($_POST['latitude']) ? floatval($_POST['latitude']) : null;
+    $longitude    = !empty($_POST['longitude']) ? floatval($_POST['longitude']) : null;
+    $latitude_sql = $latitude !== null ? sprintf('%.8F', $latitude) : "NULL";
+    $longitude_sql = $longitude !== null ? sprintf('%.8F', $longitude) : "NULL";
 
     $dup = mysqli_fetch_assoc(mysqli_query($conn,"
         SELECT user_id FROM users
@@ -53,7 +64,8 @@ if(!$is_public && isset($_POST['update'])){
         $dup_err = true;
     } else {
         mysqli_query($conn,"
-            UPDATE users SET username='$new_username', fullname='$fullname', email='$email', phone='$phone'
+            UPDATE users SET username='$new_username', fullname='$fullname', email='$email', phone='$phone',
+                latitude=$latitude_sql, longitude=$longitude_sql
             WHERE user_id='$current_user_id'
         ");
         $_SESSION['username'] = $new_username;
@@ -62,13 +74,17 @@ if(!$is_public && isset($_POST['update'])){
         if(mysqli_num_rows($check) > 0){
             mysqli_query($conn,"
                 UPDATE employer_profile SET
-                employer_name='$fullname', employer_description='$description'
+                employer_name='$fullname', employer_description='$description',
+                address='$address', province='$province', district='$district', postal_code='$postal_code',
+                latitude=$latitude_sql, longitude=$longitude_sql
                 WHERE user_id='$current_user_id'
             ");
         } else {
             mysqli_query($conn,"
-                INSERT INTO employer_profile (user_id, employer_name, employer_description)
-                VALUES ('$current_user_id','$fullname','$description')
+                INSERT INTO employer_profile
+                    (user_id, employer_name, employer_description, address, province, district, postal_code, latitude, longitude)
+                VALUES
+                    ('$current_user_id','$fullname','$description','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql)
             ");
         }
         $success = true;
@@ -82,6 +98,12 @@ $user    = mysqli_fetch_assoc(mysqli_query($conn,"SELECT * FROM users WHERE user
 $profile = mysqli_fetch_assoc(mysqli_query($conn,"SELECT * FROM employer_profile WHERE user_id='$target_id'"));
 
 if(!$user){ header("Location: browse_jobs.php"); exit(); }
+if($profile && empty($profile['latitude']) && !empty($user['latitude'])){
+    $profile['latitude'] = $user['latitude'];
+}
+if($profile && empty($profile['longitude']) && !empty($user['longitude'])){
+    $profile['longitude'] = $user['longitude'];
+}
 
 $initials = strtoupper(substr($user['fullname'] ?: $user['username'], 0, 2));
 
@@ -114,6 +136,7 @@ if($is_public){
 <title><?php echo $is_public ? 'โปรไฟล์บริษัท' : 'แก้ไขโปรไฟล์'; ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -167,8 +190,28 @@ if($is_public){
   .rev-comment { font-size:13px; line-height:1.6; }
   .empty-rev { text-align:center; padding:28px 20px; color:var(--muted); font-size:13px; }
 
+  /* ── Map Modal ── */
+  .map-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+  .map-modal.active { display:flex; }
+  .map-container { background:white; border-radius:16px; width:90%; max-width:900px; height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .map-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .map-header h3 { margin:0; font-size:18px; font-weight:600; }
+  .map-close { background:none; border:none; font-size:24px; cursor:pointer; color:var(--muted); }
+  .map-close:hover { color:var(--text); }
+  #employer-map { flex:1; }
+  .map-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+  .map-footer button { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:500; font-size:14px; }
+  .btn-map-confirm { background:var(--accent); color:white; }
+  .btn-map-confirm:hover { background:#4f46e5; }
+  .btn-map-cancel { background:var(--light); color:var(--text); }
+  .btn-map-cancel:hover { background:#e2e8f0; }
+  .map-info { padding:12px 16px; background:#eef2ff; border-radius:8px; font-size:13px; margin-bottom:12px; }
+  .btn-open-map { display:inline-flex; align-items:center; gap:6px; background:#eef2ff; color:var(--accent); border:1px solid #c7d2fe; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; }
+  .btn-open-map:hover { background:#c7d2fe; color:var(--accent); }
+  .coord-display { font-size:12px; color:var(--muted); margin-top:6px; }
+
   @media(max-width:968px){ .profile-banner { grid-template-columns:1fr; text-align:center; } .banner-actions { justify-content:center; } .info-grid { grid-template-columns:1fr; } }
-  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .info-grid { grid-template-columns:1fr; } }
+  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .info-grid { grid-template-columns:1fr; } .map-container { width:100%; height:100%; max-width:none; border-radius:0; } }
   .section-title { font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
   .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
   .field-group { margin-bottom:18px; }
@@ -224,6 +267,8 @@ if($is_public){
     background: #eef2ff;
   }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 
@@ -354,11 +399,81 @@ if($is_public){
       </div>
     </div>
 
+    <div class="section-title" style="margin-top:16px;"><i class="bi bi-map"></i> ที่อยู่บริษัท</div>
+    <div class="field-group">
+      <label>ที่อยู่</label>
+      <div class="input-icon-wrap textarea-wrap">
+        <i class="bi bi-geo-alt"></i>
+        <textarea name="address" class="form-input" style="padding-left:40px;" placeholder="เช่น 123 ซ.สุขุมวิท ถ.สุขุมวิท..."><?php echo htmlspecialchars($profile['address'] ?? ''); ?></textarea>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>จังหวัด</label>
+      <div class="input-icon-wrap">
+        <i class="bi bi-building"></i>
+        <input type="text" name="province" class="form-input" value="<?php echo htmlspecialchars($profile['province'] ?? ''); ?>" placeholder="เช่น กรุงเทพมหานคร">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>อำเภอ</label>
+      <div class="input-icon-wrap">
+        <i class="bi bi-pin-map"></i>
+        <input type="text" name="district" class="form-input" value="<?php echo htmlspecialchars($profile['district'] ?? ''); ?>" placeholder="เช่น วัฒนา">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>ตำแหน่งบริษัทบนแผนที่ / Company pin</label>
+      <button type="button" class="btn-open-map" onclick="openEmployerMapModal()">
+        <i class="bi bi-geo"></i> เลือกตำแหน่งจากแผนที่
+      </button>
+      <div class="coord-display" id="employer-coord-display">
+        <?php
+          if (!empty($profile['latitude']) && !empty($profile['longitude'])) {
+            echo "ปักหมุดบริษัทแล้ว";
+          } else {
+            echo "ยังไม่ได้ปักหมุดบริษัท";
+          }
+        ?>
+      </div>
+      <input type="hidden" name="latitude" id="employer-latitude" value="<?php echo htmlspecialchars($profile['latitude'] ?? ''); ?>">
+      <input type="hidden" name="longitude" id="employer-longitude" value="<?php echo htmlspecialchars($profile['longitude'] ?? ''); ?>">
+    </div>
+
+    <div class="field-group">
+      <label>รหัสไปรษณีย์</label>
+      <div class="input-icon-wrap">
+        <i class="bi bi-mailbox"></i>
+        <input type="text" name="postal_code" class="form-input" value="<?php echo htmlspecialchars($profile['postal_code'] ?? ''); ?>" placeholder="10110">
+      </div>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;padding-top:8px;">
       <button type="submit" name="update" class="btn-save"><i class="bi bi-check-lg"></i> บันทึกการเปลี่ยนแปลง</button>
     </div>
   </div>
   </form>
+
+  <div class="map-modal" id="employerMapModal">
+    <div class="map-container">
+      <div class="map-header">
+        <h3><i class="bi bi-geo"></i> ปักหมุดบริษัท</h3>
+        <button class="map-close" type="button" onclick="closeEmployerMapModal()">&times;</button>
+      </div>
+      <div style="padding:16px;">
+        <div class="map-info">
+          คลิกบนแผนที่เพื่อเลือกที่อยู่บริษัทหรือจุดที่ต้องการให้ระบบใช้แมชงานกับ freelancer
+        </div>
+      </div>
+      <div id="employer-map"></div>
+      <div class="map-footer">
+        <button type="button" class="btn-map-cancel" onclick="closeEmployerMapModal()">ยกเลิก</button>
+        <button type="button" class="btn-map-confirm" onclick="confirmEmployerMapLocation()">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
 
   <?php else: ?>
   <!-- ✅ MODE สาธารณะ (Freelancer อ่าน) -->
@@ -393,12 +508,78 @@ if($is_public){
 </div>
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/js/location-map-picker.js"></script>
 <script>
 function updateCount(){
   const ta = document.getElementById('desc-input');
   if(ta) document.getElementById('desc-count').textContent = ta.value.length;
 }
 updateCount();
+
+let employerMap = null;
+let employerLat = <?php echo !empty($profile['latitude']) ? $profile['latitude'] : '13.7563'; ?>;
+let employerLng = <?php echo !empty($profile['longitude']) ? $profile['longitude'] : '100.5018'; ?>;
+let employerHasPin = <?php echo (!empty($profile['latitude']) && !empty($profile['longitude'])) ? 'true' : 'false'; ?>;
+
+function setEmployerPosition(lat, lng) {
+  employerLat = Number(lat);
+  employerLng = Number(lng);
+  employerHasPin = true;
+}
+
+function openEmployerMapModal() {
+  const modal = document.getElementById('employerMapModal');
+  if (!modal) return;
+  modal.classList.add('active');
+
+  setTimeout(() => {
+    if (!employerMap) {
+      employerMap = createJobFindMapPicker({
+        elementId: 'employer-map',
+        lat: employerLat,
+        lng: employerLng,
+        hasPin: employerHasPin,
+        radiusKm: 30,
+        showCircle: false,
+        onChange: setEmployerPosition
+      });
+    }
+
+    if (employerMap) {
+      employerMap.resize();
+    }
+    if (employerHasPin) {
+      employerMap.setView(employerLat, employerLng);
+    }
+  }, 100);
+}
+
+function closeEmployerMapModal() {
+  const modal = document.getElementById('employerMapModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function confirmEmployerMapLocation() {
+  if (!employerHasPin) {
+    alert('กรุณาเลือกตำแหน่งบริษัทบนแผนที่');
+    return;
+  }
+
+  document.getElementById('employer-latitude').value = employerLat.toFixed(6);
+  document.getElementById('employer-longitude').value = employerLng.toFixed(6);
+  document.getElementById('employer-coord-display').textContent = 'ปักหมุดบริษัทแล้ว';
+  closeEmployerMapModal();
+}
+
+const employerMapModal = document.getElementById('employerMapModal');
+if (employerMapModal) {
+  employerMapModal.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeEmployerMapModal();
+    }
+  });
+}
 </script>
 </body>
 </html>

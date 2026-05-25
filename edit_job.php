@@ -2,6 +2,7 @@
 session_start();
 include "config.php";
 require_once "job_image_helpers.php";
+require_once "location_schema.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "employer"){
     header("Location: login.php");
@@ -12,6 +13,19 @@ $job_id = intval($_GET['job_id'] ?? $_GET['id'] ?? 0);
 $employer_id = intval($_SESSION['user_id']);
 $toast = '';
 ensure_job_image_schema($conn);
+ensure_location_schema($conn);
+
+function jobfind_location_text_from_profile(array $profile, string $fallback = ''): string {
+    $parts = array_filter([
+        trim($profile['district'] ?? ''),
+        trim($profile['province'] ?? '')
+    ]);
+    $location = trim(implode(', ', $parts));
+    if($location === ''){
+        $location = trim($profile['address'] ?? '');
+    }
+    return $location !== '' ? $location : $fallback;
+}
 
 $query = mysqli_query($conn, "SELECT * FROM job WHERE job_id='$job_id' AND employer_id='$employer_id'");
 $job = mysqli_fetch_assoc($query);
@@ -22,12 +36,18 @@ if(!$job){
 }
 
 $job_images = get_job_images($conn, $job_id);
+$employer_location = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT address, province, district
+    FROM employer_profile
+    WHERE user_id='$employer_id'
+    LIMIT 1
+")) ?: [];
 
 // ── UPDATE JOB ──
 if(isset($_POST['update'])){
     $title       = mysqli_real_escape_string($conn, trim($_POST['title']));
     $description = mysqli_real_escape_string($conn, trim($_POST['description']));
-    $location    = mysqli_real_escape_string($conn, trim($_POST['location']));
+    $location    = mysqli_real_escape_string($conn, jobfind_location_text_from_profile($employer_location, trim($job['location'] ?? '')));
     $salary      = mysqli_real_escape_string($conn, trim($_POST['salary']));
     $deadline    = mysqli_real_escape_string($conn, trim($_POST['deadline']));
     $category    = mysqli_real_escape_string($conn, trim($_POST['category'] ?? ''));
@@ -236,6 +256,8 @@ if(empty($cats)){
   
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 
@@ -370,25 +392,14 @@ if(empty($cats)){
 
     <div class="section-title" style="margin-top:8px;"><i class="bi bi-map"></i> สถานที่และค่าตอบแทน</div>
 
-    <div class="two-col">
-      <div class="field-group">
-        <label>สถานที่ <span class="hint">(ไม่บังคับ)</span></label>
-        <div class="input-icon-wrap">
-          <i class="bi bi-geo-alt"></i>
-          <input type="text" name="location" class="form-input"
-                 placeholder="เช่น กรุงเทพฯ, Remote"
-                 value="<?php echo htmlspecialchars($job['location'] ?? ''); ?>">
-        </div>
-      </div>
-      <div class="field-group">
-        <label>ค่าจ้าง (บาท) <span class="hint">(ไม่บังคับ)</span></label>
-        <div class="input-icon-wrap">
-          <i class="bi bi-currency-dollar"></i>
-          <input type="number" name="salary" class="form-input"
-                 placeholder="เช่น 50000"
-                 min="0"
-                 value="<?php echo htmlspecialchars($job['salary'] ?? ''); ?>">
-        </div>
+    <div class="field-group">
+      <label>ค่าจ้าง (บาท) <span class="hint">(ไม่บังคับ)</span></label>
+      <div class="input-icon-wrap">
+        <i class="bi bi-currency-dollar"></i>
+        <input type="number" name="salary" class="form-input"
+               placeholder="เช่น 50000"
+               min="0"
+               value="<?php echo htmlspecialchars($job['salary'] ?? ''); ?>">
       </div>
     </div>
 

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include("config.php");
+require_once "location_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "freelancer"){
     header("Location: login.php");
@@ -9,33 +10,17 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "freelancer"){
 
 $user_id   = $_SESSION['user_id'];
 $username  = $_SESSION['username'];
+$location_summary = getFreelancerLocationSummary($conn, $user_id);
+$user_location = $location_summary['label'] ?? '';
 
-// get location
-$profile = mysqli_query($conn,"
-    SELECT location
-    FROM freelancer_profile
-    WHERE user_id='$user_id'
-");
-$data = mysqli_fetch_assoc($profile);
-$user_location = "";
-if($data){ $user_location = $data['location']; }
+// Get location-based recommended jobs
+$recommended_jobs = getRecommendedJobs($conn, $user_id, limit: 10, min_match_score: 30);
+$recommend = null;
 
-// recommend jobs
-if($user_location != ""){
-    $recommend = mysqli_query($conn,"
-        SELECT * FROM job
-        WHERE location LIKE '%$user_location%'
-        AND status='approved'
-        ORDER BY created_at DESC
-        LIMIT 5
-    ");
-} else {
-    $recommend = mysqli_query($conn,"
-        SELECT * FROM job
-        WHERE status='approved'
-        ORDER BY created_at DESC
-        LIMIT 5
-    ");
+// For backwards compatibility with the rest of the code
+if (!empty($recommended_jobs)) {
+    // Create a temporary result set from the array
+    $recommend = $recommended_jobs;
 }
 
 $popular_employers = mysqli_query($conn,"
@@ -195,7 +180,7 @@ if($most_applied_jobs){
     }
 }
 
-$recommended_count = $recommend ? mysqli_num_rows($recommend) : 0;
+$recommended_count = is_array($recommend) ? count($recommend) : 0;
 $popular_employer_count = $popular_employers ? mysqli_num_rows($popular_employers) : 0;
 $top_freelancer_count = $top_freelancers ? mysqli_num_rows($top_freelancers) : 0;
 $popular_job_count = $popular_jobs ? mysqli_num_rows($popular_jobs) : 0;
@@ -674,6 +659,8 @@ $most_applied_count = count($most_applied_jobs_list);
     .profile-info-box.full { grid-column:auto; }
   }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 
@@ -913,43 +900,71 @@ $most_applied_count = count($most_applied_jobs_list);
   <div class="section-header">
     <div>
       <h4>งานที่แนะนำสำหรับคุณ</h4>
-      <p>เลือกจากตำแหน่งและงานล่าสุดที่เปิดรับสมัคร</p>
+      <p>งานที่ตรงกับพื้นที่และตำแหน่งของคุณ</p>
     </div>
     <span class="badge-count"><i class="bi bi-briefcase"></i><?php echo $recommended_count; ?> งาน</span>
   </div>
 
   <?php
     $hasJobs = false;
-    while($job = mysqli_fetch_assoc($recommend)):
-      $hasJobs = true;
-      $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱'];
-      $icon  = $icons[crc32($job['title']) % count($icons)];
+    if (is_array($recommend)) {
+      foreach ($recommend as $job):
+        $hasJobs = true;
+        $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱'];
+        $icon  = $icons[crc32($job['title'] ?? 'job') % count($icons)];
+        $match_score = $job['match_score'] ?? 0;
+        $distance_km = $job['distance_km'] ?? null;
+        
+        // Determine match badge style
+        $match_label = 'Nearby Match';
+        $match_style = 'background: #eef2ff; color: #4f46e5;';
+        if ($match_score >= 95) {
+          $match_label = 'Perfect Match';
+          $match_style = 'background: #d1fae5; color: #059669;';
+        } elseif ($match_score >= 85) {
+          $match_label = 'Great Match';
+          $match_style = 'background: #fef3c7; color: #d97706;';
+        } elseif ($match_score >= 70) {
+          $match_label = 'Good Match';
+          $match_style = 'background: #dbeafe; color: #1d4ed8;';
+        }
   ?>
   <div class="job-card">
     <div class="job-logo"><?php echo $icon; ?></div>
 
     <div class="job-info">
-      <div class="job-title"><?php echo htmlspecialchars($job['title']); ?></div>
+      <div class="job-title"><?php echo htmlspecialchars($job['title'] ?? 'Untitled Job'); ?></div>
       <div class="job-meta">
-        <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($job['location']); ?></span>
-        <span><i class="bi bi-currency-dollar"></i><?php echo htmlspecialchars($job['salary']); ?></span>
-        <?php if(!empty($job['created_at'])): ?>
+        <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($job['location'] ?? 'ไม่ระบุ'); ?></span>
+        <span><i class="bi bi-currency-dollar"></i><?php echo number_format($job['salary'] ?? 0, 0); ?> ฿</span>
+        <?php if (!empty($job['company_name'])): ?>
+        <span><i class="bi bi-briefcase"></i><?php echo htmlspecialchars($job['company_name']); ?></span>
+        <?php endif; ?>
+        <?php if (!empty($job['created_at'])): ?>
         <span><i class="bi bi-clock"></i><?php echo date('d M Y', strtotime($job['created_at'])); ?></span>
         <?php endif; ?>
+        <?php if ($distance_km !== null): ?>
+        <span><i class="bi bi-pin"></i><?php echo round($distance_km, 1); ?> กม.</span>
+        <?php endif; ?>
       </div>
-      <span class="tag"><i class="bi bi-check-circle"></i> Open</span>
+      <span class="tag" style="<?php echo $match_style; ?>">
+        <i class="bi bi-hand-thumbs-up"></i> <?php echo $match_label; ?> (<?php echo (int)$match_score; ?>%)
+      </span>
     </div>
 
     <a href="apply_job.php?job_id=<?php echo (int)$job['job_id']; ?>" class="btn-apply">
       <i class="bi bi-send"></i> Apply
     </a>
   </div>
-  <?php endwhile; ?>
+  <?php
+      endforeach;
+    }
+  ?>
 
-  <?php if(!$hasJobs): ?>
+  <?php if (!$hasJobs): ?>
   <div class="empty-state">
     <i class="bi bi-inbox"></i>
-    <p>No recommended jobs found at the moment.<br>Try updating your profile location.</p>
+    <p>ยังไม่พบงานแนะนำในขณะนี้<br>กรุณาอัปเดตข้อมูลพื้นที่ของคุณในโปรไฟล์</p>
   </div>
   <?php endif; ?>
 

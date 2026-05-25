@@ -82,6 +82,8 @@ if($review_count > 0){
 
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

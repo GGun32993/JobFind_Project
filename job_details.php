@@ -69,6 +69,8 @@ body{
 }
 
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 
 </head>
 <body>

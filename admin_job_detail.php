@@ -8,6 +8,21 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
     exit();
 }
 
+$admin_unread_support = 0;
+$admin_id_for_badge = (int)$_SESSION['user_id'];
+$col_check = mysqli_query($conn,"SHOW COLUMNS FROM chat_messages LIKE 'is_read'");
+if($col_check && mysqli_num_rows($col_check) === 0){
+    mysqli_query($conn,"ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) DEFAULT 0");
+}
+$unread_support = mysqli_fetch_assoc(mysqli_query($conn,"
+    SELECT COUNT(*) AS c
+    FROM chat_messages cm
+    JOIN users u ON u.user_id=cm.sender_id
+    WHERE cm.receiver_id='$admin_id_for_badge'
+    AND cm.is_read=0
+"));
+$admin_unread_support = (int)($unread_support['c'] ?? 0);
+
 $job_id = intval($_GET['id'] ?? 0);
 ensure_job_image_schema($conn);
 
@@ -114,6 +129,8 @@ if(isset($_GET['reject'])){
   @media(max-width:900px){ .detail-grid { grid-template-columns:1fr; } }
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 
@@ -146,7 +163,10 @@ if(isset($_GET['reject'])){
     <a href="admin_manage_jobs.php" class="nav-item active"><i class="bi bi-briefcase"></i> Manage Jobs</a>
     <a href="admin_manage_categories.php" class="nav-item"><i class="bi bi-tag"></i> Categories</a>
     <div class="nav-divider"></div>
-    <a href="admin_support.php" class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>
+    <a href="admin_support.php" class="nav-item">
+      <i class="bi bi-chat-dots"></i> Support Chat
+      <?php if($admin_unread_support > 0): ?><span class="nav-badge"><?php echo $admin_unread_support; ?></span><?php endif; ?>
+    </a>
   </nav>
   <div class="sidebar-footer">
     <a href="logout.php" class="nav-logout"><i class="bi bi-box-arrow-left"></i> Logout</a>

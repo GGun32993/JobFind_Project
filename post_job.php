@@ -2,6 +2,7 @@
 session_start();
 include "config.php";
 require_once "job_image_helpers.php";
+require_once "location_schema.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     header("Location: login.php");
@@ -11,22 +12,63 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 $employer_id = $_SESSION['user_id'];
 $error = '';
 ensure_job_image_schema($conn);
+ensure_location_schema($conn);
+
+$employer_location = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT ep.address, ep.province, ep.district, ep.latitude, ep.longitude,
+           u.latitude AS user_lat, u.longitude AS user_lon
+    FROM users u
+    LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
+    WHERE u.user_id = '$employer_id'
+    LIMIT 1
+")) ?: [];
+$default_job_lat = $_POST['latitude'] ?? ($employer_location['latitude'] ?? $employer_location['user_lat'] ?? '');
+$default_job_lng = $_POST['longitude'] ?? ($employer_location['longitude'] ?? $employer_location['user_lon'] ?? '');
+$default_job_lat = is_numeric($default_job_lat) ? (float)$default_job_lat : '';
+$default_job_lng = is_numeric($default_job_lng) ? (float)$default_job_lng : '';
+
+function jobfind_location_text_from_profile(array $profile, string $fallback = ''): string {
+    $parts = array_filter([
+        trim($profile['district'] ?? ''),
+        trim($profile['province'] ?? '')
+    ]);
+    $location = trim(implode(', ', $parts));
+    if($location === ''){
+        $location = trim($profile['address'] ?? '');
+    }
+    return $location !== '' ? $location : $fallback;
+}
+
+$default_job_location = jobfind_location_text_from_profile($employer_location);
 
 if(isset($_POST['submit'])){
     $title       = mysqli_real_escape_string($conn, $_POST['title']);
     $description = mysqli_real_escape_string($conn, $_POST['description']);
-    $location    = mysqli_real_escape_string($conn, $_POST['location']);
-    $salary      = mysqli_real_escape_string($conn, $_POST['salary']);
-    $deadline    = mysqli_real_escape_string($conn, $_POST['deadline']);
+    $location    = mysqli_real_escape_string($conn, $default_job_location);
+    $salary_raw  = trim($_POST['salary'] ?? '');
+    $salary      = $salary_raw !== '' && is_numeric($salary_raw) ? mysqli_real_escape_string($conn, $salary_raw) : '0';
+    $deadline_raw = trim($_POST['deadline'] ?? '');
+    $deadline    = mysqli_real_escape_string($conn, $deadline_raw);
+    $deadline_sql = $deadline !== '' ? "'$deadline'" : "NULL";
     $category    = mysqli_real_escape_string($conn, $_POST['category'] ?? '');
+    $latitude     = !empty($_POST['latitude']) ? floatval($_POST['latitude']) : (!empty($employer_location['latitude']) ? floatval($employer_location['latitude']) : null);
+    $longitude    = !empty($_POST['longitude']) ? floatval($_POST['longitude']) : (!empty($employer_location['longitude']) ? floatval($employer_location['longitude']) : null);
+    if($latitude === null && !empty($employer_location['user_lat'])){
+        $latitude = floatval($employer_location['user_lat']);
+    }
+    if($longitude === null && !empty($employer_location['user_lon'])){
+        $longitude = floatval($employer_location['user_lon']);
+    }
+    $latitude_sql = $latitude !== null ? sprintf('%.8F', $latitude) : "NULL";
+    $longitude_sql = $longitude !== null ? sprintf('%.8F', $longitude) : "NULL";
     $job_image_paths = save_uploaded_job_images($_FILES['job_images'] ?? [], $employer_id, $error);
 
     if($error === ''){
         $job_image_path = $job_image_paths[0] ?? '';
         $job_image_sql = $job_image_path !== '' ? "'" . mysqli_real_escape_string($conn, $job_image_path) . "'" : "NULL";
         $result = mysqli_query($conn,"
-            INSERT INTO job (employer_id,title,description,location,salary,deadline,category,image_path,status,admin_status)
-            VALUES ('$employer_id','$title','$description','$location','$salary','$deadline','$category',$job_image_sql,'pending','pending')
+            INSERT INTO job (employer_id,title,description,location,salary,latitude,longitude,deadline,category,image_path,status,admin_status)
+            VALUES ('$employer_id','$title','$description','$location','$salary',$latitude_sql,$longitude_sql,$deadline_sql,'$category',$job_image_sql,'open','pending')
         ");
 
         if($result){
@@ -90,6 +132,7 @@ if(empty($cats)){
 <title>Post Job</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
 
@@ -177,9 +220,26 @@ if(empty($cats)){
 
   /* ── Char counter ── */
   .char-count { font-size:11.5px; color:var(--muted); text-align:right; margin-top:4px; }
+  .btn-open-map { display:inline-flex; align-items:center; gap:6px; background:#eef2ff; color:var(--accent); border:1px solid #c7d2fe; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; }
+  .btn-open-map:hover { background:#c7d2fe; }
+  .coord-display { font-size:12px; color:var(--muted); margin-top:6px; }
+  .map-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+  .map-modal.active { display:flex; }
+  .map-container { background:white; border-radius:16px; width:90%; max-width:900px; height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .map-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .map-header h3 { margin:0; font-size:18px; font-weight:600; }
+  .map-close { background:none; border:none; font-size:24px; cursor:pointer; color:var(--muted); }
+  #job-map { flex:1; }
+  .map-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+  .map-footer button { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:500; font-size:14px; }
+  .btn-map-confirm { background:var(--accent); color:white; }
+  .btn-map-cancel { background:var(--light); color:var(--text); }
+  .map-info { padding:12px 16px; background:#eef2ff; border-radius:8px; font-size:13px; color:#3730a3; }
 
-  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col { grid-template-columns:1fr; } .file-upload { grid-template-columns:auto 1fr; } .upload-action { grid-column:1 / -1; } }
+  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col { grid-template-columns:1fr; } .file-upload { grid-template-columns:auto 1fr; } .upload-action { grid-column:1 / -1; } .map-container { width:100%; height:100%; max-width:none; border-radius:0; } }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 
@@ -296,26 +356,33 @@ if(empty($cats)){
       <div class="upload-preview-grid" id="job-image-preview-grid"></div>
     </div>
 
-    <div class="two-col">
-      <div class="field-group">
-        <label>สถานที่ <span class="hint">(ไม่บังคับ)</span></label>
-        <div class="input-icon-wrap">
-          <i class="bi bi-geo-alt"></i>
-          <input type="text" name="location" class="form-input"
-                 placeholder="เช่น กรุงเทพฯ, Remote"
-                 value="<?php echo htmlspecialchars($_POST['location'] ?? ''); ?>">
-        </div>
+    <div class="field-group">
+      <label>ค่าจ้าง (บาท) <span class="hint">(ไม่บังคับ)</span></label>
+      <div class="input-icon-wrap">
+        <i class="bi bi-currency-dollar"></i>
+        <input type="number" name="salary" class="form-input"
+               placeholder="เช่น 50000"
+               min="0"
+               value="<?php echo htmlspecialchars($_POST['salary'] ?? ''); ?>">
       </div>
-      <div class="field-group">
-        <label>ค่าจ้าง (บาท) <span class="hint">(ไม่บังคับ)</span></label>
-        <div class="input-icon-wrap">
-          <i class="bi bi-currency-dollar"></i>
-          <input type="number" name="salary" class="form-input"
-                 placeholder="เช่น 50000"
-                 min="0"
-                 value="<?php echo htmlspecialchars($_POST['salary'] ?? ''); ?>">
-        </div>
+    </div>
+
+    <div class="field-group">
+      <label>ตำแหน่งงานบนแผนที่ / Job pin</label>
+      <button type="button" class="btn-open-map" onclick="openJobMapModal()">
+        <i class="bi bi-geo"></i> เลือกตำแหน่งงาน
+      </button>
+      <div class="coord-display" id="job-coord-display">
+        <?php
+          if (!empty($default_job_lat) && !empty($default_job_lng)) {
+            echo "ปักหมุดงานแล้ว";
+          } else {
+            echo "ยังไม่ได้ปักหมุดงาน ระบบจะแมชจากข้อความสถานที่แทน";
+          }
+        ?>
       </div>
+      <input type="hidden" name="latitude" id="job-latitude" value="<?php echo htmlspecialchars($default_job_lat ?? ''); ?>">
+      <input type="hidden" name="longitude" id="job-longitude" value="<?php echo htmlspecialchars($default_job_lng ?? ''); ?>">
     </div>
 
     <div class="field-group">
@@ -337,9 +404,30 @@ if(empty($cats)){
   </div>
   </form>
 
+  <div class="map-modal" id="jobMapModal">
+    <div class="map-container">
+      <div class="map-header">
+        <h3><i class="bi bi-geo"></i> ปักหมุดตำแหน่งงาน</h3>
+        <button class="map-close" type="button" onclick="closeJobMapModal()">&times;</button>
+      </div>
+      <div style="padding:16px;">
+        <div class="map-info">
+          คลิกบนแผนที่เพื่อเลือกพื้นที่ทำงาน ถ้าไม่เลือก ระบบจะใช้พิกัดบริษัทหรือข้อความสถานที่
+        </div>
+      </div>
+      <div id="job-map"></div>
+      <div class="map-footer">
+        <button type="button" class="btn-map-cancel" onclick="closeJobMapModal()">ยกเลิก</button>
+        <button type="button" class="btn-map-confirm" onclick="confirmJobMapLocation()">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/js/location-map-picker.js"></script>
 <script>
   function updateCount(){
     const ta = document.getElementById('desc-input');
@@ -372,6 +460,64 @@ if(empty($cats)){
     icon.style.display = 'none';
     title.textContent = files.length + ' รูปที่เลือก';
   }
+  let jobMap = null;
+  let jobLat = <?php echo !empty($default_job_lat) ? $default_job_lat : '13.7563'; ?>;
+  let jobLng = <?php echo !empty($default_job_lng) ? $default_job_lng : '100.5018'; ?>;
+  let jobHasPin = <?php echo (!empty($default_job_lat) && !empty($default_job_lng)) ? 'true' : 'false'; ?>;
+
+  function setJobPosition(lat, lng) {
+    jobLat = Number(lat);
+    jobLng = Number(lng);
+    jobHasPin = true;
+  }
+
+  function openJobMapModal() {
+    const modal = document.getElementById('jobMapModal');
+    modal.classList.add('active');
+
+    setTimeout(() => {
+      if (!jobMap) {
+        jobMap = createJobFindMapPicker({
+          elementId: 'job-map',
+          lat: jobLat,
+          lng: jobLng,
+          hasPin: jobHasPin,
+          radiusKm: 30,
+          showCircle: false,
+          onChange: setJobPosition
+        });
+      }
+
+      if (jobMap) {
+        jobMap.resize();
+      }
+      if (jobHasPin) {
+        jobMap.setView(jobLat, jobLng);
+      }
+    }, 100);
+  }
+
+  function closeJobMapModal() {
+    document.getElementById('jobMapModal').classList.remove('active');
+  }
+
+  function confirmJobMapLocation() {
+    if (!jobHasPin) {
+      alert('กรุณาเลือกตำแหน่งงานบนแผนที่');
+      return;
+    }
+
+    document.getElementById('job-latitude').value = jobLat.toFixed(6);
+    document.getElementById('job-longitude').value = jobLng.toFixed(6);
+    document.getElementById('job-coord-display').textContent = 'ปักหมุดงานแล้ว';
+    closeJobMapModal();
+  }
+
+  document.getElementById('jobMapModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeJobMapModal();
+    }
+  });
 </script>
 </body>
 </html>

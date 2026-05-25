@@ -179,6 +179,8 @@ if(isset($_POST['register'])){
     .two-col { grid-template-columns:1fr; }
   }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

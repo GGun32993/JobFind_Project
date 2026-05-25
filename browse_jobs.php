@@ -291,6 +291,8 @@ $result = mysqli_query($conn, $query);
     .btn-apply { width: 100%; justify-content: center; margin-top: 10px; }
   }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

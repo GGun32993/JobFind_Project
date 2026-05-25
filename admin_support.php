@@ -16,6 +16,26 @@ if(mysqli_num_rows($col_check) === 0){
     mysqli_query($conn,"ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) DEFAULT 0");
 }
 
+if(!$selected_user){
+    $latest_conversation = mysqli_fetch_assoc(mysqli_query($conn,"
+        SELECT u.user_id
+        FROM chat_messages cm
+        JOIN users u ON (
+            (cm.sender_id='$admin_id' AND u.user_id=cm.receiver_id)
+            OR (cm.receiver_id='$admin_id' AND u.user_id=cm.sender_id)
+        )
+        WHERE (cm.sender_id='$admin_id' OR cm.receiver_id='$admin_id')
+        AND u.user_id != '$admin_id'
+        ORDER BY
+            CASE WHEN cm.receiver_id='$admin_id' AND cm.is_read=0 THEN 0 ELSE 1 END,
+            cm.sent_at DESC
+        LIMIT 1
+    "));
+    if(!empty($latest_conversation['user_id'])){
+        $selected_user = (int)$latest_conversation['user_id'];
+    }
+}
+
 // ── send message (process BEFORE any output) ──
 if(isset($_POST['message']) && $selected_user){
     $message = mysqli_real_escape_string($conn, $_POST['message']);
@@ -88,6 +108,16 @@ if($selected_user){
     ");
     while($m = mysqli_fetch_assoc($msgs)) $msg_rows[] = $m;
 }
+
+$admin_unread_support = 0;
+$unread_support = mysqli_fetch_assoc(mysqli_query($conn,"
+    SELECT COUNT(*) AS c
+    FROM chat_messages cm
+    JOIN users u ON u.user_id=cm.sender_id
+    WHERE cm.receiver_id='$admin_id'
+    AND cm.is_read=0
+"));
+$admin_unread_support = (int)($unread_support['c'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -238,6 +268,8 @@ if($selected_user){
     .user-panel { width:200px; }
   }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 
@@ -258,7 +290,10 @@ if($selected_user){
     <a href="admin_manage_jobs.php"        class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs</a>
     <a href="admin_manage_categories.php"  class="nav-item"><i class="bi bi-tag"></i> Categories</a>
     <div class="nav-divider"></div>
-    <a href="admin_support.php"            class="nav-item active"><i class="bi bi-chat-dots"></i> Support Chat</a>
+    <a href="admin_support.php"            class="nav-item active">
+      <i class="bi bi-chat-dots"></i> Support Chat
+      <?php if($admin_unread_support > 0): ?><span class="nav-badge"><?php echo $admin_unread_support; ?></span><?php endif; ?>
+    </a>
   </nav>
   <div class="sidebar-footer">
     <a href="logout.php" class="nav-logout"><i class="bi bi-box-arrow-left"></i> Logout</a>
@@ -271,7 +306,7 @@ if($selected_user){
   <!-- User list panel -->
   <div class="user-panel">
     <div class="panel-header">
-      <h3>💬 Conversations</h3>
+      <h3><i class="bi bi-chat-left-dots"></i> Conversations</h3>
       <div class="search-wrap">
         <i class="bi bi-search"></i>
         <input type="text" id="user-search" placeholder="ค้นหาชื่อ user..." oninput="searchUsers()" />
@@ -338,6 +373,10 @@ if($selected_user){
       <div>
         <div class="ch-name"><?php echo htmlspecialchars($selected_info['username']); ?></div>
         <div class="ch-role"><?php echo ucfirst($cr); ?></div>
+      </div>
+      <div class="chat-header-actions">
+        <span class="chat-chip"><i class="bi bi-person-check"></i> <?php echo ucfirst($cr); ?></span>
+        <span class="chat-chip"><i class="bi bi-chat-square-text"></i> <?php echo count($msg_rows); ?> messages</span>
       </div>
     </div>
 

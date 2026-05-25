@@ -26,9 +26,11 @@ if(mysqli_num_rows($col_check) === 0){
 
 // ── unread support messages (เฉพาะที่ยังไม่ได้อ่าน) ──
 $unread_res = mysqli_fetch_assoc(mysqli_query($conn,"
-    SELECT COUNT(*) AS c FROM chat_messages
-    WHERE receiver_id='$admin_id'
-    AND is_read = 0
+    SELECT COUNT(*) AS c
+    FROM chat_messages cm
+    JOIN users u ON u.user_id=cm.sender_id
+    WHERE cm.receiver_id='$admin_id'
+    AND cm.is_read = 0
 "))['c'];
 
 // ── recent jobs ──
@@ -161,6 +163,8 @@ $recent_users = mysqli_query($conn,"
   @media(max-width:1100px){ .stat-grid { grid-template-columns:repeat(2,1fr); } .quick-grid { grid-template-columns:repeat(2,1fr); } }
   @media(max-width:768px) { .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col { grid-template-columns:1fr; } }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

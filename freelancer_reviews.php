@@ -174,6 +174,8 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
     .avg-block { width:100%; }
   }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

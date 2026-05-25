@@ -154,6 +154,8 @@ function skill_list($skills){
     .empty-visual{width:190px;}
   }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

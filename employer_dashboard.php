@@ -380,6 +380,8 @@ $most_applied_count = count($most_applied_jobs_list);
   @media(max-width:1100px){ .stat-grid,.quick-grid,.popular-list,.application-rank-list { grid-template-columns:repeat(2,1fr); } }
   @media(max-width:768px) { .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col,.popular-list,.application-rank-list,.profile-info-grid { grid-template-columns:1fr; } .profile-info-box.full { grid-column:auto; } }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 

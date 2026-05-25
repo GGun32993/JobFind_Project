@@ -243,6 +243,8 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
     .bubble  { max-width:80%; }
   }
 </style>
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+
 </head>
 <body>
 
@@ -307,6 +309,10 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
       <div class="admin-info">
         <div class="name">Admin Support</div>
         <div class="status"><div class="status-dot"></div> Online</div>
+      </div>
+      <div class="chat-header-actions">
+        <span class="chat-chip"><i class="bi bi-shield-check"></i> Support</span>
+        <span class="chat-chip"><i class="bi bi-chat-square-text"></i> <?php echo count($rows); ?> messages</span>
       </div>
     </div>
 
