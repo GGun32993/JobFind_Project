@@ -1,6 +1,10 @@
 <?php
 session_start();
 include "config.php";
+require_once "profile_image_helpers.php";
+require_once "employer_sidebar_helpers.php";
+
+ensure_profile_image_schema($conn);
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     header("Location: login.php");
@@ -9,6 +13,8 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 
 $user_id  = $_SESSION['user_id'];
 $username = $_SESSION['username'];
+$current_user = mysqli_fetch_assoc(mysqli_query($conn,"SELECT profile_image FROM users WHERE user_id='$user_id'"));
+$profile_image = trim($current_user['profile_image'] ?? '');
 
 // ── stats ──
 $total_jobs   = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) AS c FROM job WHERE employer_id='$user_id'"))['c'];
@@ -23,6 +29,7 @@ $pending_apps = mysqli_fetch_assoc(mysqli_query($conn,"
     JOIN job j ON j.job_id = ja.job_id
     WHERE j.employer_id='$user_id' AND ja.status='pending'
 "))['c'];
+$sidebar_pending_apps = (int)$pending_apps;
 
 // ── employer rating ──
 $rating_data = mysqli_fetch_assoc(mysqli_query($conn,"
@@ -89,6 +96,7 @@ $top_freelancers = mysqli_query($conn,"
            u.fullname,
            u.email,
            u.phone,
+           u.profile_image,
            COALESCE(fp.skill, '') AS skill,
            COALESCE(fp.experience, '') AS experience,
            COALESCE(fp.location, 'ไม่ระบุ') AS location,
@@ -255,7 +263,8 @@ $most_applied_count = count($most_applied_jobs_list);
   .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; }
   .topbar h2 { font-size:22px; font-weight:600; }
   .topbar p  { font-size:13px; color:var(--muted); margin-top:2px; }
-  .topbar-avatar { width:44px; height:44px; border-radius:50%; background:var(--accent); color:#fff; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .topbar-avatar { width:44px; height:44px; border-radius:50%; background:var(--accent); color:#fff; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; overflow:hidden; }
+  .topbar-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
 
   /* ── Stat grid ── */
   .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
@@ -299,7 +308,8 @@ $most_applied_count = count($most_applied_jobs_list);
   .popular-item:hover { color:var(--text); border-color:#c7d2fe; box-shadow:0 6px 18px rgba(99,102,241,.12); transform:translateY(-1px); }
   .popular-top { display:flex; align-items:center; gap:10px; min-width:0; }
   .popular-rank { width:28px; height:28px; border-radius:9px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
-  .popular-avatar { width:34px; height:34px; border-radius:10px; background:var(--light); color:var(--accent); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .popular-avatar { width:34px; height:34px; border-radius:10px; background:var(--light); color:var(--accent); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; overflow:hidden; }
+  .popular-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .popular-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .popular-stats { display:flex; flex-wrap:wrap; gap:6px; }
   .popular-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--muted); background:var(--light); border-radius:999px; padding:4px 8px; }
@@ -312,7 +322,8 @@ $most_applied_count = count($most_applied_jobs_list);
   .profile-modal-head { position:relative; display:flex; gap:18px; align-items:flex-start; padding:28px; border-radius:20px 20px 0 0; background:var(--navy); color:#fff; }
   .profile-modal-close { position:absolute; top:16px; right:16px; width:34px; height:34px; border:0; border-radius:50%; background:rgba(255,255,255,.14); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .profile-modal-close:hover { background:rgba(255,255,255,.24); }
-  .profile-modal-avatar { width:64px; height:64px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; border:3px solid rgba(255,255,255,.22); flex-shrink:0; }
+  .profile-modal-avatar { width:64px; height:64px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; border:3px solid rgba(255,255,255,.22); flex-shrink:0; overflow:hidden; }
+  .profile-modal-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .profile-modal-name { font-size:21px; font-weight:700; margin-bottom:8px; }
   .profile-modal-meta { display:flex; flex-wrap:wrap; gap:12px; color:#cbd5e1; font-size:13px; }
   .profile-modal-body { padding:24px 28px 28px; }
@@ -384,7 +395,7 @@ $most_applied_count = count($most_applied_jobs_list);
     <a href="post_job.php"            class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
     <a href="employer_manage_jobs.php" class="nav-item">
       <i class="bi bi-briefcase"></i> Manage Jobs
-      <?php if($pending_apps > 0): ?><span class="nav-badge"><?php echo $pending_apps; ?></span><?php endif; ?>
+      <?php render_employer_manage_jobs_badge($sidebar_pending_apps); ?>
     </a>
     <a href="saved_freelancers.php" class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php"    class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
@@ -407,7 +418,13 @@ $most_applied_count = count($most_applied_jobs_list);
       <h2>Welcome back, <?php echo htmlspecialchars($username); ?> 👋</h2>
       <p>จัดการงานและดูการสมัครของ Freelancer ได้ที่นี่</p>
     </div>
-    <div class="topbar-avatar"><?php echo strtoupper(substr($username,0,1)); ?></div>
+    <div class="topbar-avatar">
+      <?php if($profile_image !== ''): ?>
+        <img src="<?php echo profile_image_src($profile_image); ?>" alt="Profile image">
+      <?php else: ?>
+        <?php echo strtoupper(substr($username,0,1)); ?>
+      <?php endif; ?>
+    </div>
   </div>
 
   <!-- Stat cards -->
@@ -528,6 +545,7 @@ $most_applied_count = count($most_applied_jobs_list);
             'fullname' => $freelancer['fullname'] ?? '',
             'email' => $freelancer['email'] ?? '',
             'phone' => $freelancer['phone'] ?? '',
+            'profile_image' => $freelancer['profile_image'] ?? '',
             'location' => $freelancer['location'] ?? '',
             'skill' => $freelancer['skill'] ?? '',
             'experience' => $freelancer['experience'] ?? '',
@@ -540,7 +558,13 @@ $most_applied_count = count($most_applied_jobs_list);
       <button type="button" class="popular-item" onclick='openFreelancerProfile(<?php echo htmlspecialchars(json_encode($profileData, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP), ENT_QUOTES, "UTF-8"); ?>)'>
         <div class="popular-top">
           <div class="popular-rank"><?php echo $rank; ?></div>
-          <div class="popular-avatar"><i class="bi bi-person-circle"></i></div>
+          <div class="popular-avatar">
+            <?php if(!empty($freelancer['profile_image'])): ?>
+              <img src="<?php echo profile_image_src($freelancer['profile_image']); ?>" alt="Profile image">
+            <?php else: ?>
+              <i class="bi bi-person-circle"></i>
+            <?php endif; ?>
+          </div>
           <div class="popular-name"><?php echo htmlspecialchars($freelancer['username']); ?></div>
         </div>
         <div class="popular-stats">
@@ -837,7 +861,16 @@ function renderFreelancerReviewHistory(reviews){
 
 function openFreelancerProfile(data){
   const displayName = data.fullname || data.username || '-';
-  document.getElementById('fp-avatar').textContent = (data.username || displayName).substring(0, 2).toUpperCase();
+  const avatar = document.getElementById('fp-avatar');
+  avatar.innerHTML = '';
+  if (data.profile_image) {
+    const img = document.createElement('img');
+    img.src = data.profile_image;
+    img.alt = 'Profile image';
+    avatar.appendChild(img);
+  } else {
+    avatar.textContent = (data.username || displayName).substring(0, 2).toUpperCase();
+  }
   document.getElementById('fp-name').textContent = displayName;
   document.getElementById('fp-location').textContent = data.location ? '📍 ' + data.location : '';
   document.getElementById('fp-rating').textContent = data.avg_rating > 0 ? '⭐ ' + Number(data.avg_rating).toFixed(1) : '⭐ -';

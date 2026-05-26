@@ -1,6 +1,10 @@
 <?php
 session_start();
 include "config.php";
+require_once "profile_image_helpers.php";
+require_once "employer_sidebar_helpers.php";
+
+ensure_profile_image_schema($conn);
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     header("Location: login.php");
@@ -8,9 +12,10 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 }
 
 $employer_id = $_SESSION['user_id'];
+$sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 $result = mysqli_query($conn,"
-    SELECT employer_review.*, users.username, job.title
+    SELECT employer_review.*, users.username, users.profile_image, job.title
     FROM employer_review
     JOIN users ON users.user_id = employer_review.freelancer_id
     JOIN job   ON job.job_id    = employer_review.job_id
@@ -111,7 +116,8 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
 
   .rc-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
   .rc-user { display:flex; align-items:center; gap:12px; }
-  .fl-avatar { width:42px; height:42px; border-radius:50%; background:var(--accent); color:#fff; font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .fl-avatar { width:42px; height:42px; border-radius:50%; background:var(--accent); color:#fff; font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+  .fl-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .fl-name { font-size:14px; font-weight:600; }
   .fl-job  { font-size:12px; color:var(--muted); margin-top:2px; display:flex; align-items:center; gap:4px; }
 
@@ -158,7 +164,7 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
   <nav class="sidebar-nav">
     <a href="employer_dashboard.php"   class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
     <a href="post_job.php"             class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
-    <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs</a>
+    <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs<?php render_employer_manage_jobs_badge($sidebar_pending_apps); ?></a>
     <a href="saved_freelancers.php"    class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php"     class="nav-item active"><i class="bi bi-star"></i> My Reviews</a>
     <a href="employer_review.php"      class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>
@@ -242,6 +248,7 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
   <?php foreach($rows as $row):
     $rating     = (int)$row['rating'];
     $fl_init    = strtoupper(substr($row['username'], 0, 1));
+    $profile_img = trim($row['profile_image'] ?? '');
     $date_str   = date('d M Y', strtotime($row['created_at']));
     $sb_class   = 'sb-' . $rating;
     $star_label = [1=>'แย่',2=>'พอใช้',3=>'ปานกลาง',4=>'ดี',5=>'ดีมาก'][$rating] ?? '';
@@ -250,7 +257,13 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
 
     <div class="rc-top">
       <div class="rc-user">
-        <div class="fl-avatar"><?php echo $fl_init; ?></div>
+        <div class="fl-avatar">
+          <?php if($profile_img !== ''): ?>
+            <img src="<?php echo profile_image_src($profile_img); ?>" alt="Profile image">
+          <?php else: ?>
+            <?php echo $fl_init; ?>
+          <?php endif; ?>
+        </div>
         <div>
           <div class="fl-name"><?php echo htmlspecialchars($row['username']); ?></div>
           <div class="fl-job">

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config.php";
+require_once "employer_sidebar_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     header("Location: login.php");
@@ -10,6 +11,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 $employer_id   = $_SESSION['user_id'];
 $freelancer_id = intval($_GET['freelancer_id'] ?? 0);
 $job_id        = intval($_GET['job_id'] ?? 0);
+$sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 if(!$freelancer_id || !$job_id){
     header("Location: employer_manage_jobs.php");
@@ -163,7 +165,7 @@ if($_POST && !$already){
   <nav class="sidebar-nav">
     <a href="employer_dashboard.php"   class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
     <a href="post_job.php"             class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
-    <a href="employer_manage_jobs.php" class="nav-item active"><i class="bi bi-briefcase"></i> Manage Jobs</a>
+    <a href="employer_manage_jobs.php" class="nav-item active"><i class="bi bi-briefcase"></i> Manage Jobs<?php render_employer_manage_jobs_badge($sidebar_pending_apps); ?></a>
     <a href="saved_freelancers.php"    class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php"     class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
     <a href="employer_review.php"      class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>

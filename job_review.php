@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config.php";
+require_once "profile_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
     header("Location: login.php");
@@ -11,10 +12,12 @@ $freelancer_id = $_SESSION['user_id'];
 $job_id        = intval($_GET['job_id'] ?? 0);
 
 if(!$job_id){ header("Location: my_applications.php"); exit(); }
+ensure_profile_image_schema($conn);
 
 $job = mysqli_fetch_assoc(mysqli_query($conn,"
     SELECT j.employer_id, j.title,
-           COALESCE(ep.employer_name, u.username) AS company_name
+           COALESCE(ep.employer_name, u.username) AS company_name,
+           u.profile_image AS employer_profile_image
     FROM job j
     JOIN users u ON u.user_id = j.employer_id
     LEFT JOIN employer_profile ep ON ep.user_id = j.employer_id
@@ -107,7 +110,8 @@ if(isset($_POST['submit']) && !$already){
     padding:20px 24px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; 
   }
   .co-left { display:flex; align-items:center; gap:16px; flex:1; min-width:0; }
-  .co-avatar { width:52px; height:52px; border-radius:12px; background:var(--navy); color:#fff; font-size:19px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .co-avatar { width:52px; height:52px; border-radius:12px; background:var(--navy); color:#fff; font-size:19px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+  .co-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .co-name { font-size:15px; font-weight:600; }
   .co-job  { font-size:13px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:5px; }
   
@@ -135,10 +139,10 @@ if(isset($_POST['submit']) && !$already){
   /* ── Star rating ── */
   .star-rating { display:flex; flex-direction:row-reverse; justify-content:flex-end; gap:6px; margin-bottom:10px; }
   .star-rating input { display:none; }
-  .star-rating label { font-size:42px; color:#e2e8f0; cursor:pointer; transition:color .15s, transform .1s; line-height:1; }
+  .star-rating label { font-size:42px; color:#e2e8f0 !important; cursor:pointer; transition:color .15s, transform .1s; line-height:1; }
   .star-rating label:hover,
   .star-rating label:hover ~ label,
-  .star-rating input:checked ~ label { color:var(--yellow); }
+  .star-rating input:checked ~ label { color:var(--yellow) !important; }
   .star-rating label:hover { transform:scale(1.15); }
   .star-desc { font-size:13px; color:var(--muted); margin-bottom:20px; height:20px; }
 
@@ -174,7 +178,7 @@ if(isset($_POST['submit']) && !$already){
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="logo-text">FreelanceHub</div>
-        <div class="logo-sub">Dashboard</div>
+        <div class="logo-sub">Freelancer</div>
       </div>
     </a>
   </div>
@@ -210,7 +214,13 @@ if(isset($_POST['submit']) && !$already){
   <!-- Company info -->
   <div class="company-card">
     <div class="co-left">
-      <div class="co-avatar"><?php echo strtoupper(substr($job['company_name'] ?? '?', 0, 2)); ?></div>
+      <div class="co-avatar">
+        <?php if(!empty($job['employer_profile_image'])): ?>
+          <img src="<?php echo profile_image_src($job['employer_profile_image']); ?>" alt="Employer profile image">
+        <?php else: ?>
+          <?php echo strtoupper(substr($job['company_name'] ?? '?', 0, 2)); ?>
+        <?php endif; ?>
+      </div>
       <div>
         <div class="co-name"><?php echo htmlspecialchars($job['company_name'] ?? 'Unknown'); ?></div>
         <div class="co-job">
@@ -221,7 +231,7 @@ if(isset($_POST['submit']) && !$already){
     </div>
     <!-- ✅ ปุ่มรีวิวบริษัท (ตรงตำแหน่งวงแดง) -->
         <!-- ✅ ปุ่มรีวิวบริษัท (เปลี่ยนลิงก์ไปหน้าฟอร์มรีวิวบริษัท) -->
-    <a href="employer_review_form.php?employer_id=<?php echo $employer_id; ?>&job_id=<?php echo $job_id; ?>" class="btn-company-review">
+    <a href="employer_review_form.php?employer_id=<?php echo $employer_id; ?>&job_id=<?php echo $job_id; ?>&return_url=<?php echo urlencode('my_applications.php'); ?>" class="btn-company-review">
       <i class="bi bi-building"></i> รีวิวผู้ว่าจ้าง
     </a>
   </div>

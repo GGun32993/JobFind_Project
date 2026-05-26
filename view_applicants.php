@@ -1,6 +1,10 @@
 <?php
 session_start();
 include "config.php";
+require_once "profile_image_helpers.php";
+require_once "employer_sidebar_helpers.php";
+
+ensure_profile_image_schema($conn);
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     header("Location: /JobFind_Project/login.php"); exit();
@@ -8,6 +12,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 
 $job_id      = $_GET['job_id'] ?? 0;
 $employer_id = $_SESSION['user_id'];
+$sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 $job_query = "SELECT * FROM job WHERE job_id = ? AND employer_id = ?";
 $stmt = $conn->prepare($job_query);
@@ -19,7 +24,7 @@ $stmt->close();
 if(!$job){ header("Location: employer_manage_jobs.php"); exit(); }
 
 $applicants_query = "
-    SELECT ja.*, u.username, u.email, u.phone, u.fullname,
+    SELECT ja.*, u.username, u.email, u.phone, u.fullname, u.profile_image,
            fp.skill, fp.experience, fp.rating, fp.location,
            (SELECT file_name FROM resume WHERE freelancer_id=ja.freelancer_id ORDER BY resume_id DESC LIMIT 1) AS resume_file
     FROM job_application ja
@@ -139,7 +144,8 @@ $stmt2->close();
   .app-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.09);border-color:#c7d2fe;transform:translateY(-2px);}
 
   .card-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
-  .card-avatar{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .card-avatar{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+  .card-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
   .card-name{font-size:15px;font-weight:600;margin-bottom:3px;}
   .card-meta{font-size:12.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;}
   .card-meta span{display:flex;align-items:center;gap:3px;}
@@ -169,7 +175,8 @@ $stmt2->close();
 
   /* Modal header */
   .modal-head{background:var(--navy);padding:28px;border-radius:20px 20px 0 0;display:flex;gap:18px;align-items:flex-start;position:relative;}
-  .modal-av{width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid rgba(255,255,255,.2);}
+  .modal-av{width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid rgba(255,255,255,.2);overflow:hidden;}
+  .modal-av img{width:100%;height:100%;object-fit:cover;display:block;}
   .modal-head-info{flex:1;}
   .modal-head-name{font-size:20px;font-weight:600;color:#fff;margin-bottom:4px;}
   .modal-head-meta{display:flex;gap:14px;font-size:13px;color:#94a3b8;flex-wrap:wrap;}
@@ -228,7 +235,7 @@ $stmt2->close();
   <nav class="sidebar-nav">
     <a href="employer_dashboard.php"   class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
     <a href="post_job.php"             class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
-    <a href="employer_manage_jobs.php" class="nav-item active"><i class="bi bi-briefcase"></i> Manage Jobs</a>
+    <a href="employer_manage_jobs.php" class="nav-item active"><i class="bi bi-briefcase"></i> Manage Jobs<?php render_employer_manage_jobs_badge($sidebar_pending_apps); ?></a>
     <a href="saved_freelancers.php"    class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php"     class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
     <a href="employer_review.php"      class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>
@@ -294,11 +301,18 @@ $stmt2->close();
     $skills   = !empty($row['skill']) ? array_map('trim', explode(',', $row['skill'])) : [];
     $date_str = !empty($row['apply_date']) ? date('d M Y', strtotime($row['apply_date'])) : '';
     $is_saved = isFreelancerSaved($conn, $employer_id, $row['freelancer_id']);
+    $profile_img = trim($row['profile_image'] ?? '');
     $data_json = htmlspecialchars(json_encode($row, JSON_UNESCAPED_UNICODE), ENT_QUOTES);
   ?>
   <div class="app-card" onclick='openModal(<?php echo $data_json; ?>)'>
     <div class="card-top">
-      <div class="card-avatar"><?php echo $init; ?></div>
+      <div class="card-avatar">
+        <?php if($profile_img !== ''): ?>
+          <img src="<?php echo profile_image_src($profile_img); ?>" alt="Profile image">
+        <?php else: ?>
+          <?php echo $init; ?>
+        <?php endif; ?>
+      </div>
       <div style="flex:1;min-width:0;">
         <div class="card-name"><?php echo htmlspecialchars($row['username']); ?></div>
         <div class="card-meta">
@@ -397,7 +411,16 @@ function openModal(ap){
   currentId = ap.freelancer_id;
   const status = (ap.status||'').toLowerCase();
 
-  document.getElementById('m-av').textContent   = ap.username.substring(0,2).toUpperCase();
+  const avatar = document.getElementById('m-av');
+  avatar.innerHTML = '';
+  if (ap.profile_image) {
+    const img = document.createElement('img');
+    img.src = ap.profile_image;
+    img.alt = 'Profile image';
+    avatar.appendChild(img);
+  } else {
+    avatar.textContent = ap.username.substring(0,2).toUpperCase();
+  }
   document.getElementById('m-name').textContent  = ap.username;
   document.getElementById('m-email').textContent = ap.email || '—';
   document.getElementById('m-phone').textContent = ap.phone || 'ไม่ระบุ';

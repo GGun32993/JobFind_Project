@@ -1,5 +1,6 @@
 <?php
 include "config.php";
+require_once "job_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
     header("Location: login.php");
@@ -7,6 +8,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
 }
 
 $freelancer_id = $_SESSION['user_id'];
+ensure_job_image_schema($conn);
 
 $result = mysqli_query($conn,"
     SELECT job_application.*,
@@ -14,6 +16,7 @@ $result = mysqli_query($conn,"
            job.title,
            job.description,
            job.category,
+           job.image_path,
            job.location,
            job.salary,
            job.status AS job_status,
@@ -116,7 +119,9 @@ while($r = mysqli_fetch_assoc($result)) {
   .app-card:hover { box-shadow:0 4px 20px rgba(0,0,0,.07); border-color:#c7d2fe; }
   .app-card.hidden { display:none; }
 
-  .app-icon { width:52px; height:52px; flex-shrink:0; border-radius:12px; background:var(--light); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .app-icon { width:52px; height:52px; flex-shrink:0; border-radius:12px; background:var(--light); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; overflow:hidden; }
+  .app-icon.has-image { background:var(--white); }
+  .app-icon img { width:100%; height:100%; object-fit:cover; display:block; }
 
   .app-body { flex:1; min-width:0; }
   .app-title { font-size:15px; font-weight:600; margin-bottom:4px; }
@@ -171,7 +176,7 @@ while($r = mysqli_fetch_assoc($result)) {
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="logo-text">FreelanceHub</div>
-        <div class="logo-sub">Dashboard</div>
+        <div class="logo-sub">Freelancer</div>
       </div>
     </a>
   </div>
@@ -258,6 +263,7 @@ while($r = mysqli_fetch_assoc($result)) {
     $icon = $categoryIcons[$category] ?? $icons[crc32($row['title']) % count($icons)] ?? '💼';
     if($icon === '') $icon = '💼';
     $job_id = $row['job_id'];
+    $job_image = get_job_primary_image($conn, $job_id, $row['image_path'] ?? '');
     $app_status  = strtolower($row['status']);
     $job_status  = strtolower($row['job_status']);
 
@@ -282,7 +288,13 @@ while($r = mysqli_fetch_assoc($result)) {
     $filterVal = ($app_status === 'accepted' || $app_status === 'approved') ? 'accepted' : $app_status;
   ?>
   <div class="app-card" data-filter="<?php echo htmlspecialchars($filterVal); ?>">
-    <div class="app-icon"><?php echo $icon; ?></div>
+    <div class="app-icon <?php echo $job_image !== '' ? 'has-image' : ''; ?>">
+      <?php if($job_image !== ''): ?>
+        <img src="<?php echo htmlspecialchars($job_image); ?>" alt="<?php echo htmlspecialchars($row['title']); ?>">
+      <?php else: ?>
+        <?php echo $icon; ?>
+      <?php endif; ?>
+    </div>
 
     <div class="app-body">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">

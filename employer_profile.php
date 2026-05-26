@@ -2,13 +2,19 @@
 session_start();
 include("config.php");
 require_once "location_schema.php";
+require_once "profile_image_helpers.php";
+require_once "employer_sidebar_helpers.php";
 
 ensure_location_schema($conn);
+ensure_profile_image_schema($conn);
 
 if(!isset($_SESSION['user_id'])){ header("Location: login.php"); exit(); }
 
 $current_user_id = $_SESSION['user_id'];
 $current_role    = $_SESSION['role'];
+$sidebar_pending_apps = $current_role === 'employer' ? get_employer_pending_application_count($conn, $current_user_id) : 0;
+$current_user_image = mysqli_fetch_assoc(mysqli_query($conn,"SELECT profile_image FROM users WHERE user_id='$current_user_id'"));
+$current_profile_image = trim($current_user_image['profile_image'] ?? '');
 
 function safe_return_url($url, $fallback = ''){
     $url = trim((string)$url);
@@ -35,8 +41,28 @@ $return_query = $return_url !== '' ? '&return_url=' . urlencode($return_url) : '
 $view_emp_id = intval($_GET['emp'] ?? $_GET['employer_id'] ?? 0);
 $is_public   = ($view_emp_id > 0 && ($current_role != 'employer' || $view_emp_id != $current_user_id));
 
-$success = false;
+$toast = $_GET['toast'] ?? '';
+$success = $toast === 'profile_saved';
+$image_deleted = $toast === 'profile_image_deleted';
+$image_delete_err = $toast === 'profile_image_delete_failed';
 $dup_err = false;
+$image_err = '';
+
+if(!$is_public && $current_role !== 'employer'){
+    header("Location: my_profile.php");
+    exit();
+}
+
+if(!$is_public && isset($_POST['delete_profile_image'])){
+    if($current_profile_image !== '' && mysqli_query($conn,"UPDATE users SET profile_image=NULL WHERE user_id='$current_user_id'")){
+        delete_profile_image_file($current_profile_image);
+        header("Location: employer_profile.php?toast=profile_image_deleted");
+        exit();
+    }
+
+    header("Location: employer_profile.php?toast=profile_image_delete_failed");
+    exit();
+}
 
 // ── UPDATE PROFILE (เฉพาะ Employer แก้ตัวเอง) ──
 if(!$is_public && isset($_POST['update'])){
@@ -63,9 +89,26 @@ if(!$is_public && isset($_POST['update'])){
     if($dup){
         $dup_err = true;
     } else {
+        $new_profile_image_path = '';
+        if(profile_image_file_selected($_FILES['profile_image'] ?? [])){
+            $new_profile_image_path = save_uploaded_profile_image($_FILES['profile_image'], $current_user_id, $image_err);
+        }
+
+        if($image_err !== ''){
+            if($new_profile_image_path !== ''){
+                delete_profile_image_file($new_profile_image_path);
+            }
+        } else {
+            $profile_image_set = '';
+            if($new_profile_image_path !== ''){
+                $new_profile_image_sql = mysqli_real_escape_string($conn, $new_profile_image_path);
+                $profile_image_set = ", profile_image='$new_profile_image_sql'";
+            }
+
         mysqli_query($conn,"
             UPDATE users SET username='$new_username', fullname='$fullname', email='$email', phone='$phone',
                 latitude=$latitude_sql, longitude=$longitude_sql
+                $profile_image_set
             WHERE user_id='$current_user_id'
         ");
         $_SESSION['username'] = $new_username;
@@ -87,8 +130,12 @@ if(!$is_public && isset($_POST['update'])){
                     ('$current_user_id','$fullname','$description','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql)
             ");
         }
-        $success = true;
-        header("Refresh:0");
+        if($new_profile_image_path !== ''){
+            delete_profile_image_file($current_profile_image);
+        }
+        header("Location: employer_profile.php?toast=profile_saved");
+        exit();
+        }
     }
 }
 
@@ -96,6 +143,8 @@ if(!$is_public && isset($_POST['update'])){
 $target_id = $is_public ? $view_emp_id : $current_user_id;
 $user    = mysqli_fetch_assoc(mysqli_query($conn,"SELECT * FROM users WHERE user_id='$target_id'"));
 $profile = mysqli_fetch_assoc(mysqli_query($conn,"SELECT * FROM employer_profile WHERE user_id='$target_id'"));
+$has_profile = (bool)$profile;
+$profile_image = trim($user['profile_image'] ?? '');
 
 if(!$user){ header("Location: browse_jobs.php"); exit(); }
 if($profile && empty($profile['latitude']) && !empty($user['latitude'])){
@@ -168,7 +217,8 @@ if($is_public){
   .btn-back:hover { background:var(--light); }
 
   .profile-banner { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; display:grid; grid-template-columns:56px 1fr; gap:16px; align-items:center; margin-bottom:18px; }
-  .banner-avatar { width:56px; height:56px; border-radius:16px; background:var(--accent); color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .banner-avatar { width:56px; height:56px; border-radius:16px; background:var(--accent); color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+  .banner-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .banner-main { min-width:0; }
   .banner-main h3 { font-size:18px; font-weight:700; margin-bottom:4px; }
   .banner-main p { font-size:13px; color:var(--muted); margin-bottom:8px; }
@@ -177,6 +227,34 @@ if($is_public){
   .company-status { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--muted); background:var(--light); border-radius:999px; padding:6px 10px; }
 
   .form-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+  .profile-image-editor {
+    display:grid;
+    grid-template-columns:78px 1fr;
+    gap:14px;
+    align-items:center;
+    padding:14px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#f8fafc;
+    margin-bottom:18px;
+  }
+  .profile-image-preview {
+    width:78px; height:78px; border-radius:16px;
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+    background:var(--accent); color:#fff; font-size:22px; font-weight:700;
+  }
+  .profile-image-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+  .profile-image-copy strong { display:block; font-size:14px; margin-bottom:4px; color:var(--text); }
+  .profile-image-copy p { margin:0 0 10px; font-size:12.5px; color:var(--muted); line-height:1.6; }
+  .profile-file-input { width:100%; max-width:360px; font-size:13px; }
+  .image-delete-form { display:flex; justify-content:flex-end; margin:-4px 0 18px; }
+  .btn-delete-image {
+    display:inline-flex; align-items:center; gap:7px;
+    background:#fff1f2; color:#be123c; border:1px solid #fecdd3;
+    border-radius:10px; padding:9px 14px; font-size:12.5px; font-weight:700;
+    cursor:pointer; transition:background .15s, transform .1s;
+  }
+  .btn-delete-image:hover { background:#ffe4e6; transform:translateY(-1px); }
   .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
   .info-box { background:var(--light); border-radius:12px; padding:14px; }
   .info-box .lbl { font-size:11px; color:var(--muted); margin-bottom:6px; display:block; }
@@ -227,6 +305,9 @@ if($is_public){
   .char-count { font-size:11.5px; color:var(--muted); text-align:right; margin-top:4px; }
   .btn-save { display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-size:14px; font-weight:600; font-family:'Sora',sans-serif; cursor:pointer; transition:background .15s,transform .1s; }
   .btn-save:hover { background:#4f46e5; transform:translateY(-1px); }
+  .profile-actions { display:flex; justify-content:space-between; align-items:center; gap:14px; padding-top:8px; flex-wrap:wrap; }
+  .profile-status { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12.5px; line-height:1.5; }
+  .profile-status i { color:var(--accent); }
 
   /* Public View Styles */
   .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
@@ -245,6 +326,7 @@ if($is_public){
   .toast-bar { position:fixed; top:24px; right:24px; z-index:999; background:var(--navy); color:#fff; padding:14px 20px; border-radius:12px; display:flex; align-items:center; gap:10px; font-size:14px; font-weight:500; box-shadow:0 8px 24px rgba(0,0,0,.18); animation:slideIn .3s ease; transition:opacity .4s; }
   @keyframes slideIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .info-grid { grid-template-columns:1fr; } }
+  @media(max-width:640px){ .profile-image-editor { grid-template-columns:1fr; justify-items:start; } .profile-actions { align-items:stretch; flex-direction:column; } .btn-save { justify-content:center; width:100%; } }
 
   /* ปุ่มรีวิวบริษัท */
   .btn-company-review {
@@ -275,8 +357,14 @@ if($is_public){
 <?php if($success): ?>
 <div class="toast-bar" id="toast"><i class="bi bi-check-circle-fill" style="color:var(--green);"></i> อัปเดตโปรไฟล์สำเร็จแล้ว</div>
 <script>setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.opacity='0'; },3000);</script>
+<?php elseif($image_deleted): ?>
+<div class="toast-bar" id="toast"><i class="bi bi-check-circle-fill" style="color:var(--green);"></i> ลบรูปโปรไฟล์แล้ว</div>
+<script>setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.opacity='0'; },3000);</script>
 <?php elseif($dup_err): ?>
 <div class="toast-bar" id="toast" style="background:#7f1d1d;"><i class="bi bi-exclamation-triangle-fill" style="color:#fca5a5;"></i> Username หรือ Email นี้ถูกใช้งานแล้ว</div>
+<script>setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.opacity='0'; },4000);</script>
+<?php elseif($image_delete_err || $image_err !== ''): ?>
+<div class="toast-bar" id="toast" style="background:#7f1d1d;"><i class="bi bi-exclamation-triangle-fill" style="color:#fca5a5;"></i> <?php echo htmlspecialchars($image_err ?: 'ลบรูปโปรไฟล์ไม่สำเร็จ กรุณาลองใหม่'); ?></div>
 <script>setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.opacity='0'; },4000);</script>
 <?php endif; ?>
 
@@ -284,14 +372,14 @@ if($is_public){
   <div class="sidebar-brand">
     <a href="#" class="logo">
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
-      <div><div class="logo-text">FreelanceHub</div><div class="logo-sub"><?php echo $current_role == 'employer' ? 'Employer' : 'Dashboard'; ?></div></div>
+      <div><div class="logo-text">FreelanceHub</div><div class="logo-sub"><?php echo $current_role == 'employer' ? 'Employer' : 'Freelancer'; ?></div></div>
     </a>
   </div>
   <nav class="sidebar-nav">
     <?php if($current_role == 'employer'): ?>
       <a href="employer_dashboard.php"   class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
       <a href="post_job.php"             class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
-      <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs</a>
+      <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs<?php render_employer_manage_jobs_badge($sidebar_pending_apps); ?></a>
       <a href="saved_freelancers.php"    class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
       <a href="employer_reviews.php"     class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
       <a href="employer_review.php"      class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>
@@ -325,7 +413,13 @@ if($is_public){
   </div>
 
   <div class="profile-banner">
-    <div class="banner-avatar"><?php echo $initials ?: '?'; ?></div>
+    <div class="banner-avatar">
+      <?php if($profile_image !== ''): ?>
+        <img src="<?php echo profile_image_src($profile_image); ?>" alt="Profile image">
+      <?php else: ?>
+        <?php echo $initials ?: '?'; ?>
+      <?php endif; ?>
+    </div>
     <div class="banner-main">
       <h3><?php echo htmlspecialchars($profile['employer_name'] ?? $user['fullname'] ?? '(ยังไม่ระบุ)'); ?></h3>
       <p><?php echo htmlspecialchars($user['email'] ?? ''); ?></p>
@@ -353,10 +447,35 @@ if($is_public){
     </div>
   </div>
 
+  <?php if(!$is_public && $profile_image !== ''): ?>
+  <form method="POST" class="image-delete-form"
+        onsubmit="return confirm('ยืนยันลบรูปโปรไฟล์?');">
+    <button type="submit" name="delete_profile_image" class="btn-delete-image">
+      <i class="bi bi-trash"></i> ลบรูปโปรไฟล์
+    </button>
+  </form>
+  <?php endif; ?>
+
   <?php if(!$is_public): ?>
   <!-- ✅ MODE แก้ไข (Employer) -->
-  <form method="POST">
+  <form method="POST" enctype="multipart/form-data">
   <div class="form-card">
+    <div class="section-title"><i class="bi bi-image"></i> รูปโปรไฟล์บริษัท</div>
+    <div class="profile-image-editor">
+      <div class="profile-image-preview">
+        <?php if($profile_image !== ''): ?>
+          <img src="<?php echo profile_image_src($profile_image); ?>" alt="Company profile image preview">
+        <?php else: ?>
+          <?php echo $initials ?: '?'; ?>
+        <?php endif; ?>
+      </div>
+      <div class="profile-image-copy">
+        <strong>อัปโหลดหรือเปลี่ยนรูปโปรไฟล์</strong>
+        <p>รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 3MB รูปใหม่จะแทนที่รูปเดิมเมื่อกดบันทึก</p>
+        <input class="form-control profile-file-input" type="file" name="profile_image" accept="image/jpeg,image/png,image/webp">
+      </div>
+    </div>
+
     <div class="section-title"><i class="bi bi-at"></i> ข้อมูลบัญชี</div>
     <div class="field-group">
       <label>Username</label>
@@ -450,8 +569,17 @@ if($is_public){
       </div>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;padding-top:8px;">
-      <button type="submit" name="update" class="btn-save"><i class="bi bi-check-lg"></i> บันทึกการเปลี่ยนแปลง</button>
+    <div class="profile-actions">
+      <div class="profile-status">
+        <?php if($has_profile): ?>
+          <i class="bi bi-check-circle-fill"></i> โปรไฟล์บริษัทพร้อมใช้งานและสามารถแก้ไขได้
+        <?php else: ?>
+          <i class="bi bi-info-circle-fill"></i> ยังไม่ได้ตั้งโปรไฟล์บริษัท กดบันทึกเพื่อสร้างโปรไฟล์ใหม่
+        <?php endif; ?>
+      </div>
+      <button type="submit" name="update" class="btn-save">
+        <i class="bi bi-check-lg"></i> <?php echo $has_profile ? 'บันทึกการเปลี่ยนแปลง' : 'สร้างโปรไฟล์บริษัท'; ?>
+      </button>
     </div>
   </div>
   </form>

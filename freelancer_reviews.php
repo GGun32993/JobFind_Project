@@ -1,5 +1,8 @@
 <?php
 include "config.php";
+require_once "profile_image_helpers.php";
+
+ensure_profile_image_schema($conn);
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
     header("Location: login.php");
@@ -13,6 +16,7 @@ $query = mysqli_query($conn,"
         freelancer_review.*,
         COALESCE(ep.employer_name, u.username) AS employer_name,
         u.username AS employer_username,
+        u.profile_image AS employer_profile_image,
         job.title
     FROM freelancer_review
     JOIN users u ON u.user_id = freelancer_review.employer_id
@@ -132,8 +136,9 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
     background:var(--accent); color:#fff;
     font-size:15px; font-weight:600;
     display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
+    flex-shrink:0; overflow:hidden;
   }
+  .emp-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .emp-name { font-size:14px; font-weight:600; }
   .emp-job  { font-size:12px; color:var(--muted); margin-top:2px; display:flex; align-items:center; gap:4px; }
 
@@ -186,7 +191,7 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="logo-text">FreelanceHub</div>
-        <div class="logo-sub">Dashboard</div>
+        <div class="logo-sub">Freelancer</div>
       </div>
     </a>
   </div>
@@ -272,6 +277,7 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
   <?php foreach($rows as $row):
     $rating = (int)$row['rating'];
     $emp_init = strtoupper(substr($row['employer_name'], 0, 1));
+    $profile_img = trim($row['employer_profile_image'] ?? '');
     $title = $row['title'] ?? 'Unknown Job';
     $date  = date('d M Y', strtotime($row['created_at']));
 
@@ -283,7 +289,13 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
 
     <div class="rc-top">
       <div class="rc-employer">
-        <div class="emp-avatar"><?php echo $emp_init; ?></div>
+        <div class="emp-avatar">
+          <?php if($profile_img !== ''): ?>
+            <img src="<?php echo profile_image_src($profile_img); ?>" alt="Employer profile image">
+          <?php else: ?>
+            <?php echo htmlspecialchars($emp_init); ?>
+          <?php endif; ?>
+        </div>
         <div>
           <div class="emp-name"><?php echo htmlspecialchars($row['employer_name']); ?></div>
           <div class="emp-job">

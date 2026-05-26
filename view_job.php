@@ -2,6 +2,7 @@
 session_start();
 include "config.php";
 require_once "job_image_helpers.php";
+require_once "profile_image_helpers.php";
 
 // ตรวจสอบว่าเป็น Freelancer หรือไม่
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
@@ -11,6 +12,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
 
 $job_id = $_GET['job_id'] ?? 0;
 ensure_job_image_schema($conn);
+ensure_profile_image_schema($conn);
 
 // ดึงข้อมูลงาน
 $job_query = "SELECT * FROM job WHERE job_id = ?";
@@ -30,7 +32,7 @@ $job_status = trim($job['status'] ?? '') ?: 'open';
 
 // ✅ ดึงข้อมูลนายจ้าง + รายละเอียดบริษัท (JOIN 2 ตาราง)
 $employer_query = "
-    SELECT u.user_id, u.username, u.email, u.phone, u.created_at,
+    SELECT u.user_id, u.username, u.email, u.phone, u.created_at, u.profile_image,
            ep.employer_description
     FROM users u
     LEFT JOIN employer_profile ep ON u.user_id = ep.user_id
@@ -43,7 +45,7 @@ $employer = $stmt_emp->get_result()->fetch_assoc();
 $stmt_emp->close();
 
 if (!$employer) {
-    $employer = ['username' => 'ไม่ทราบชื่อ', 'email' => 'ไม่มีอีเมล', 'phone' => '', 'employer_description' => '', 'created_at' => ''];
+    $employer = ['username' => 'ไม่ทราบชื่อ', 'email' => 'ไม่มีอีเมล', 'phone' => '', 'employer_description' => '', 'created_at' => '', 'profile_image' => ''];
 }
 
 // ── ดึงรีวิวของนายจ้าง ──
@@ -75,6 +77,7 @@ $employer_js_data = [
     'email'    => $employer['email'] ?? 'ไม่มีอีเมล',
     'phone'    => $employer['phone'] ?? '',
     'company_details' => $employer['employer_description'] ?? '',
+    'profile_image' => $employer['profile_image'] ?? '',
     'joined'   => $employer['created_at'] ?? '',
     'avg_rating' => $avg_rating,
     'total_reviews' => count($employer_reviews)
@@ -577,6 +580,14 @@ $employer_js_data = [
             box-shadow: 0 8px 24px rgba(99,102,241,.4);
             border: 3px solid rgba(255,255,255,.2);
             flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .employer-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
         
         .employer-info {
@@ -784,6 +795,14 @@ $employer_js_data = [
             flex-shrink: 0;
             border: 3px solid rgba(255,255,255,.2);
             box-shadow: 0 8px 16px rgba(0,0,0,.2);
+            overflow: hidden;
+        }
+
+        .modal-av img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
         
         .modal-head-info {
@@ -1035,7 +1054,7 @@ $employer_js_data = [
             <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
             <div>
                 <div class="logo-text">FreelanceHub</div>
-                <div class="logo-sub">Dashboard</div>
+                <div class="logo-sub">Freelancer</div>
             </div>
         </a>
     </div>
@@ -1087,7 +1106,13 @@ $employer_js_data = [
             </h2>
             <div class="employer-card" onclick="openEmployerModal()">
                 <div class="employer-header">
-                    <div class="employer-avatar"><?php echo strtoupper(substr($employer['username'] ?? 'EM', 0, 2)); ?></div>
+                    <div class="employer-avatar">
+                        <?php if(!empty($employer['profile_image'])): ?>
+                            <img src="<?php echo profile_image_src($employer['profile_image']); ?>" alt="Employer profile image">
+                        <?php else: ?>
+                            <?php echo strtoupper(substr($employer['username'] ?? 'EM', 0, 2)); ?>
+                        <?php endif; ?>
+                    </div>
                     <div class="employer-info">
                         <h4 class="employer-name">
                             <?php echo htmlspecialchars($employer['username'] ?? 'ไม่ทราบชื่อนายจ้าง'); ?>
@@ -1272,8 +1297,22 @@ $employer_js_data = [
 const empData = <?php echo json_encode($employer_js_data, JSON_UNESCAPED_UNICODE); ?>;
 const empReviews = <?php echo json_encode($employer_reviews, JSON_UNESCAPED_UNICODE); ?>;
 
+function setEmployerModalAvatar(){
+    const avatar = document.getElementById('emp-m-av');
+    avatar.textContent = '';
+
+    if (empData.profile_image) {
+        const img = document.createElement('img');
+        img.src = empData.profile_image;
+        img.alt = 'Employer profile image';
+        avatar.appendChild(img);
+    } else {
+        avatar.textContent = empData.username.substring(0, 2).toUpperCase();
+    }
+}
+
 function openEmployerModal() {
-    document.getElementById('emp-m-av').textContent = empData.username.substring(0,2).toUpperCase();
+    setEmployerModalAvatar();
     document.getElementById('emp-m-name').textContent = empData.username;
     
     document.getElementById('emp-m-company').textContent = empData.company_details || 'ไม่ระบุรายละเอียดบริษัท';

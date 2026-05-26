@@ -2,8 +2,10 @@
 session_start();
 include("config.php");
 require_once "location_schema.php";
+require_once "profile_image_helpers.php";
 
 ensure_location_schema($conn);
+ensure_profile_image_schema($conn);
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
     header("Location: login.php");
@@ -15,9 +17,11 @@ $username = $_SESSION['username'];
 
 $user         = mysqli_query($conn,"SELECT * FROM users WHERE user_id='$user_id'");
 $user_data    = mysqli_fetch_assoc($user);
+$profile_image = trim($user_data['profile_image'] ?? '');
 
 $profile      = mysqli_query($conn,"SELECT * FROM freelancer_profile WHERE user_id='$user_id'");
 $profile_data = mysqli_fetch_assoc($profile);
+$has_profile  = (bool)$profile_data;
 
 if(!$profile_data){
     $profile_data = [
@@ -43,8 +47,24 @@ if(empty($profile_data['preferred_radius_km'])){
     $profile_data['preferred_radius_km'] = 30;
 }
 
-$success = false;
+$toast = $_GET['toast'] ?? '';
+$success = $toast === 'profile_saved';
+$image_deleted = $toast === 'profile_image_deleted';
+$image_delete_err = $toast === 'profile_image_delete_failed';
 $dup_err = false;
+$image_err = '';
+
+if(isset($_POST['delete_profile_image'])){
+    if($profile_image !== '' && mysqli_query($conn,"UPDATE users SET profile_image=NULL WHERE user_id='$user_id'")){
+        delete_profile_image_file($profile_image);
+        header("Location: my_profile.php?toast=profile_image_deleted");
+        exit();
+    }
+
+    header("Location: my_profile.php?toast=profile_image_delete_failed");
+    exit();
+}
+
 if(isset($_POST['update'])){
     $new_username = mysqli_real_escape_string($conn, trim($_POST['username']));
     $email        = mysqli_real_escape_string($conn, trim($_POST['email']));
@@ -83,9 +103,26 @@ if(isset($_POST['update'])){
     if($dup){
         $dup_err = true;
     } else {
+        $new_profile_image_path = '';
+        if(profile_image_file_selected($_FILES['profile_image'] ?? [])){
+            $new_profile_image_path = save_uploaded_profile_image($_FILES['profile_image'], $user_id, $image_err);
+        }
+
+        if($image_err !== ''){
+            if($new_profile_image_path !== ''){
+                delete_profile_image_file($new_profile_image_path);
+            }
+        } else {
+            $profile_image_set = '';
+            if($new_profile_image_path !== ''){
+                $new_profile_image_sql = mysqli_real_escape_string($conn, $new_profile_image_path);
+                $profile_image_set = ", profile_image='$new_profile_image_sql'";
+            }
+
         mysqli_query($conn,"
             UPDATE users SET username='$new_username', email='$email', fullname='$fullname', phone='$phone',
                 latitude=$latitude_sql, longitude=$longitude_sql
+                $profile_image_set
             WHERE user_id='$user_id'
         ");
 
@@ -108,8 +145,12 @@ if(isset($_POST['update'])){
         }
         $_SESSION['username'] = $new_username;
         $username = $new_username;
-        $success = true;
-        header("Refresh:0");
+        if($new_profile_image_path !== ''){
+            delete_profile_image_file($profile_image);
+        }
+        header("Location: my_profile.php?toast=profile_saved");
+        exit();
+        }
     }
 }
 
@@ -183,7 +224,9 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
     font-size:26px; font-weight:600;
     display:flex; align-items:center; justify-content:center;
     flex-shrink:0; letter-spacing:1px;
+    overflow:hidden;
   }
+  .avatar-circle img { width:100%; height:100%; object-fit:cover; display:block; }
   .banner-info h3 { font-size:18px; font-weight:600; margin-bottom:4px; }
   .banner-info p  { font-size:13px; color:var(--muted); }
   .banner-tags { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
@@ -198,6 +241,34 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
     background:var(--white); border:1px solid var(--border);
     border-radius:var(--radius); padding:28px;
   }
+  .profile-image-editor {
+    display:grid;
+    grid-template-columns:84px 1fr;
+    gap:16px;
+    align-items:center;
+    padding:16px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#f8fafc;
+    margin-bottom:18px;
+  }
+  .profile-image-preview {
+    width:84px; height:84px; border-radius:18px;
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+    background:var(--accent); color:#fff; font-size:24px; font-weight:700;
+  }
+  .profile-image-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+  .profile-image-copy strong { display:block; font-size:14px; margin-bottom:4px; color:var(--text); }
+  .profile-image-copy p { margin:0 0 10px; font-size:12.5px; color:var(--muted); line-height:1.6; }
+  .profile-file-input { width:100%; max-width:360px; font-size:13px; }
+  .image-delete-form { display:flex; justify-content:flex-end; margin:-4px 0 18px; }
+  .btn-delete-image {
+    display:inline-flex; align-items:center; gap:7px;
+    background:#fff1f2; color:#be123c; border:1px solid #fecdd3;
+    border-radius:10px; padding:9px 14px; font-size:12.5px; font-weight:700;
+    cursor:pointer; transition:background .15s, transform .1s;
+  }
+  .btn-delete-image:hover { background:#ffe4e6; transform:translateY(-1px); }
   .section-title {
     font-size:13px; font-weight:600; color:var(--muted);
     text-transform:uppercase; letter-spacing:.05em;
@@ -264,6 +335,9 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
   }
   .btn-save:hover { background:#4f46e5; transform:translateY(-1px); }
   .btn-save:active { transform:scale(.98); }
+  .profile-actions { display:flex; justify-content:space-between; align-items:center; gap:14px; padding-top:8px; flex-wrap:wrap; }
+  .profile-status { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12.5px; line-height:1.5; }
+  .profile-status i { color:var(--accent); }
 
   /* ── Map Modal ── */
   .map-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
@@ -304,6 +378,9 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
     .main { margin-left:0; padding:20px 16px; }
     .two-col { grid-template-columns:1fr; }
     .profile-banner { flex-wrap:wrap; }
+    .profile-image-editor { grid-template-columns:1fr; justify-items:start; }
+    .profile-actions { align-items:stretch; flex-direction:column; }
+    .btn-save { justify-content:center; width:100%; }
     .map-container { width:100%; height:100%; max-width:none; border-radius:0; }
   }
 </style>
@@ -317,9 +394,19 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
   <i class="bi bi-check-circle-fill"></i> อัปเดตโปรไฟล์สำเร็จแล้ว
 </div>
 <script>setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.opacity='0'; }, 3000);</script>
+<?php elseif($image_deleted): ?>
+<div class="toast-bar" id="toast">
+  <i class="bi bi-check-circle-fill"></i> ลบรูปโปรไฟล์แล้ว
+</div>
+<script>setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.opacity='0'; }, 3000);</script>
 <?php elseif($dup_err): ?>
 <div class="toast-bar" id="toast" style="background:#7f1d1d;">
   <i class="bi bi-exclamation-triangle-fill" style="color:#fca5a5;font-size:18px;"></i> Username นี้ถูกใช้งานแล้ว กรุณาเปลี่ยน
+</div>
+<script>setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.opacity='0'; }, 4000);</script>
+<?php elseif($image_delete_err || $image_err !== ''): ?>
+<div class="toast-bar" id="toast" style="background:#7f1d1d;">
+  <i class="bi bi-exclamation-triangle-fill" style="color:#fca5a5;font-size:18px;"></i> <?php echo htmlspecialchars($image_err ?: 'ลบรูปโปรไฟล์ไม่สำเร็จ กรุณาลองใหม่'); ?>
 </div>
 <script>setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.opacity='0'; }, 4000);</script>
 <?php endif; ?>
@@ -331,7 +418,7 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="logo-text">FreelanceHub</div>
-        <div class="logo-sub">Dashboard</div>
+        <div class="logo-sub">Freelancer</div>
       </div>
     </a>
   </div>
@@ -362,7 +449,13 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
 
   <!-- Avatar banner -->
   <div class="profile-banner">
-    <div class="avatar-circle"><?php echo $initials ?: '?'; ?></div>
+    <div class="avatar-circle">
+      <?php if($profile_image !== ''): ?>
+        <img src="<?php echo profile_image_src($profile_image); ?>" alt="Profile image">
+      <?php else: ?>
+        <?php echo $initials ?: '?'; ?>
+      <?php endif; ?>
+    </div>
     <div class="banner-info">
       <h3><?php echo htmlspecialchars($user_data['fullname'] ?: $username); ?></h3>
       <p>@<?php echo htmlspecialchars($username); ?></p>
@@ -377,9 +470,34 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
     </div>
   </div>
 
+  <?php if($profile_image !== ''): ?>
+  <form method="POST" class="image-delete-form"
+        onsubmit="return confirm('ยืนยันลบรูปโปรไฟล์?');">
+    <button type="submit" name="delete_profile_image" class="btn-delete-image">
+      <i class="bi bi-trash"></i> ลบรูปโปรไฟล์
+    </button>
+  </form>
+  <?php endif; ?>
+
   <!-- Form -->
-  <form method="POST">
+  <form method="POST" enctype="multipart/form-data">
   <div class="form-card">
+
+    <div class="section-title"><i class="bi bi-image"></i> รูปโปรไฟล์</div>
+    <div class="profile-image-editor">
+      <div class="profile-image-preview">
+        <?php if($profile_image !== ''): ?>
+          <img src="<?php echo profile_image_src($profile_image); ?>" alt="Profile image preview">
+        <?php else: ?>
+          <?php echo $initials ?: '?'; ?>
+        <?php endif; ?>
+      </div>
+      <div class="profile-image-copy">
+        <strong>อัปโหลดหรือเปลี่ยนรูปโปรไฟล์</strong>
+        <p>รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 3MB รูปใหม่จะแทนที่รูปเดิมเมื่อกดบันทึก</p>
+        <input class="form-control profile-file-input" type="file" name="profile_image" accept="image/jpeg,image/png,image/webp">
+      </div>
+    </div>
 
     <!-- Account info -->
     <div class="section-title"><i class="bi bi-person"></i> ข้อมูลบัญชี</div>
@@ -502,9 +620,16 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
       </div>
     </div>
 
-    <div style="display:flex; justify-content:flex-end; padding-top:8px;">
+    <div class="profile-actions">
+      <div class="profile-status">
+        <?php if($has_profile): ?>
+          <i class="bi bi-check-circle-fill"></i> โปรไฟล์ Freelancer พร้อมใช้งานและสามารถแก้ไขได้
+        <?php else: ?>
+          <i class="bi bi-info-circle-fill"></i> ยังไม่ได้ตั้งโปรไฟล์ กดบันทึกเพื่อสร้างโปรไฟล์ใหม่
+        <?php endif; ?>
+      </div>
       <button type="submit" name="update" class="btn-save">
-        <i class="bi bi-check-lg"></i> บันทึกการเปลี่ยนแปลง
+        <i class="bi bi-check-lg"></i> <?php echo $has_profile ? 'บันทึกการเปลี่ยนแปลง' : 'สร้างโปรไฟล์'; ?>
       </button>
     </div>
 

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config.php";
+require_once "employer_sidebar_helpers.php";
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
@@ -10,6 +11,7 @@ if(!isset($_SESSION['user_id'])){
 $user_id  = $_SESSION['user_id'];
 $role     = $_SESSION['role'];
 $username = $_SESSION['username'];
+$sidebar_pending_apps = $role === 'employer' ? get_employer_pending_application_count($conn, $user_id) : 0;
 
 // ── ดึง admin_id จริงจาก DB (แทนการ hardcode = 1) ──
 $admin_query = mysqli_query($conn, "SELECT user_id FROM users WHERE role='admin' LIMIT 1");
@@ -255,7 +257,7 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="logo-text">FreelanceHub</div>
-        <div class="logo-sub"><?php echo $role === 'employer' ? 'Employer' : ($role === 'admin' ? 'Admin' : 'Dashboard'); ?></div>
+        <div class="logo-sub"><?php echo $role === 'employer' ? 'Employer' : ($role === 'admin' ? 'Admin' : 'Freelancer'); ?></div>
       </div>
     </a>
   </div>
@@ -273,7 +275,7 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
       <a href="upload_resume.php"      class="nav-item"><i class="bi bi-cloud-upload"></i> Upload Resume</a>
     <?php elseif($role === 'employer'): ?>
       <a href="post_job.php"             class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
-      <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs</a>
+      <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs<?php render_employer_manage_jobs_badge($sidebar_pending_apps); ?></a>
       <a href="saved_freelancers.php"    class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
       <a href="employer_reviews.php"     class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
       <a href="employer_review.php"      class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>

@@ -2,6 +2,7 @@
 session_start();
 include "config.php";
 require_once "job_image_helpers.php";
+require_once "employer_sidebar_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     header("Location: /JobFind_Project/login.php");  // ✅ ระบุ path ชัดเจน
@@ -10,6 +11,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 
 $employer_id = $_SESSION['user_id'];
 ensure_job_image_schema($conn);
+$sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 // ── 1.4.2.7 ลบประกาศ ──
 if(isset($_GET['delete'])){
@@ -248,7 +250,7 @@ while($r = mysqli_fetch_assoc($result)){
     <a href="post_job.php"             class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
     <a href="employer_manage_jobs.php" class="nav-item active">
       <i class="bi bi-briefcase"></i> Manage Jobs
-      <?php if($cnt_pending > 0): ?><span class="nav-badge"><?php echo $cnt_pending; ?></span><?php endif; ?>
+      <?php render_employer_manage_jobs_badge($sidebar_pending_apps); ?>
     </a>
     <a href="saved_freelancers.php"    class="nav-item"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php"     class="nav-item"><i class="bi bi-star"></i> My Reviews</a>

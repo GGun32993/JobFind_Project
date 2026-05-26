@@ -1,6 +1,10 @@
 <?php
 session_start();
 include "config.php";
+require_once "profile_image_helpers.php";
+require_once "employer_sidebar_helpers.php";
+
+ensure_profile_image_schema($conn);
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== "employer"){
     header("Location: login.php");
@@ -8,10 +12,11 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== "employer"){
 }
 
 $employer_id = (int)$_SESSION['user_id'];
+$sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 $query = "
     SELECT sf.id AS saved_id, sf.saved_at,
-           u.user_id AS freelancer_id, u.username, u.fullname, u.email, u.phone,
+           u.user_id AS freelancer_id, u.username, u.fullname, u.email, u.phone, u.profile_image,
            fp.skill, fp.experience, fp.location, fp.rating,
            (SELECT file_name FROM resume WHERE freelancer_id = u.user_id ORDER BY resume_id DESC LIMIT 1) AS resume_file,
            (SELECT COUNT(*) FROM freelancer_review fr WHERE fr.freelancer_id = u.user_id) AS review_count,
@@ -98,7 +103,8 @@ function skill_list($skills){
   .freelancer-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.08);border-color:#c7d2fe;}
   .freelancer-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:16px;}
   .person{display:flex;gap:12px;align-items:center;min-width:0;}
-  .avatar{width:52px;height:52px;border-radius:14px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;}
+  .avatar{width:52px;height:52px;border-radius:14px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;overflow:hidden;}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
   .name-wrap{min-width:0;}
   .name{font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .fullname{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -172,7 +178,7 @@ function skill_list($skills){
   <nav class="sidebar-nav">
     <a href="employer_dashboard.php" class="nav-item"><i class="bi bi-grid"></i> Dashboard</a>
     <a href="post_job.php" class="nav-item"><i class="bi bi-plus-circle"></i> Post Job</a>
-    <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs</a>
+    <a href="employer_manage_jobs.php" class="nav-item"><i class="bi bi-briefcase"></i> Manage Jobs<?php render_employer_manage_jobs_badge($sidebar_pending_apps); ?></a>
     <a href="saved_freelancers.php" class="nav-item active"><i class="bi bi-bookmark"></i> Saved Freelancers</a>
     <a href="employer_reviews.php" class="nav-item"><i class="bi bi-star"></i> My Reviews</a>
     <a href="employer_review.php" class="nav-item"><i class="bi bi-building"></i> รีวิวบริษัท</a>
@@ -205,11 +211,18 @@ function skill_list($skills){
           $display_name = $freelancer['fullname'] ?: $freelancer['username'];
           $initials = strtoupper(substr($freelancer['username'] ?: 'FL', 0, 2));
           $rating = $freelancer['review_rating'] ?: ($freelancer['rating'] ?: 0);
+          $profile_img = trim($freelancer['profile_image'] ?? '');
         ?>
         <article class="freelancer-card" data-card="<?php echo (int)$freelancer['freelancer_id']; ?>">
           <div class="freelancer-head">
             <div class="person">
-              <div class="avatar"><?php echo e($initials); ?></div>
+              <div class="avatar">
+                <?php if($profile_img !== ''): ?>
+                  <img src="<?php echo profile_image_src($profile_img); ?>" alt="Profile image">
+                <?php else: ?>
+                  <?php echo e($initials); ?>
+                <?php endif; ?>
+              </div>
               <div class="name-wrap">
                 <div class="name"><?php echo e($display_name); ?></div>
                 <div class="fullname">@<?php echo e($freelancer['username']); ?></div>

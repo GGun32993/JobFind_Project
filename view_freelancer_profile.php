@@ -1,6 +1,9 @@
 <?php
 session_start();
 include "config.php";
+require_once "profile_image_helpers.php";
+
+ensure_profile_image_schema($conn);
 
 if(!isset($_SESSION['user_id']) || ($_SESSION['role']!="employer" && $_SESSION['role']!="admin")){
     exit("Access denied");
@@ -10,7 +13,7 @@ $freelancer_id = intval($_GET['id'] ?? 0);
 
 // ดึงข้อมูล User
 $user = mysqli_fetch_assoc(mysqli_query($conn, "
-    SELECT fullname, email, phone, username 
+    SELECT fullname, email, phone, username, profile_image
     FROM users 
     WHERE user_id='$freelancer_id' AND role='freelancer'
 "));
@@ -48,7 +51,8 @@ $rating_count = $rating_data['count'] ?? 0;
   body { font-family:'Sora',sans-serif; background:#f8fafc; margin:0; padding:20px; }
   .profile-container { max-width:700px; margin:0 auto; background:#fff; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08); overflow:hidden; }
   .profile-header { background:linear-gradient(135deg, #6366f1, #8b5cf6); padding:30px; color:#fff; display:flex; align-items:center; gap:20px; }
-  .avatar-circle { width:70px; height:70px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:600; }
+  .avatar-circle { width:70px; height:70px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:600; overflow:hidden; flex-shrink:0; }
+  .avatar-circle img { width:100%; height:100%; object-fit:cover; display:block; }
   .header-info h2 { margin:0; font-size:24px; font-weight:600; }
   .header-info .subtitle { margin:4px 0 0; opacity:0.9; font-size:14px; }
   .profile-body { padding:30px; }
@@ -69,7 +73,13 @@ $rating_count = $rating_data['count'] ?? 0;
 
 <div class="profile-container">
   <div class="profile-header">
-    <div class="avatar-circle"><?php echo strtoupper(substr($user['username'], 0, 2)); ?></div>
+    <div class="avatar-circle">
+      <?php if(!empty($user['profile_image'])): ?>
+        <img src="<?php echo profile_image_src($user['profile_image']); ?>" alt="Profile image">
+      <?php else: ?>
+        <?php echo strtoupper(substr($user['username'], 0, 2)); ?>
+      <?php endif; ?>
+    </div>
     <div class="header-info">
       <h2><?php echo htmlspecialchars($user['fullname'] ?? $user['username']); ?></h2>
       <div class="subtitle">
