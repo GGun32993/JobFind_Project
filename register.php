@@ -1,6 +1,9 @@
 <?php
 session_start();
 include("config.php");
+require_once "location_schema.php";
+
+ensure_location_schema($conn);
 
 if(isset($_SESSION['role'])){
     if($_SESSION['role']=="admin")      { header("Location: admin_dashboard.php");      exit(); }
@@ -17,34 +20,70 @@ if(isset($_POST['register'])){
     $password = mysqli_real_escape_string($conn, $_POST['password']);
     $fullname = mysqli_real_escape_string($conn, trim($_POST['fullname']));
     $phone    = mysqli_real_escape_string($conn, trim($_POST['phone']));
-    $role     = mysqli_real_escape_string($conn, $_POST['role']);
+    $role_raw = $_POST['role'] ?? 'freelancer';
+    $role     = in_array($role_raw, ['freelancer', 'employer'], true) ? $role_raw : 'freelancer';
+    $address_raw  = trim($_POST['address'] ?? '');
+    $province_raw = trim($_POST['province'] ?? '');
+    $district_raw = trim($_POST['district'] ?? '');
+    $postal_raw   = trim($_POST['postal_code'] ?? '');
+    $location_raw = trim(implode(', ', array_filter([$district_raw, $province_raw])));
+    if($location_raw === ''){
+        $location_raw = $address_raw;
+    }
+    $address     = mysqli_real_escape_string($conn, $address_raw);
+    $province    = mysqli_real_escape_string($conn, $province_raw);
+    $district    = mysqli_real_escape_string($conn, $district_raw);
+    $postal_code = mysqli_real_escape_string($conn, $postal_raw);
+    $location    = mysqli_real_escape_string($conn, $location_raw);
+    $latitude    = !empty($_POST['latitude']) ? floatval($_POST['latitude']) : null;
+    $longitude   = !empty($_POST['longitude']) ? floatval($_POST['longitude']) : null;
+    $preferred_radius_km = isset($_POST['preferred_radius_km'])
+        ? max(1, min(300, floatval($_POST['preferred_radius_km'])))
+        : 30;
+    $latitude_sql = $latitude !== null ? sprintf('%.8F', $latitude) : "NULL";
+    $longitude_sql = $longitude !== null ? sprintf('%.8F', $longitude) : "NULL";
+    $radius_sql = sprintf('%.2F', $preferred_radius_km);
 
     // check duplicate username / email
     $dup = mysqli_query($conn,"SELECT user_id FROM users WHERE username='$username' OR email='$email'");
     if(mysqli_num_rows($dup) > 0){
         $error = "Username หรือ Email นี้ถูกใช้งานแล้ว";
     } else {
-        mysqli_query($conn,"
-            INSERT INTO users (username,email,password,fullname,phone,role)
-            VALUES ('$username','$email','$password','$fullname','$phone','$role')
+        mysqli_begin_transaction($conn);
+
+        $user_ok = mysqli_query($conn,"
+            INSERT INTO users (username,email,password,fullname,phone,role,latitude,longitude)
+            VALUES ('$username','$email','$password','$fullname','$phone','$role',$latitude_sql,$longitude_sql)
         ");
-        $user_id = mysqli_insert_id($conn);
+        $user_id = $user_ok ? mysqli_insert_id($conn) : 0;
+        $profile_ok = false;
 
-        if($role == "freelancer"){
-            mysqli_query($conn,"
-                INSERT INTO freelancer_profile (user_id,skill,experience,location)
-                VALUES ('$user_id','','','')
+        if($user_ok && $user_id > 0 && $role == "freelancer"){
+            $profile_ok = mysqli_query($conn,"
+                INSERT INTO freelancer_profile
+                    (user_id,skill,experience,location,address,province,district,postal_code,latitude,longitude,preferred_radius_km)
+                VALUES
+                    ('$user_id','','','$location','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql,$radius_sql)
             ");
         }
-        if($role == "employer"){
-            mysqli_query($conn,"
-                INSERT INTO employer_profile (user_id,employer_name,employer_description)
-                VALUES ('$user_id','$fullname','')
+        if($user_ok && $user_id > 0 && $role == "employer"){
+            $profile_ok = mysqli_query($conn,"
+                INSERT INTO employer_profile
+                    (user_id,employer_name,employer_description,address,province,district,postal_code,latitude,longitude)
+                VALUES
+                    ('$user_id','$fullname','','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql)
             ");
         }
 
-        header("Location: login.php?registered=1");
-        exit();
+        if($user_ok && $profile_ok){
+            mysqli_commit($conn);
+            header("Location: login.php?registered=1");
+            exit();
+        }
+
+        mysqli_rollback($conn);
+        error_log('Register failed: ' . mysqli_error($conn));
+        $error = "สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
     }
 }
 ?>
@@ -56,6 +95,7 @@ if(isset($_POST['register'])){
 <title>Register — FreelanceHub</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
 
@@ -70,21 +110,21 @@ if(isset($_POST['register'])){
     --red:    #ef4444;  --radius: 14px;
   }
 
-  body { font-family:'Sora',sans-serif; background:var(--light); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 0; }
+  body { font-family:'Sora',sans-serif; background:var(--light); min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:28px 0; }
 
   /* ── Card ── */
   .register-wrap {
-    display:flex; width:960px; max-width:95vw;
+    display:flex; width:920px; max-width:95vw;
     background:var(--white); border-radius:24px;
     box-shadow:0 20px 60px rgba(0,0,0,.12);
-    overflow:hidden; min-height:600px;
+    overflow:hidden;
   }
 
   /* ── Left panel ── */
   .left-panel {
-    width:380px; flex-shrink:0;
+    width:340px; flex-shrink:0;
     background:var(--navy);
-    padding:52px 40px;
+    padding:44px 34px;
     display:flex; flex-direction:column;
     justify-content:space-between;
     position:relative; overflow:hidden;
@@ -122,17 +162,17 @@ if(isset($_POST['register'])){
   .left-footer p { font-size:12px; color:#475569; }
 
   /* ── Right panel ── */
-  .right-panel { flex:1; padding:48px 44px; display:flex; flex-direction:column; justify-content:center; overflow-y:auto; }
+  .right-panel { flex:1; padding:34px 38px; display:flex; flex-direction:column; justify-content:flex-start; overflow-y:auto; }
 
   .right-panel h3 { font-size:22px; font-weight:600; margin-bottom:4px; }
-  .right-panel .subtitle { font-size:13.5px; color:var(--muted); margin-bottom:28px; }
+  .right-panel .subtitle { font-size:13.5px; color:var(--muted); margin-bottom:20px; }
 
   /* Alert */
   .alert-err { background:#fee2e2; border:1px solid #fca5a5; border-radius:10px; padding:12px 16px; font-size:13.5px; color:#991b1b; display:flex; align-items:center; gap:8px; margin-bottom:20px; }
 
   /* Fields */
-  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .field-group { margin-bottom:14px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field-group { margin-bottom:12px; }
   .field-group label { display:block; font-size:13px; font-weight:500; margin-bottom:5px; color:var(--text); }
   .field-group label .req { color:var(--red); margin-left:2px; }
 
@@ -160,6 +200,32 @@ if(isset($_POST['register'])){
   .role-opt label .checkmark { margin-left:auto; width:18px; height:18px; border-radius:50%; border:2px solid var(--border); transition:all .15s; flex-shrink:0; }
   .role-opt input:checked + label .checkmark { border-color:var(--accent); background:var(--accent); box-shadow:inset 0 0 0 3px #fff; }
 
+  /* Address and map */
+  .textarea-wrap i.prefix { top:18px; transform:none; }
+  textarea.form-input { min-height:68px; resize:vertical; line-height:1.5; }
+  .location-status { margin-top:7px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+  .btn-open-map { display:inline-flex; align-items:center; gap:7px; background:#eef2ff; color:var(--accent); border:1px solid #c7d2fe; border-radius:10px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s,color .15s; }
+  .btn-open-map:hover { background:#c7d2fe; color:var(--accent); }
+  .radius-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+  .radius-row span { font-size:12px; color:var(--muted); }
+  .radius-value { font-size:13px; font-weight:700; color:var(--accent); white-space:nowrap; }
+  .radius-slider { width:100%; accent-color:var(--accent); }
+  .radius-scale { display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--muted); }
+  .map-modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.62); z-index:1000; align-items:center; justify-content:center; padding:22px; }
+  .map-modal.active { display:flex; }
+  .map-container { width:min(900px,100%); height:min(760px,92vh); background:#fff; border-radius:18px; display:flex; flex-direction:column; box-shadow:0 24px 70px rgba(15,23,42,.32); overflow:hidden; }
+  .map-header { padding:18px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .map-header h3 { font-size:17px; font-weight:700; margin:0; display:flex; align-items:center; gap:8px; }
+  .map-close { border:0; background:transparent; color:var(--muted); font-size:26px; line-height:1; cursor:pointer; }
+  .map-info { margin:16px 16px 0; padding:12px 14px; background:#eef2ff; color:#3730a3; border-radius:10px; font-size:13px; }
+  .map-radius-control { display:none; margin:12px 16px 14px; padding:13px 14px; border:1px solid var(--border); border-radius:12px; background:#f8fafc; }
+  .map-radius-control.active { display:block; }
+  #register-map { flex:1; min-height:360px; margin-top:16px; }
+  .map-footer { padding:14px 18px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+  .map-footer button { border:0; border-radius:10px; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer; }
+  .btn-map-cancel { background:var(--light); color:var(--text); }
+  .btn-map-confirm { background:var(--accent); color:#fff; }
+
   /* Submit */
   .btn-register { width:100%; padding:13px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'Sora',sans-serif; font-size:15px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:background .15s,transform .1s; margin-top:6px; }
   .btn-register:hover { background:#4f46e5; transform:translateY(-1px); }
@@ -173,13 +239,27 @@ if(isset($_POST['register'])){
   .login-link a { color:var(--accent); font-weight:600; text-decoration:none; }
   .login-link a:hover { text-decoration:underline; }
 
-  @media(max-width:700px){
+  @media(max-width:900px){
     .left-panel { display:none; }
+    .register-wrap { width:min(620px,95vw); }
+  }
+
+  @media(max-width:700px){
     .right-panel { padding:32px 24px; }
     .two-col { grid-template-columns:1fr; }
+    .role-select-wrap { grid-template-columns:1fr; }
+    .map-modal { padding:0; }
+    .map-container { width:100%; height:100%; max-height:none; border-radius:0; }
   }
 </style>
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+<style>
+  .register-wrap > .left-panel .left-content h2 {
+    color:#ffffff !important;
+    -webkit-text-fill-color:#ffffff !important;
+    text-shadow:0 2px 16px rgba(0,0,0,.45);
+  }
+</style>
 
 </head>
 <body>
@@ -320,6 +400,61 @@ if(isset($_POST['register'])){
         </div>
       </div>
 
+      <!-- Address -->
+      <div class="section-label" style="margin-top:4px;" id="address-section-label">ที่อยู่และพื้นที่หางาน</div>
+
+      <div class="field-group">
+        <label id="address-label">ที่อยู่</label>
+        <div class="input-wrap textarea-wrap">
+          <i class="bi bi-geo-alt prefix"></i>
+          <textarea name="address" class="form-input" placeholder="เช่น 123 ซ.สุขุมวิท ถ.สุขุมวิท..."><?php echo htmlspecialchars($_POST['address'] ?? ''); ?></textarea>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label>จังหวัด</label>
+          <div class="input-wrap">
+            <i class="bi bi-building prefix"></i>
+            <input type="text" name="province" class="form-input"
+                   placeholder="เช่น กรุงเทพมหานคร"
+                   value="<?php echo htmlspecialchars($_POST['province'] ?? ''); ?>">
+          </div>
+        </div>
+        <div class="field-group">
+          <label>อำเภอ / เขต</label>
+          <div class="input-wrap">
+            <i class="bi bi-pin-map prefix"></i>
+            <input type="text" name="district" class="form-input"
+                   placeholder="เช่น วัฒนา"
+                   value="<?php echo htmlspecialchars($_POST['district'] ?? ''); ?>">
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>รหัสไปรษณีย์</label>
+        <div class="input-wrap">
+          <i class="bi bi-mailbox prefix"></i>
+          <input type="text" name="postal_code" class="form-input"
+                 placeholder="10110"
+                 value="<?php echo htmlspecialchars($_POST['postal_code'] ?? ''); ?>">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label id="pin-label">ปักพื้นที่หางานบนแผนที่</label>
+        <button type="button" class="btn-open-map" onclick="openRegisterMapModal()">
+          <i class="bi bi-geo"></i> เลือกตำแหน่งจากแผนที่
+        </button>
+        <div class="location-status" id="location-status">
+          <i class="bi bi-info-circle"></i> ยังไม่ได้ปักหมุด
+        </div>
+        <input type="hidden" name="latitude" id="latitude" value="<?php echo htmlspecialchars($_POST['latitude'] ?? ''); ?>">
+        <input type="hidden" name="longitude" id="longitude" value="<?php echo htmlspecialchars($_POST['longitude'] ?? ''); ?>">
+        <input type="hidden" name="preferred_radius_km" id="preferred_radius_km" value="<?php echo htmlspecialchars($_POST['preferred_radius_km'] ?? 30); ?>">
+      </div>
+
       <button type="submit" name="register" class="btn-register">
         <i class="bi bi-person-plus"></i> สมัครสมาชิก
       </button>
@@ -333,6 +468,39 @@ if(isset($_POST['register'])){
   </div>
 </div>
 
+<div class="map-modal" id="registerMapModal">
+  <div class="map-container">
+    <div class="map-header">
+      <h3><i class="bi bi-geo"></i> <span id="map-title">ปักพื้นที่หางาน</span></h3>
+      <button type="button" class="map-close" onclick="closeRegisterMapModal()">&times;</button>
+    </div>
+    <div class="map-info" id="map-info">
+      คลิกบนแผนที่เพื่อเลือกตำแหน่งของคุณ ระบบจะใช้ตำแหน่งนี้แนะนำงานใกล้เคียง
+    </div>
+    <div class="map-radius-control" id="map-radius-control">
+      <div class="radius-row">
+        <span>วงค้นหางานบนแผนที่</span>
+        <strong class="radius-value"><span id="map-radius-label"><?php echo htmlspecialchars($_POST['preferred_radius_km'] ?? 30); ?></span> กม.</strong>
+      </div>
+      <input class="radius-slider" type="range" id="map_preferred_radius_slider"
+             min="1" max="300" step="1"
+             value="<?php echo htmlspecialchars($_POST['preferred_radius_km'] ?? 30); ?>"
+             oninput="updateRegisterRadius(this.value)">
+      <div class="radius-scale">
+        <span>1 กม.</span>
+        <span>300 กม.</span>
+      </div>
+    </div>
+    <div id="register-map"></div>
+    <div class="map-footer">
+      <button type="button" class="btn-map-cancel" onclick="closeRegisterMapModal()">ยกเลิก</button>
+      <button type="button" class="btn-map-confirm" onclick="confirmRegisterMapLocation()">ยืนยัน</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/js/location-map-picker.js"></script>
 <script>
   function togglePw(){
     const input = document.getElementById('pw-input');
@@ -344,6 +512,115 @@ if(isset($_POST['register'])){
       input.type = 'password';
       eye.className = 'bi bi-eye';
     }
+  }
+
+  let registerMap = null;
+  let registerMapRole = '';
+  let selectedLat = Number(document.getElementById('latitude')?.value || 13.7563);
+  let selectedLng = Number(document.getElementById('longitude')?.value || 100.5018);
+  let hasSelectedPin = Boolean(document.getElementById('latitude')?.value && document.getElementById('longitude')?.value);
+  let selectedRadiusKm = Number(document.getElementById('preferred_radius_km')?.value || 30);
+
+  function getSelectedRole(){
+    return document.querySelector('input[name="role"]:checked')?.value || 'freelancer';
+  }
+
+  function updateRoleLocationCopy(){
+    const role = getSelectedRole();
+    const isFreelancer = role === 'freelancer';
+    document.getElementById('address-section-label').textContent = isFreelancer ? 'ที่อยู่และพื้นที่หางาน' : 'ที่อยู่และพื้นที่บริษัท';
+    document.getElementById('address-label').textContent = isFreelancer ? 'ที่อยู่ของคุณ' : 'ที่อยู่บริษัท';
+    document.getElementById('pin-label').textContent = isFreelancer ? 'ปักพื้นที่หางานบนแผนที่' : 'ปักพื้นที่บริษัทบนแผนที่';
+    document.getElementById('map-title').textContent = isFreelancer ? 'ปักพื้นที่หางาน' : 'ปักพื้นที่บริษัท';
+    document.getElementById('map-info').textContent = isFreelancer
+      ? 'คลิกบนแผนที่เพื่อเลือกตำแหน่งของคุณ ระบบจะใช้ตำแหน่งนี้แนะนำงานใกล้เคียง'
+      : 'คลิกบนแผนที่เพื่อเลือกตำแหน่งบริษัท ระบบจะใช้ตำแหน่งนี้ช่วยแมชงานกับ freelancer';
+
+    document.getElementById('map-radius-control').classList.toggle('active', isFreelancer);
+
+    if (registerMap && registerMapRole !== role && typeof registerMap.destroy === 'function') {
+      registerMap.destroy();
+      registerMap = null;
+    }
+  }
+
+  function setRegisterPosition(lat, lng) {
+    selectedLat = Number(lat);
+    selectedLng = Number(lng);
+    hasSelectedPin = true;
+  }
+
+  function updateRegisterRadius(value) {
+    selectedRadiusKm = Math.max(1, Math.min(300, Number(value) || 30));
+    document.getElementById('preferred_radius_km').value = selectedRadiusKm;
+    document.getElementById('map_preferred_radius_slider').value = selectedRadiusKm;
+    document.getElementById('map-radius-label').textContent = selectedRadiusKm;
+
+    if (registerMap) {
+      registerMap.setRadius(selectedRadiusKm);
+    }
+  }
+
+  function openRegisterMapModal() {
+    updateRoleLocationCopy();
+    const role = getSelectedRole();
+    const showCircle = role === 'freelancer';
+    document.getElementById('registerMapModal').classList.add('active');
+
+    setTimeout(() => {
+      if (!registerMap || registerMapRole !== role) {
+        registerMap = createJobFindMapPicker({
+          elementId: 'register-map',
+          lat: selectedLat,
+          lng: selectedLng,
+          hasPin: hasSelectedPin,
+          radiusKm: selectedRadiusKm,
+          showCircle: showCircle,
+          onChange: setRegisterPosition
+        });
+        registerMapRole = role;
+      }
+
+      if (registerMap) {
+        registerMap.resize();
+        if (hasSelectedPin) {
+          registerMap.setView(selectedLat, selectedLng);
+          registerMap.setRadius(selectedRadiusKm);
+        }
+      }
+    }, 100);
+  }
+
+  function closeRegisterMapModal() {
+    document.getElementById('registerMapModal').classList.remove('active');
+  }
+
+  function confirmRegisterMapLocation() {
+    if (!hasSelectedPin) {
+      alert('กรุณาเลือกตำแหน่งบนแผนที่');
+      return;
+    }
+
+    document.getElementById('latitude').value = selectedLat.toFixed(6);
+    document.getElementById('longitude').value = selectedLng.toFixed(6);
+    document.getElementById('location-status').innerHTML = '<i class="bi bi-check-circle"></i> ปักหมุดแล้ว';
+    closeRegisterMapModal();
+  }
+
+  document.querySelectorAll('input[name="role"]').forEach(input => {
+    input.addEventListener('change', updateRoleLocationCopy);
+  });
+
+  document.getElementById('registerMapModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeRegisterMapModal();
+    }
+  });
+
+  updateRoleLocationCopy();
+  updateRegisterRadius(selectedRadiusKm);
+  if (hasSelectedPin) {
+    document.getElementById('location-status').innerHTML = '<i class="bi bi-check-circle"></i> ปักหมุดแล้ว';
   }
 </script>
 </body>

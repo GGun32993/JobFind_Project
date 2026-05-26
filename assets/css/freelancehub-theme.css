@@ -832,6 +832,24 @@ table tr:hover td {
     linear-gradient(180deg, #0b1220 0%, #101b31 100%) !important;
 }
 
+.left-panel .brand-name,
+.left-panel .left-content h2,
+.left-panel .role-card .rc-title {
+  color: #f8fbff !important;
+}
+
+.left-panel .brand-sub,
+.left-panel .left-content p,
+.left-panel .role-card .rc-desc,
+.left-panel .left-footer p {
+  color: #b8c7dd !important;
+}
+
+.left-panel .role-card {
+  background: rgba(255, 255, 255, .08) !important;
+  border-color: rgba(226, 232, 240, .18) !important;
+}
+
 .left-panel::before,
 .left-panel::after {
   display: none !important;

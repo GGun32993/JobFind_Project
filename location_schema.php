@@ -95,6 +95,13 @@ function ensure_location_schema($conn)
         jobfind_add_index_if_missing($conn, 'employer_profile', 'idx_employer_user', '(`user_id`)');
     }
 
+    if (jobfind_table_exists($conn, 'users')) {
+        jobfind_add_column_if_missing($conn, 'users', 'latitude', 'DOUBLE DEFAULT NULL AFTER `phone`');
+        jobfind_add_column_if_missing($conn, 'users', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
+
+        jobfind_add_index_if_missing($conn, 'users', 'idx_user_geo', '(`latitude`, `longitude`)');
+    }
+
     if (jobfind_table_exists($conn, 'job')) {
         jobfind_add_column_if_missing($conn, 'job', 'latitude', 'DOUBLE DEFAULT NULL AFTER `location`');
         jobfind_add_column_if_missing($conn, 'job', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');

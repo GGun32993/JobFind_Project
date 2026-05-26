@@ -99,6 +99,9 @@
       },
       resize() {
         map.invalidateSize();
+      },
+      destroy() {
+        map.remove();
       }
     };
   };
