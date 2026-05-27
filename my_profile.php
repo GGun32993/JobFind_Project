@@ -575,18 +575,18 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
         <label>จังหวัด</label>
         <div class="input-icon-wrap">
           <i class="bi bi-building"></i>
-          <input class="form-input" type="text" name="province"
-                 value="<?php echo htmlspecialchars($profile_data['province'] ?? ''); ?>"
-                 placeholder="เช่น กรุงเทพมหานคร">
+          <select class="form-input" name="province" id="profile-province">
+            <option value="">เลือกจังหวัด</option>
+          </select>
         </div>
       </div>
       <div class="field-group">
         <label>อำเภอ</label>
         <div class="input-icon-wrap">
           <i class="bi bi-pin-map"></i>
-          <input class="form-input" type="text" name="district"
-                 value="<?php echo htmlspecialchars($profile_data['district'] ?? ''); ?>"
-                 placeholder="เช่น วัฒนา">
+          <select class="form-input" name="district" id="profile-district" disabled>
+            <option value="">เลือกจังหวัดก่อน</option>
+          </select>
         </div>
       </div>
     </div>
@@ -614,7 +614,7 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
       <label>รหัสไปรษณีย์</label>
       <div class="input-icon-wrap">
         <i class="bi bi-mailbox"></i>
-        <input class="form-input" type="text" name="postal_code"
+        <input class="form-input" type="text" name="postal_code" id="profile-postal-code"
                value="<?php echo htmlspecialchars($profile_data['postal_code'] ?? ''); ?>"
                placeholder="10110">
       </div>
@@ -674,7 +674,16 @@ $initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
 
 <script src="assets/vendor/leaflet/leaflet.min.js"></script>
 <script src="assets/js/location-map-picker.js"></script>
+<script src="assets/js/thai-location-selects.js"></script>
 <script>
+initThaiProvinceDistrictSelects({
+  provinceId: 'profile-province',
+  districtId: 'profile-district',
+  postalCodeId: 'profile-postal-code',
+  currentProvince: <?php echo json_encode($profile_data['province'] ?? '', JSON_UNESCAPED_UNICODE); ?>,
+  currentDistrict: <?php echo json_encode($profile_data['district'] ?? '', JSON_UNESCAPED_UNICODE); ?>
+});
+
 let mapInstance = null;
 let selectedLat = <?php echo !empty($profile_data['latitude']) ? $profile_data['latitude'] : '13.7563'; ?>;
 let selectedLng = <?php echo !empty($profile_data['longitude']) ? $profile_data['longitude'] : '100.5018'; ?>;
