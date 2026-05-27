@@ -531,7 +531,9 @@ if($is_public){
       <label>จังหวัด</label>
       <div class="input-icon-wrap">
         <i class="bi bi-building"></i>
-        <input type="text" name="province" class="form-input" value="<?php echo htmlspecialchars($profile['province'] ?? ''); ?>" placeholder="เช่น กรุงเทพมหานคร">
+        <select name="province" id="employer-province" class="form-input">
+          <option value="">เลือกจังหวัด</option>
+        </select>
       </div>
     </div>
 
@@ -539,7 +541,9 @@ if($is_public){
       <label>อำเภอ</label>
       <div class="input-icon-wrap">
         <i class="bi bi-pin-map"></i>
-        <input type="text" name="district" class="form-input" value="<?php echo htmlspecialchars($profile['district'] ?? ''); ?>" placeholder="เช่น วัฒนา">
+        <select name="district" id="employer-district" class="form-input" disabled>
+          <option value="">เลือกจังหวัดก่อน</option>
+        </select>
       </div>
     </div>
 
@@ -565,7 +569,7 @@ if($is_public){
       <label>รหัสไปรษณีย์</label>
       <div class="input-icon-wrap">
         <i class="bi bi-mailbox"></i>
-        <input type="text" name="postal_code" class="form-input" value="<?php echo htmlspecialchars($profile['postal_code'] ?? ''); ?>" placeholder="10110">
+        <input type="text" name="postal_code" id="employer-postal-code" class="form-input" value="<?php echo htmlspecialchars($profile['postal_code'] ?? ''); ?>" placeholder="10110">
       </div>
     </div>
 
@@ -638,7 +642,16 @@ if($is_public){
 
 <script src="assets/vendor/leaflet/leaflet.min.js"></script>
 <script src="assets/js/location-map-picker.js"></script>
+<script src="assets/js/thai-location-selects.js"></script>
 <script>
+initThaiProvinceDistrictSelects({
+  provinceId: 'employer-province',
+  districtId: 'employer-district',
+  postalCodeId: 'employer-postal-code',
+  currentProvince: <?php echo json_encode($profile['province'] ?? '', JSON_UNESCAPED_UNICODE); ?>,
+  currentDistrict: <?php echo json_encode($profile['district'] ?? '', JSON_UNESCAPED_UNICODE); ?>
+});
+
 function updateCount(){
   const ta = document.getElementById('desc-input');
   if(ta) document.getElementById('desc-count').textContent = ta.value.length;
