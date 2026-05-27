@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . "/config.php";
+
 if(!function_exists('get_employer_pending_application_count')){
     function get_employer_pending_application_count($conn, $employer_id){
         $employer_id = (int)$employer_id;

@@ -1,5 +1,5 @@
 <?php
-include("config.php");
+require_once __DIR__ . "/config.php";
 
 $query = mysqli_query($conn,"
 SELECT users.fullname, COUNT(like_employer.like_id) as total_likes

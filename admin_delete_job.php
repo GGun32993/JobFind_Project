@@ -1,5 +1,5 @@
 <?php
-include "config.php";
+require_once __DIR__ . "/config.php";
 require_once "job_image_helpers.php";
 
 $id = intval($_GET['id'] ?? 0);

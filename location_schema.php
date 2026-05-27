@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/config.php";
+
 function jobfind_table_exists($conn, $table)
 {
     if (!$conn || !preg_match('/^[A-Za-z0-9_]+$/', $table)) {

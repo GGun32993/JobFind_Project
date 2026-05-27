@@ -1,11 +1,11 @@
 <?php
-include "config.php";
+require_once __DIR__ . "/config.php";
 
 $id = $_GET['id'];
 
 mysqli_query($conn,"
 UPDATE job
-SET job_status='open'
+SET admin_status='approved', status='open'
 WHERE job_id='$id'
 ");
 

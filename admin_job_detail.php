@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "config.php";
+require_once __DIR__ . "/config.php";
 require_once "job_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){

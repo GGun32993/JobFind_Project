@@ -1,5 +1,6 @@
 <?php
 
+require_once __DIR__ . "/config.php";
 require_once __DIR__ . "/location_schema.php";
 
 function jobfind_coordinate_value($value)

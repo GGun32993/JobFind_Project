@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "config.php";
+require_once __DIR__ . "/config.php";
 require_once "job_image_helpers.php";
 require_once "location_schema.php";
 require_once "employer_sidebar_helpers.php";

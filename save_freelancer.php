@@ -2,7 +2,7 @@
 // save_freelancer.php
 session_start();
 header('Content-Type: application/json');
-include "config.php";  // ✅ ใช้ config.php
+require_once __DIR__ . "/config.php";  // ✅ ใช้ config.php
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'employer') {
     echo json_encode(['success' => false, 'message' => 'Please login']);

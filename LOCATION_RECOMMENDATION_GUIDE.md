@@ -204,7 +204,7 @@ Final Score = max(text_match, province_match, distance_match)
 Run the SQL migration file to add address fields:
 
 ```bash
-mysql -u root jobfind < migrations/add_address_fields.sql
+mysql -h sql205.infinityfree.com -u if0_42031060 -p if0_42031060_jobfind < migrations/add_address_fields.sql
 ```
 
 Or run SQL queries in phpMyAdmin:

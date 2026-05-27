@@ -1,6 +1,7 @@
 <?php
 
-require_once "location_schema.php";
+require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/location_schema.php";
 
 function ensure_profile_image_schema($conn)
 {

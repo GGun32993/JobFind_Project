@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/config.php";
+
 function ensure_job_image_schema($conn){
     $image_col = mysqli_query($conn, "SHOW COLUMNS FROM job LIKE 'image_path'");
     if($image_col && mysqli_num_rows($image_col) === 0){
