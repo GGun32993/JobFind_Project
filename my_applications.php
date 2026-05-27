@@ -140,6 +140,15 @@ while($r = mysqli_fetch_assoc($result)) {
 
   .app-actions { display:flex; align-items:center; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); flex-wrap:wrap; }
 
+  .btn-detail {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--white); color:var(--accent); border:1px solid var(--border);
+    border-radius:10px; padding:8px 18px;
+    font-size:13px; font-weight:600; text-decoration:none;
+    transition:background .15s, border-color .15s, transform .1s;
+  }
+  .btn-detail:hover { background:#eef2ff; border-color:#a5b4fc; color:var(--accent); transform:translateY(-1px); }
+
   .btn-rate {
     display:inline-flex; align-items:center; gap:6px;
     background:var(--yellow); color:#fff; border:none;
@@ -331,8 +340,11 @@ while($r = mysqli_fetch_assoc($result)) {
       $already_reviewed = mysqli_num_rows($check_review) > 0;
       ?>
 
-      <?php if($can_review): ?>
       <div class="app-actions">
+        <a href="view_job.php?job_id=<?php echo (int)$job_id; ?>&return_url=<?php echo urlencode('my_applications.php'); ?>" class="btn-detail">
+          <i class="bi bi-eye"></i> Detail
+        </a>
+        <?php if($can_review): ?>
         <?php if(!$already_reviewed): ?>
         <!-- ใหม่ -->
         <a href="job_review.php?job_id=<?php echo (int)$job_id; ?>" class="btn-rate">
@@ -343,8 +355,8 @@ while($r = mysqli_fetch_assoc($result)) {
           <i class="bi bi-check-circle-fill"></i> รีวิวแล้ว
         </span>
         <?php endif; ?>
+        <?php endif; ?>
       </div>
-      <?php endif; ?>
     </div>
   </div>
   <?php endforeach; ?>

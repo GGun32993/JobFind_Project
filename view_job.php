@@ -14,6 +14,28 @@ $job_id = $_GET['job_id'] ?? 0;
 ensure_job_image_schema($conn);
 ensure_profile_image_schema($conn);
 
+function safe_return_url($url, $fallback = ''){
+    $url = trim((string)$url);
+    if($url === '' || preg_match('/[\r\n]/', $url)){
+        return $fallback;
+    }
+
+    $parts = parse_url($url);
+    if($parts === false || isset($parts['scheme']) || isset($parts['host']) || strpos($url, '//') === 0){
+        return $fallback;
+    }
+
+    if(!preg_match('/^[A-Za-z0-9_\/.-]+\.php(\?[A-Za-z0-9_%=&.\-\/]*)?$/', $url)){
+        return $fallback;
+    }
+
+    return $url;
+}
+
+$return_url = safe_return_url($_GET['return_url'] ?? '');
+$back_url = $return_url ?: 'browse_jobs.php';
+$back_label = strpos($back_url, 'my_applications.php') === 0 ? 'กลับไป My Applications' : 'กลับไป Browse Jobs';
+
 // ดึงข้อมูลงาน
 $job_query = "SELECT * FROM job WHERE job_id = ?";
 $stmt = $conn->prepare($job_query);
@@ -23,7 +45,7 @@ $job = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if (!$job) {
-    header("Location: browse_jobs.php");
+    header("Location: " . $back_url);
     exit();
 }
 
@@ -1093,8 +1115,8 @@ $employer_js_data = [
 <main class="main">
     <div class="content-container">
         <div class="page-header">
-            <a href="browse_jobs.php" class="btn-back">
-                <i class="bi bi-arrow-left"></i> กลับไป Browse Jobs
+            <a href="<?php echo htmlspecialchars($back_url, ENT_QUOTES, 'UTF-8'); ?>" class="btn-back">
+                <i class="bi bi-arrow-left"></i> <?php echo htmlspecialchars($back_label, ENT_QUOTES, 'UTF-8'); ?>
             </a>
         </div>
 
@@ -1234,9 +1256,9 @@ $employer_js_data = [
                 <i class="bi bi-send-fill"></i>
                 สมัครงานนี้
             </a>
-            <a href="browse_jobs.php" class="btn-secondary">
+            <a href="<?php echo htmlspecialchars($back_url, ENT_QUOTES, 'UTF-8'); ?>" class="btn-secondary">
                 <i class="bi bi-arrow-left"></i>
-                กลับไปดูงานอื่น
+                <?php echo htmlspecialchars($back_label, ENT_QUOTES, 'UTF-8'); ?>
             </a>
         </div>
     </div>
