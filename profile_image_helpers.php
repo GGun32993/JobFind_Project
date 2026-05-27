@@ -31,6 +31,31 @@ function profile_image_file_selected($file)
     return isset($file['error']) && $file['error'] !== UPLOAD_ERR_NO_FILE;
 }
 
+function ensure_profile_image_upload_dir(&$error)
+{
+    $uploads_root = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
+    if (!is_dir($uploads_root) && !mkdir($uploads_root, 0775, true)) {
+        $error = 'Cannot create uploads directory.';
+        return '';
+    }
+
+    $upload_dir = $uploads_root . DIRECTORY_SEPARATOR . 'profile_images';
+    if (!is_dir($upload_dir) && !mkdir($upload_dir, 0775, true)) {
+        $error = 'Cannot create uploads/profile_images directory.';
+        return '';
+    }
+
+    @chmod($uploads_root, 0775);
+    @chmod($upload_dir, 0775);
+
+    if (!is_writable($upload_dir)) {
+        $error = 'uploads/profile_images is not writable by PHP.';
+        return '';
+    }
+
+    return $upload_dir;
+}
+
 function save_uploaded_profile_image($file, $user_id, &$error)
 {
     $error = '';
@@ -40,25 +65,24 @@ function save_uploaded_profile_image($file, $user_id, &$error)
     }
 
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-        $error = 'อัปโหลดรูปโปรไฟล์ไม่สำเร็จ กรุณาลองใหม่';
+        $error = 'Profile image upload failed. PHP upload error code: ' . (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
         return '';
     }
 
     if (($file['size'] ?? 0) > profile_image_max_size()) {
-        $error = 'รูปโปรไฟล์ต้องมีขนาดไม่เกิน 3MB';
+        $error = 'Profile image must be 3MB or smaller.';
         return '';
     }
 
     $allowed = profile_image_allowed_mimes();
     $image_info = @getimagesize($file['tmp_name']);
     if (!$image_info || !isset($allowed[$image_info['mime']])) {
-        $error = 'รองรับเฉพาะรูป JPG, PNG หรือ WEBP เท่านั้น';
+        $error = 'Only JPG, PNG, or WEBP profile images are allowed.';
         return '';
     }
 
-    $upload_dir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile_images';
-    if (!is_dir($upload_dir) && !mkdir($upload_dir, 0775, true)) {
-        $error = 'ไม่สามารถสร้างโฟลเดอร์เก็บรูปโปรไฟล์ได้';
+    $upload_dir = ensure_profile_image_upload_dir($error);
+    if ($upload_dir === '') {
         return '';
     }
 
@@ -67,10 +91,11 @@ function save_uploaded_profile_image($file, $user_id, &$error)
     $target_path = $upload_dir . DIRECTORY_SEPARATOR . $new_name;
 
     if (!move_uploaded_file($file['tmp_name'], $target_path)) {
-        $error = 'บันทึกรูปโปรไฟล์ไม่สำเร็จ';
+        $error = 'Failed to save profile image to uploads/profile_images.';
         return '';
     }
 
+    @chmod($target_path, 0644);
     return 'uploads/profile_images/' . $new_name;
 }
 
@@ -104,5 +129,3 @@ function profile_image_src($path)
 
     return htmlspecialchars($path, ENT_QUOTES, 'UTF-8');
 }
-
-?>
