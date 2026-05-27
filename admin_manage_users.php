@@ -1,9 +1,56 @@
 <?php
 session_start();
 require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/location_schema.php";
+require_once __DIR__ . "/profile_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "admin"){
     header("Location: login.php"); exit();
+}
+
+ensure_location_schema($conn);
+ensure_profile_image_schema($conn);
+
+function admin_profile_location_text($row, $prefix) {
+    $district = trim($row[$prefix . '_district'] ?? '');
+    $province = trim($row[$prefix . '_province'] ?? '');
+    $address = trim($row[$prefix . '_address'] ?? '');
+    $legacy_location = trim($row[$prefix . '_location'] ?? '');
+
+    $parts = array_filter([$district, $province]);
+    if (!empty($parts)) {
+        return implode(', ', $parts);
+    }
+    if ($legacy_location !== '') {
+        return $legacy_location;
+    }
+    return $address;
+}
+
+function admin_profile_preview($row) {
+    $role = $row['role'] ?? '';
+    if ($role === 'freelancer') {
+        return [
+            'exists' => !empty($row['freelancer_id']),
+            'title' => trim($row['freelancer_skill'] ?? ''),
+            'meta' => trim($row['freelancer_experience'] ?? ''),
+            'location' => admin_profile_location_text($row, 'freelancer')
+        ];
+    }
+    if ($role === 'employer') {
+        return [
+            'exists' => !empty($row['employer_id']),
+            'title' => trim($row['employer_name'] ?? ''),
+            'meta' => trim($row['employer_description'] ?? ''),
+            'location' => admin_profile_location_text($row, 'employer')
+        ];
+    }
+    return [
+        'exists' => true,
+        'title' => 'Admin account',
+        'meta' => '',
+        'location' => ''
+    ];
 }
 
 $admin_unread_support = 0;
@@ -62,7 +109,29 @@ if(isset($_POST['add_user'])){
 }
 
 // ── GET USERS ──
-$result = mysqli_query($conn,"SELECT * FROM users ORDER BY created_at DESC");
+$result = mysqli_query($conn,"
+    SELECT
+        u.*,
+        fp.freelancer_id,
+        fp.skill AS freelancer_skill,
+        fp.experience AS freelancer_experience,
+        fp.location AS freelancer_location,
+        fp.address AS freelancer_address,
+        fp.province AS freelancer_province,
+        fp.district AS freelancer_district,
+        fp.postal_code AS freelancer_postal_code,
+        ep.employer_id,
+        ep.employer_name,
+        ep.employer_description,
+        ep.address AS employer_address,
+        ep.province AS employer_province,
+        ep.district AS employer_district,
+        ep.postal_code AS employer_postal_code
+    FROM users u
+    LEFT JOIN freelancer_profile fp ON fp.user_id = u.user_id
+    LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
+    ORDER BY u.created_at DESC
+");
 $rows = []; $count_fl = 0; $count_em = 0; $count_ad = 0;
 while($u = mysqli_fetch_assoc($result)){
     $rows[] = $u;
@@ -153,12 +222,20 @@ $count_all = count($rows);
 
   .user-cell{display:flex;align-items:center;gap:10px;}
   .u-av{width:36px;height:36px;border-radius:50%;font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .u-av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
   .ua-freelancer{background:var(--accent);}
   .ua-employer{background:var(--blue);}
   .ua-admin{background:var(--navy3);}
   .u-name{font-weight:600;font-size:13.5px;}
   .u-email{font-size:12px;color:var(--muted);margin-top:2px;}
   .you-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:#eef2ff;color:var(--accent);margin-left:6px;vertical-align:middle;}
+
+  .profile-cell{min-width:240px;max-width:360px;}
+  .profile-main{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px;line-height:1.35;}
+  .profile-main i{color:var(--accent);font-size:14px;flex-shrink:0;}
+  .profile-sub,.profile-loc{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .profile-loc{display:flex;-webkit-line-clamp:unset;-webkit-box-orient:initial;align-items:center;gap:5px;}
+  .profile-empty{font-size:12px;color:var(--muted);font-style:italic;}
 
   .role-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:4px 11px;border-radius:20px;}
   .rb-freelancer{background:#eef2ff;color:var(--accent);}
@@ -356,6 +433,7 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
         <tr>
           <th>#</th>
           <th>ผู้ใช้งาน</th>
+          <th>โปรไฟล์</th>
           <th>เบอร์โทร</th>
           <th>Role</th>
           <th>Action</th>
@@ -363,21 +441,37 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
       </thead>
       <tbody>
       <?php if(empty($rows)): ?>
-        <tr class="empty-row"><td colspan="5"><i class="bi bi-inbox"></i>ยังไม่มีผู้ใช้</td></tr>
+        <tr class="empty-row"><td colspan="6"><i class="bi bi-inbox"></i>ยังไม่มีผู้ใช้</td></tr>
       <?php else: ?>
         <?php foreach($rows as $row):
           $is_me    = ($row['user_id'] == $_SESSION['user_id']);
           $init     = strtoupper(substr($row['fullname'] ?: $row['username'] ?? '?', 0, 1));
           $av_class = 'ua-'.($row['role'] ?? 'admin');
           $rb_class = 'rb-'.($row['role'] ?? 'admin');
-          $search_str = strtolower(($row['username']??'').' '.($row['fullname']??'').' '.($row['email']??'').' '.($row['phone']??''));
+          $profile_preview = admin_profile_preview($row);
+          $profile_image = trim($row['profile_image'] ?? '');
+          $search_str = strtolower(
+              ($row['username']??'').' '.
+              ($row['fullname']??'').' '.
+              ($row['email']??'').' '.
+              ($row['phone']??'').' '.
+              ($profile_preview['title']??'').' '.
+              ($profile_preview['meta']??'').' '.
+              ($profile_preview['location']??'')
+          );
         ?>
         <tr data-search="<?php echo htmlspecialchars($search_str); ?>"
             data-role="<?php echo $row['role']; ?>">
           <td style="color:var(--muted);font-size:13px;"><?php echo $row['user_id']; ?></td>
           <td>
             <div class="user-cell">
-              <div class="u-av <?php echo $av_class; ?>"><?php echo $init; ?></div>
+              <div class="u-av <?php echo $av_class; ?>">
+                <?php if($profile_image !== ''): ?>
+                  <img src="<?php echo profile_image_src($profile_image); ?>" alt="Profile image">
+                <?php else: ?>
+                  <?php echo $init; ?>
+                <?php endif; ?>
+              </div>
               <div>
                 <div class="u-name">
                   <?php echo htmlspecialchars($row['fullname'] ?: $row['username']); ?>
@@ -385,6 +479,24 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
                 </div>
                 <div class="u-email"><?php echo htmlspecialchars($row['email']); ?></div>
               </div>
+            </div>
+          </td>
+          <td>
+            <div class="profile-cell">
+              <?php if($profile_preview['exists']): ?>
+                <div class="profile-main">
+                  <i class="bi <?php echo $row['role'] === 'employer' ? 'bi-building' : ($row['role'] === 'admin' ? 'bi-shield-check' : 'bi-person-lines-fill'); ?>"></i>
+                  <span><?php echo htmlspecialchars($profile_preview['title'] !== '' ? $profile_preview['title'] : 'ยังไม่ได้ระบุข้อมูลหลัก'); ?></span>
+                </div>
+                <?php if($profile_preview['meta'] !== ''): ?>
+                  <div class="profile-sub"><?php echo htmlspecialchars($profile_preview['meta']); ?></div>
+                <?php endif; ?>
+                <?php if($profile_preview['location'] !== ''): ?>
+                  <div class="profile-loc"><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($profile_preview['location']); ?></div>
+                <?php endif; ?>
+              <?php else: ?>
+                <span class="profile-empty">ยังไม่มีโปรไฟล์</span>
+              <?php endif; ?>
             </div>
           </td>
           <td style="color:var(--muted);"><?php echo htmlspecialchars($row['phone'] ?? '—'); ?></td>

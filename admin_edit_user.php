@@ -1,11 +1,16 @@
 <?php
 session_start();
 require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/location_schema.php";
+require_once __DIR__ . "/profile_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
     header("Location: login.php");
     exit();
 }
+
+ensure_location_schema($conn);
+ensure_profile_image_schema($conn);
 
 $admin_unread_support = 0;
 $admin_id_for_badge = (int)$_SESSION['user_id'];
@@ -128,6 +133,19 @@ if ($user_role === 'freelancer') {
     $stmt_profile->execute();
     $profile_result = $stmt_profile->get_result();
     $profile_data = $profile_result->fetch_assoc();
+}
+
+$profile_address = trim($profile_data['address'] ?? '');
+$profile_postal_code = trim($profile_data['postal_code'] ?? '');
+$profile_location_parts = array_filter([
+    trim($profile_data['district'] ?? ''),
+    trim($profile_data['province'] ?? '')
+]);
+$profile_location_display = !empty($profile_location_parts)
+    ? implode(', ', $profile_location_parts)
+    : trim($profile_data['location'] ?? '');
+if ($profile_location_display === '' && $profile_address !== '') {
+    $profile_location_display = $profile_address;
 }
 ?>
 <!DOCTYPE html>
@@ -418,11 +436,45 @@ if(isset($_GET['toast'])):
         <span class="info-label">Location</span>
         <span class="info-value"><?php echo htmlspecialchars($profile_data['location'] ?? '-'); ?></span>
       </div>
+      <div class="info-row">
+        <span class="info-label">ที่อยู่</span>
+        <span class="info-value"><?php echo htmlspecialchars($profile_address !== '' ? $profile_address : '-'); ?></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">จังหวัด / อำเภอ</span>
+        <span class="info-value"><?php echo htmlspecialchars($profile_location_display !== '' ? $profile_location_display : '-'); ?></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">รหัสไปรษณีย์</span>
+        <span class="info-value"><?php echo htmlspecialchars($profile_postal_code !== '' ? $profile_postal_code : '-'); ?></span>
+      </div>
       <?php elseif($user_role === 'employer' && $profile_data): ?>
       <hr class="section-divider">
       <div class="info-row">
         <span class="info-label">Company</span>
         <span class="info-value"><?php echo htmlspecialchars($profile_data['employer_name'] ?? '-'); ?></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">รายละเอียดบริษัท</span>
+        <span class="info-value"><?php echo htmlspecialchars($profile_data['employer_description'] ?? '-'); ?></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">ที่อยู่</span>
+        <span class="info-value"><?php echo htmlspecialchars($profile_address !== '' ? $profile_address : '-'); ?></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">จังหวัด / อำเภอ</span>
+        <span class="info-value"><?php echo htmlspecialchars($profile_location_display !== '' ? $profile_location_display : '-'); ?></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">รหัสไปรษณีย์</span>
+        <span class="info-value"><?php echo htmlspecialchars($profile_postal_code !== '' ? $profile_postal_code : '-'); ?></span>
+      </div>
+      <?php elseif($user_role !== 'admin'): ?>
+      <hr class="section-divider">
+      <div class="info-row">
+        <span class="info-label">โปรไฟล์</span>
+        <span class="info-value">ยังไม่มีโปรไฟล์</span>
       </div>
       <?php endif; ?>
     </div>
