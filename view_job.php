@@ -34,7 +34,8 @@ function safe_return_url($url, $fallback = ''){
 
 $return_url = safe_return_url($_GET['return_url'] ?? '');
 $back_url = $return_url ?: 'browse_jobs.php';
-$back_label = strpos($back_url, 'my_applications.php') === 0 ? 'กลับไป My Applications' : 'กลับไป Browse Jobs';
+$is_from_my_applications = strpos($back_url, 'my_applications.php') === 0;
+$back_label = $is_from_my_applications ? 'กลับไป My Applications' : 'กลับไป Browse Jobs';
 
 // ดึงข้อมูลงาน
 $job_query = "SELECT * FROM job WHERE job_id = ?";
@@ -1084,10 +1085,10 @@ $employer_js_data = [
         <a href="freelancer_dashboard.php" class="nav-item">
             <i class="bi bi-grid"></i> Dashboard
         </a>
-        <a href="browse_jobs.php" class="nav-item active">
+        <a href="browse_jobs.php" class="nav-item <?php echo !$is_from_my_applications ? 'active' : ''; ?>">
             <i class="bi bi-briefcase"></i> Browse Jobs
         </a>
-        <a href="my_applications.php" class="nav-item">
+        <a href="my_applications.php" class="nav-item <?php echo $is_from_my_applications ? 'active' : ''; ?>">
             <i class="bi bi-file-earmark-text"></i> My Applications
         </a>
         <a href="my_profile.php" class="nav-item">
