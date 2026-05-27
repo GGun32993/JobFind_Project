@@ -679,7 +679,7 @@ $most_applied_count = count($most_applied_jobs_list);
 
     <div class="nav-divider"></div>
 
-    <a href="support_chat.php" class="nav-item">
+    <a href="support_messages.php" class="nav-item">
       <i class="bi bi-chat-dots"></i> Support Chat
     </a>
   </nav>

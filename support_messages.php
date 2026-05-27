@@ -26,7 +26,7 @@ if(isset($_POST['send'])){
         INSERT INTO chat_messages (sender_id, receiver_id, message)
         VALUES ('$user_id','$admin_id','$msg')
     ");
-    header("Location: support_chat.php");
+    header("Location: support_messages.php");
     exit();
 }
 
@@ -284,7 +284,7 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
     <?php endif; ?>
 
     <div class="nav-divider"></div>
-    <a href="support_chat.php" class="nav-item active">
+    <a href="support_messages.php" class="nav-item active">
       <i class="bi bi-chat-dots"></i> Support Chat
     </a>
   </nav>
@@ -360,7 +360,7 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
 
     <!-- Input -->
     <div class="chat-footer">
-      <form method="POST" action="support_chat.php">
+      <form method="POST" action="support_messages.php">
         <div class="input-row">
           <input type="text" name="message" id="msg-input" class="msg-input"
                  placeholder="พิมพ์ข้อความ..." required autocomplete="off">

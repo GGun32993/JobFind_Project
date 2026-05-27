@@ -393,7 +393,7 @@ if($is_public){
       <a href="upload_resume.php"        class="nav-item"><i class="bi bi-cloud-upload"></i> Upload Resume</a>
     <?php endif; ?>
     <div class="nav-divider"></div>
-    <a href="support_chat.php" class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>
+    <a href="support_messages.php" class="nav-item"><i class="bi bi-chat-dots"></i> Support Chat</a>
   </nav>
   <div class="sidebar-footer">
     <a href="logout.php" class="nav-logout"><i class="bi bi-box-arrow-left"></i> Logout</a>

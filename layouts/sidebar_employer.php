@@ -32,7 +32,7 @@ My Reviews
 My Profile
 </a>
 
-<a href="support_chat.php" style="color:white;display:block;margin-bottom:10px;">
+<a href="support_messages.php" style="color:white;display:block;margin-bottom:10px;">
 Support Chat
 </a>
 

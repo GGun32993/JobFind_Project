@@ -327,7 +327,7 @@ $result = mysqli_query($conn, $query);
       <i class="bi bi-cloud-upload"></i> Upload Resume
     </a>
     <div class="nav-divider"></div>
-    <a href="support_chat.php" class="nav-item">
+    <a href="support_messages.php" class="nav-item">
       <i class="bi bi-chat-dots"></i> Support Chat
     </a>
   </nav>
