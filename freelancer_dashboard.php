@@ -713,7 +713,7 @@ $most_applied_count = count($most_applied_jobs_list);
         <?php if($profile_image !== ''): ?>
           <img src="<?php echo profile_image_src($profile_image); ?>" alt="Profile image">
         <?php else: ?>
-          <?php echo strtoupper(substr($username, 0, 1)); ?>
+          <?php echo profile_initials($username); ?>
         <?php endif; ?>
       </div>
     </div>

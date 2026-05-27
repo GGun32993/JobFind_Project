@@ -1132,7 +1132,7 @@ $employer_js_data = [
                         <?php if(!empty($employer['profile_image'])): ?>
                             <img src="<?php echo profile_image_src($employer['profile_image']); ?>" alt="Employer profile image">
                         <?php else: ?>
-                            <?php echo strtoupper(substr($employer['username'] ?? 'EM', 0, 2)); ?>
+                            <?php echo profile_initials($employer['username'] ?? 'EM'); ?>
                         <?php endif; ?>
                     </div>
                     <div class="employer-info">

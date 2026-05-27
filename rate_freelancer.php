@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/config.php";
+require_once "profile_image_helpers.php";
 require_once "employer_sidebar_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
@@ -194,7 +195,7 @@ if($_POST && !$already){
 
   <!-- Freelancer info -->
   <div class="fl-card">
-    <div class="fl-avatar"><?php echo strtoupper(substr($fl['username'] ?? '?', 0, 1)); ?></div>
+    <div class="fl-avatar"><?php echo profile_initials($fl['username'] ?? '?'); ?></div>
     <div>
       <div class="fl-name"><?php echo htmlspecialchars($fl['username'] ?? 'Unknown'); ?></div>
       <div class="fl-job">

@@ -209,7 +209,7 @@ function skill_list($skills){
         <?php
           $skills = skill_list($freelancer['skill'] ?? '');
           $display_name = $freelancer['fullname'] ?: $freelancer['username'];
-          $initials = strtoupper(substr($freelancer['username'] ?: 'FL', 0, 2));
+          $initials = profile_initials($freelancer['username'] ?: 'FL');
           $rating = $freelancer['review_rating'] ?: ($freelancer['rating'] ?: 0);
           $profile_img = trim($freelancer['profile_image'] ?? '');
         ?>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/profile_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin'){
     header("Location: login.php");
@@ -327,7 +328,7 @@ $admin_unread_support = (int)($unread_support['c'] ?? 0);
     <?php else: ?>
       <?php foreach($user_rows as $u):
         $is_active  = ($u['user_id'] == $selected_user);
-        $init       = strtoupper(substr($u['username'], 0, 1));
+        $init       = profile_initials($u['username']);
         $role_class = in_array($u['role'], ['freelancer','employer']) ? $u['role'] : 'other';
         $preview    = $u['last_message'] ? mb_substr($u['last_message'], 0, 30).(mb_strlen($u['last_message'])>30?'...':'') : 'ยังไม่มีข้อความ';
         $time_str   = $u['last_at'] ? date('H:i', strtotime($u['last_at'])) : '';
@@ -364,7 +365,7 @@ $admin_unread_support = (int)($unread_support['c'] ?? 0);
     <!-- Chat header -->
     <div class="chat-header">
       <?php
-        $ci = strtoupper(substr($selected_info['username'], 0, 1));
+        $ci = profile_initials($selected_info['username']);
         $cr = $selected_info['role'] ?? 'other';
         $cr_class = in_array($cr, ['freelancer','employer']) ? $cr : 'other';
         $cr_bg = $cr === 'freelancer' ? '#6366f1' : ($cr === 'employer' ? '#0ea5e9' : '#64748b');

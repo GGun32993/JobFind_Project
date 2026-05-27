@@ -218,7 +218,7 @@ if(isset($_POST['submit']) && !$already){
         <?php if(!empty($job['employer_profile_image'])): ?>
           <img src="<?php echo profile_image_src($job['employer_profile_image']); ?>" alt="Employer profile image">
         <?php else: ?>
-          <?php echo strtoupper(substr($job['company_name'] ?? '?', 0, 2)); ?>
+          <?php echo profile_initials($job['company_name'] ?? '?'); ?>
         <?php endif; ?>
       </div>
       <div>

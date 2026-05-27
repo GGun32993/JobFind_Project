@@ -276,7 +276,7 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
 
   <?php foreach($rows as $row):
     $rating = (int)$row['rating'];
-    $emp_init = strtoupper(substr($row['employer_name'], 0, 1));
+    $emp_init = profile_initials($row['employer_name']);
     $profile_img = trim($row['employer_profile_image'] ?? '');
     $title = $row['title'] ?? 'Unknown Job';
     $date  = date('d M Y', strtotime($row['created_at']));

@@ -247,7 +247,7 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
   <?php else: ?>
   <?php foreach($rows as $row):
     $rating     = (int)$row['rating'];
-    $fl_init    = strtoupper(substr($row['username'], 0, 1));
+    $fl_init    = profile_initials($row['username']);
     $profile_img = trim($row['profile_image'] ?? '');
     $date_str   = date('d M Y', strtotime($row['created_at']));
     $sb_class   = 'sb-' . $rating;

@@ -77,7 +77,7 @@ $rating_count = $rating_data['count'] ?? 0;
       <?php if(!empty($user['profile_image'])): ?>
         <img src="<?php echo profile_image_src($user['profile_image']); ?>" alt="Profile image">
       <?php else: ?>
-        <?php echo strtoupper(substr($user['username'], 0, 2)); ?>
+        <?php echo profile_initials($user['username']); ?>
       <?php endif; ?>
     </div>
     <div class="header-info">

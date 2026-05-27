@@ -12,6 +12,31 @@ function ensure_profile_image_schema($conn)
     return jobfind_add_column_if_missing($conn, 'users', 'profile_image', 'VARCHAR(255) DEFAULT NULL AFTER `longitude`');
 }
 
+function profile_initials($name, $max_chars = 1)
+{
+    $name = trim((string)$name);
+    if ($name === '') {
+        return '?';
+    }
+
+    $max_chars = max(1, (int)$max_chars);
+    $chars = [];
+    if (preg_match_all('/\S/u', $name, $matches)) {
+        $chars = array_slice($matches[0], 0, $max_chars);
+    }
+
+    if (empty($chars)) {
+        $chars = [substr($name, 0, 1)];
+    }
+
+    $initials = implode('', $chars);
+    if (function_exists('mb_strtoupper')) {
+        return mb_strtoupper($initials, 'UTF-8');
+    }
+
+    return strtoupper($initials);
+}
+
 function profile_image_max_size()
 {
     return 3 * 1024 * 1024;

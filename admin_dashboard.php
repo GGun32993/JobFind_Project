@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/profile_image_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
     header("Location: login.php");
@@ -208,7 +209,7 @@ $recent_users = mysqli_query($conn,"
       <p>ยินดีต้อนรับกลับ, <?php echo htmlspecialchars($username); ?> 👋</p>
     </div>
     <div class="admin-chip">
-      <div class="av"><?php echo strtoupper(substr($username,0,1)); ?></div>
+      <div class="av"><?php echo profile_initials($username); ?></div>
       <span><?php echo htmlspecialchars($username); ?></span>
     </div>
   </div>

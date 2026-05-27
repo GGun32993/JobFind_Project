@@ -154,7 +154,7 @@ if($profile && empty($profile['longitude']) && !empty($user['longitude'])){
     $profile['longitude'] = $user['longitude'];
 }
 
-$initials = strtoupper(substr($user['fullname'] ?: $user['username'], 0, 2));
+$initials = profile_initials($user['fullname'] ?: $user['username']);
 
 // ดึงรีวิว (เฉพาะโหมดสาธารณะ)
 $reviews = [];

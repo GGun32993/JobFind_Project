@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/config.php";
+require_once "profile_image_helpers.php";
 require_once "employer_sidebar_helpers.php";
 
 if(!isset($_SESSION['user_id'])){
@@ -329,7 +330,7 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
 
       <?php else:
         $last_date = '';
-        $user_init = strtoupper(substr($username, 0, 1));
+        $user_init = profile_initials($username);
         foreach($rows as $row):
           $is_me    = ($row['sender_id'] == $user_id);
           $time_str = !empty($row['sent_at']) ? date('H:i', strtotime($row['sent_at'])) : '';

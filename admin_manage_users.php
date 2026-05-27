@@ -445,7 +445,7 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
       <?php else: ?>
         <?php foreach($rows as $row):
           $is_me    = ($row['user_id'] == $_SESSION['user_id']);
-          $init     = strtoupper(substr($row['fullname'] ?: $row['username'] ?? '?', 0, 1));
+          $init     = profile_initials($row['fullname'] ?: ($row['username'] ?? '?'));
           $av_class = 'ua-'.($row['role'] ?? 'admin');
           $rb_class = 'rb-'.($row['role'] ?? 'admin');
           $profile_preview = admin_profile_preview($row);

@@ -293,7 +293,7 @@ $stmt2->close();
   <?php
   $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
   foreach($all_rows as $row):
-    $init     = strtoupper(mb_substr($row['username'],0,2,'UTF-8'));
+    $init     = profile_initials($row['username']);
     $status   = strtolower($row['status']);
     $sp_class = match($status){ 'accepted','hired'=>'sp-accepted','rejected'=>'sp-rejected',default=>'sp-pending' };
     $sp_label = match($status){ 'accepted','hired'=>'รับแล้ว','rejected'=>'ไม่ผ่าน',default=>'รอพิจารณา' };

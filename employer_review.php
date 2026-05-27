@@ -244,7 +244,7 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
   <?php foreach($rows as $row):
     $rating      = (int)$row['rating'];
     $fl_name     = $row['freelancer_name'] ?? '-';
-    $fl_init     = strtoupper(substr($fl_name, 0, 1));
+    $fl_init     = profile_initials($fl_name);
     $profile_img = trim($row['profile_image'] ?? '');
     $date_str    = date('d M Y', strtotime($row['created_at']));
     $sb_class    = 'sb-' . $rating;

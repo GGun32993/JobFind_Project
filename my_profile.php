@@ -154,7 +154,7 @@ if(isset($_POST['update'])){
     }
 }
 
-$initials = strtoupper(substr($user_data['fullname'] ?: $username, 0, 2));
+$initials = profile_initials($user_data['fullname'] ?: $username);
 ?>
 <!DOCTYPE html>
 <html lang="th">
