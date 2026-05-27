@@ -1,10 +1,18 @@
 <?php
 define('JOBFIND_ALLOW_DB_FAILURE', true);
 require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/job_image_helpers.php";
+require_once __DIR__ . "/location_schema.php";
 
 $titleSearch = trim($_GET['title'] ?? '');
 $locationSearch = trim($_GET['location'] ?? '');
-$dbError = $conn ? '' : ($db_error ?: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ในขณะนี้ (Database unavailable).');
+$searchLat = isset($_GET['latitude']) && is_numeric($_GET['latitude']) ? (float)$_GET['latitude'] : null;
+$searchLng = isset($_GET['longitude']) && is_numeric($_GET['longitude']) ? (float)$_GET['longitude'] : null;
+$searchRadiusKm = isset($_GET['preferred_radius_km']) && is_numeric($_GET['preferred_radius_km'])
+    ? max(1, min(300, (float)$_GET['preferred_radius_km']))
+    : 30;
+$hasLocationPin = $searchLat !== null && $searchLng !== null;
+$dbError = $conn ? '' : ($db_error ?: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ในขณะนี้');
 
 function e($value){
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -12,8 +20,11 @@ function e($value){
 
 function db_fetch_all($conn, $sql, $types = '', $params = []){
     $rows = [];
-    $stmt = mysqli_prepare($conn, $sql);
+    if(!$conn){
+        return $rows;
+    }
 
+    $stmt = mysqli_prepare($conn, $sql);
     if(!$stmt){
         error_log("Query prepare failed: " . mysqli_error($conn));
         return $rows;
@@ -23,17 +34,15 @@ function db_fetch_all($conn, $sql, $types = '', $params = []){
         mysqli_stmt_bind_param($stmt, $types, ...$params);
     }
 
-    if(!mysqli_stmt_execute($stmt)){
-        error_log("Query execute failed: " . mysqli_stmt_error($stmt));
-        mysqli_stmt_close($stmt);
-        return $rows;
-    }
-
-    $result = mysqli_stmt_get_result($stmt);
-    if($result){
-        while($row = mysqli_fetch_assoc($result)){
-            $rows[] = $row;
+    if(mysqli_stmt_execute($stmt)){
+        $result = mysqli_stmt_get_result($stmt);
+        if($result){
+            while($row = mysqli_fetch_assoc($result)){
+                $rows[] = $row;
+            }
         }
+    } else {
+        error_log("Query execute failed: " . mysqli_stmt_error($stmt));
     }
 
     mysqli_stmt_close($stmt);
@@ -41,6 +50,10 @@ function db_fetch_all($conn, $sql, $types = '', $params = []){
 }
 
 function db_count($conn, $sql){
+    if(!$conn){
+        return 0;
+    }
+
     $result = mysqli_query($conn, $sql);
     if(!$result){
         error_log("Count query failed: " . mysqli_error($conn));
@@ -51,10 +64,16 @@ function db_count($conn, $sql){
     return (int)($row['c'] ?? 0);
 }
 
+function table_exists($conn, $table){
+    $table = mysqli_real_escape_string($conn, $table);
+    $result = mysqli_query($conn, "SHOW TABLES LIKE '$table'");
+    return $result && mysqli_num_rows($result) > 0;
+}
+
 function initials($name){
     $name = trim((string)$name);
     if($name === ''){
-        return 'JF';
+        return 'FH';
     }
 
     preg_match_all('/[A-Za-z0-9]/', $name, $matches);
@@ -62,61 +81,117 @@ function initials($name){
     if(count($letters) >= 2){
         return strtoupper($letters[0] . $letters[1]);
     }
+
     if(count($letters) === 1){
         return strtoupper($letters[0]);
     }
 
-    if(function_exists('mb_substr')){
-        return mb_substr($name, 0, 2, 'UTF-8');
-    }
+    return function_exists('mb_substr') ? mb_substr($name, 0, 2, 'UTF-8') : substr($name, 0, 2);
+}
 
-    return substr($name, 0, 2);
+function dashboard_for_role($role){
+    $targets = [
+        'admin' => 'admin_dashboard.php',
+        'employer' => 'employer_dashboard.php',
+        'freelancer' => 'freelancer_dashboard.php',
+    ];
+
+    return $targets[$role] ?? 'login.php';
 }
 
 function job_status_label($status){
+    $status = trim((string)$status);
     $labels = [
+        '' => 'เปิดรับสมัคร',
         'open' => 'เปิดรับสมัคร',
         'in_progress' => 'กำลังดำเนินงาน',
-        'completed' => 'งานเสร็จสิ้น',
-        'closed' => 'ปิดรับสมัคร'
+        'completed' => 'เสร็จสิ้น',
+        'closed' => 'ปิดรับสมัคร',
     ];
 
     return $labels[$status] ?? 'เปิดรับสมัคร';
 }
 
+function format_salary($salary){
+    $amount = (float)$salary;
+    return $amount > 0 ? '฿' . number_format($amount, 0) : 'ไม่ระบุงบประมาณ';
+}
+
+function category_icon($name){
+    $name = strtolower((string)$name);
+    if(str_contains($name, 'design')) return 'bi-palette';
+    if(str_contains($name, 'marketing')) return 'bi-megaphone';
+    if(str_contains($name, 'writing')) return 'bi-pencil-square';
+    if(str_contains($name, 'finance') || str_contains($name, 'account')) return 'bi-cash-coin';
+    if(str_contains($name, 'education')) return 'bi-mortarboard';
+    if(str_contains($name, 'it') || str_contains($name, 'software') || str_contains($name, 'php') || str_contains($name, 'java')) return 'bi-code-slash';
+    return 'bi-briefcase';
+}
+
+$role = $_SESSION['role'] ?? '';
+$isLoggedIn = isset($_SESSION['user_id']) && $role !== '';
+$dashboardUrl = dashboard_for_role($role);
+$primaryCtaUrl = $isLoggedIn ? $dashboardUrl : 'register.php';
+$primaryCtaText = $isLoggedIn ? 'ไปที่แดชบอร์ด' : 'เริ่มต้นใช้งาน';
+$secondaryCtaUrl = $isLoggedIn ? $dashboardUrl : 'login.php';
+$secondaryCtaText = $isLoggedIn ? 'จัดการบัญชีของฉัน' : 'เข้าสู่ระบบ';
+
 $categories = [];
 $featuredJobs = [];
 $companies = [];
-$stats = ['jobs' => 0, 'companies' => 0, 'users' => 0];
+$stats = ['jobs' => 0, 'employers' => 0, 'freelancers' => 0];
 
 if($conn){
-    $categories = db_fetch_all($conn, "
-        SELECT c.name,
-               COALESCE(NULLIF(c.icon,''), LEFT(c.name, 2)) AS icon,
-               COUNT(j.job_id) AS jobs
-        FROM categories c
-        LEFT JOIN job j ON j.category = c.name AND j.admin_status = 'approved'
-        GROUP BY c.category_id, c.name, c.icon
-        ORDER BY jobs DESC, c.name ASC
-        LIMIT 6
-    ");
+    ensure_location_schema($conn);
+    ensure_job_image_schema($conn);
+
+    if(table_exists($conn, 'categories')){
+        $categories = db_fetch_all($conn, "
+            SELECT c.name,
+                   COUNT(j.job_id) AS jobs
+            FROM categories c
+            LEFT JOIN job j ON j.category = c.name
+                AND j.admin_status = 'approved'
+                AND COALESCE(NULLIF(j.status,''), 'open') != 'closed'
+            GROUP BY c.category_id, c.name
+            ORDER BY jobs DESC, c.name ASC
+            LIMIT 6
+        ");
+    }
 
     if(count($categories) === 0){
         $categories = db_fetch_all($conn, "
             SELECT COALESCE(NULLIF(category,''), 'Other') AS name,
-                   LEFT(COALESCE(NULLIF(category,''), 'Other'), 2) AS icon,
                    COUNT(*) AS jobs
             FROM job
             WHERE admin_status = 'approved'
+              AND COALESCE(NULLIF(status,''), 'open') != 'closed'
             GROUP BY COALESCE(NULLIF(category,''), 'Other')
             ORDER BY jobs DESC, name ASC
             LIMIT 6
         ");
     }
 
-    $jobWhere = ["j.admin_status = 'approved'"];
+    $jobLatSql = "COALESCE(j.latitude, ep.latitude, u.latitude)";
+    $jobLngSql = "COALESCE(j.longitude, ep.longitude, u.longitude)";
+    $distanceSql = "(6371 * ACOS(LEAST(1, GREATEST(-1, COS(RADIANS(?)) * COS(RADIANS($jobLatSql)) * COS(RADIANS($jobLngSql) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS($jobLatSql))))))";
+    $distanceSelect = '';
+    $jobOrder = "j.created_at DESC";
+    $jobWhere = ["j.admin_status = 'approved'", "COALESCE(NULLIF(j.status,''), 'open') != 'closed'"];
     $jobTypes = '';
     $jobParams = [];
+
+    if($hasLocationPin){
+        $distanceSelect = ", $distanceSql AS distance_km";
+        $jobTypes .= 'ddd';
+        array_push($jobParams, $searchLat, $searchLng, $searchLat);
+
+        $jobWhere[] = "$jobLatSql IS NOT NULL AND $jobLngSql IS NOT NULL";
+        $jobWhere[] = "$distanceSql <= ?";
+        $jobTypes .= 'dddd';
+        array_push($jobParams, $searchLat, $searchLng, $searchLat, $searchRadiusKm);
+        $jobOrder = "distance_km ASC, j.created_at DESC";
+    }
 
     if($titleSearch !== ''){
         $likeTitle = '%' . $titleSearch . '%';
@@ -135,149 +210,133 @@ if($conn){
     $featuredJobs = db_fetch_all($conn, "
         SELECT j.job_id,
                j.title,
+               j.description,
                j.salary,
                j.location,
                j.status,
                j.category,
                j.created_at,
+               COALESCE(
+                   (SELECT ji.image_path FROM job_images ji WHERE ji.job_id = j.job_id ORDER BY ji.sort_order ASC, ji.image_id ASC LIMIT 1),
+                   j.image_path
+               ) AS job_image
+               $distanceSelect,
                COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS company
         FROM job j
         JOIN users u ON u.user_id = j.employer_id
         LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
         WHERE " . implode(' AND ', $jobWhere) . "
-        ORDER BY j.created_at DESC
+        ORDER BY $jobOrder
         LIMIT 6
     ", $jobTypes, $jobParams);
 
     $companies = db_fetch_all($conn, "
         SELECT u.user_id,
+               u.profile_image,
                COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS name,
-               COALESCE(NULLIF(ep.employer_description,''), 'นายจ้างที่ยืนยันแล้ว (Verified employer)') AS industry,
+               COALESCE(NULLIF(ep.employer_description,''), 'ผู้ว่าจ้างในระบบ FreelanceHub') AS description,
                COUNT(j.job_id) AS jobs
         FROM users u
         LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
-        LEFT JOIN job j ON j.employer_id = u.user_id AND j.admin_status = 'approved'
+        LEFT JOIN job j ON j.employer_id = u.user_id
+            AND j.admin_status = 'approved'
+            AND COALESCE(NULLIF(j.status,''), 'open') != 'closed'
         WHERE u.role = 'employer'
-        GROUP BY u.user_id, u.username, u.fullname, ep.employer_name, ep.employer_description
+        GROUP BY u.user_id, u.profile_image, u.username, u.fullname, ep.employer_name, ep.employer_description
         ORDER BY jobs DESC, name ASC
-        LIMIT 6
+        LIMIT 4
     ");
 
     $stats = [
         'jobs' => db_count($conn, "SELECT COUNT(*) AS c FROM job WHERE admin_status = 'approved'"),
-        'companies' => db_count($conn, "SELECT COUNT(*) AS c FROM users WHERE role = 'employer'"),
-        'users' => db_count($conn, "SELECT COUNT(*) AS c FROM users WHERE role != 'admin'")
+        'employers' => db_count($conn, "SELECT COUNT(*) AS c FROM users WHERE role = 'employer'"),
+        'freelancers' => db_count($conn, "SELECT COUNT(*) AS c FROM users WHERE role = 'freelancer'"),
     ];
 }
+
+$heroStyle = "--hero-bg:
+    radial-gradient(circle at 76% 24%, rgba(20,184,166,.30) 0%, rgba(20,184,166,0) 30%),
+    radial-gradient(circle at 18% 72%, rgba(91,95,244,.34) 0%, rgba(91,95,244,0) 34%),
+    linear-gradient(135deg, #0b1220 0%, #12203a 54%, #0f172a 100%);";
+$pinStatusText = $hasLocationPin
+    ? 'ปักหมุดแล้ว รัศมี ' . number_format($searchRadiusKm, 0) . ' กม.'
+    : ($locationSearch !== '' ? $locationSearch : 'ยังไม่ได้ปักหมุดพื้นที่หางาน');
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="JobFind แพลตฟอร์มหางานที่ช่วยให้ผู้สมัครเจองานคุณภาพจากบริษัทที่น่าเชื่อถือ">
-<title>JobFind - หางานที่ใช่ | Find Your Dream Job</title>
+<meta name="description" content="FreelanceHub แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
+<title>FreelanceHub - หางานฟรีแลนซ์และจ้างงาน</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
 <style>
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    letter-spacing: 0;
-  }
-
   :root {
-    --navy-950: #06101f;
-    --navy-900: #0b1220;
-    --navy-850: #101a2f;
-    --navy-800: #13233d;
-    --blue-600: #2563eb;
-    --blue-500: #3b82f6;
-    --cyan-400: #22d3ee;
+    --navy: #0b1220;
+    --navy2: #111c31;
+    --accent: #5b5ff4;
+    --cyan: #06b6d4;
+    --green: #14b87a;
+    --orange: #f97316;
+    --yellow: #f59e0b;
+    --light: #eef3f8;
+    --white: #ffffff;
     --text: #0f172a;
     --muted: #64748b;
-    --soft: #eff6ff;
-    --white: #ffffff;
     --border: #dbe4ef;
-    --shadow-sm: 0 12px 28px rgba(15, 23, 42, .08);
-    --shadow-md: 0 22px 50px rgba(15, 23, 42, .14);
-    --radius: 16px;
-    --radius-sm: 10px;
+    --radius: 8px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .04), 0 10px 24px rgba(15, 23, 42, .06);
+    --shadow-md: 0 18px 42px rgba(15, 23, 42, .10);
   }
 
-  html {
-    scroll-behavior: smooth;
-    background: var(--navy-950);
-  }
+  html { scroll-behavior: smooth; background: var(--navy); }
+  body { min-height: 100vh; margin: 0; color: var(--text); background: #f8fbff; }
+  a { color: inherit; text-decoration: none; }
+  button, input { font: inherit; }
 
-  body {
-    min-height: 100vh;
-    font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-    color: var(--text);
-    background: #f6f9fd;
-    line-height: 1.6;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-  }
+  .shell { overflow-x: hidden; background: #f7fbff; }
+  .shell .container { width: min(1160px, calc(100% - 36px)); margin: 0 auto; }
 
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  button,
-  input {
-    font: inherit;
-  }
-
-  .page {
-    overflow: hidden;
-  }
-
-  .container {
-    width: min(1180px, calc(100% - 40px));
-    margin: 0 auto;
-  }
-
-  .navbar {
+  .top-nav {
     position: sticky;
     top: 0;
-    z-index: 30;
-    border-bottom: 1px solid rgba(255, 255, 255, .10);
-    background: rgba(6, 16, 31, .88);
-    backdrop-filter: blur(18px);
+    z-index: 20;
+    background: rgba(255, 255, 255, .92) !important;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(16px);
   }
 
   .nav-inner {
-    min-height: 76px;
+    min-height: 74px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
   }
 
-  .logo {
+  .shell .brand {
     display: inline-flex;
     align-items: center;
-    gap: 11px;
-    color: #ffffff;
-    font-size: 22px;
-    font-weight: 850;
+    gap: 12px;
+    color: #14213d !important;
+    font-weight: 800;
   }
 
-  .logo-mark {
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
+  .shell .brand-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #2563eb, #22d3ee);
-    box-shadow: 0 14px 30px rgba(37, 99, 235, .34);
-    font-size: 14px;
-    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(91, 95, 244, .28);
   }
+
+  .shell .brand-name { color: #14213d !important; font-size: 22px; line-height: 1; }
 
   .nav-links {
     display: flex;
@@ -289,25 +348,16 @@ if($conn){
     min-height: 40px;
     display: inline-flex;
     align-items: center;
-    padding: 0 13px;
-    border-radius: 999px;
-    color: #cbd5e1;
+    padding: 0 12px;
+    border-radius: 8px;
+    color: #405571;
     font-size: 14px;
     font-weight: 700;
-    transition: color .18s ease, background .18s ease, transform .18s ease;
   }
 
-  .nav-links a:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, .09);
-    transform: translateY(-1px);
-  }
+  .nav-links a:hover { background: #eef2ff; color: var(--accent); }
 
-  .nav-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .nav-actions { display: flex; align-items: center; gap: 10px; }
 
   .btn {
     min-height: 42px;
@@ -316,897 +366,989 @@ if($conn){
     justify-content: center;
     gap: 8px;
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: 10px;
     padding: 0 18px;
-    cursor: pointer;
     font-size: 14px;
     font-weight: 800;
-    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s, background .15s, border-color .15s;
   }
 
-  .btn-outline {
-    border-color: rgba(255, 255, 255, .18);
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, .06);
-  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--green)); color: #fff; box-shadow: 0 12px 22px rgba(91, 95, 244, .22); }
+  .btn-secondary { background: #fff; color: #24364f; border-color: var(--border); }
+  .btn-secondary:hover { border-color: #aeb9ff; color: var(--accent); background: #f8faff; }
+  .btn-ghost { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .22); }
+  .btn-ghost:hover { background: rgba(255, 255, 255, .18); color: #fff; }
 
-  .btn-outline:hover {
-    border-color: rgba(255, 255, 255, .32);
-    background: rgba(255, 255, 255, .10);
-    transform: translateY(-1px);
-  }
-
-  .btn-primary {
-    color: #ffffff;
-    background: linear-gradient(135deg, var(--blue-600), var(--cyan-400));
-    box-shadow: 0 16px 32px rgba(37, 99, 235, .28);
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 22px 42px rgba(37, 99, 235, .34);
-  }
-
-  .hero {
-    position: relative;
-    min-height: 680px;
+  .shell .hero {
+    min-height: clamp(560px, 82vh, 720px);
     display: flex;
     align-items: center;
-    color: #ffffff;
-    background:
-      linear-gradient(rgba(6, 16, 31, .88), rgba(6, 16, 31, .78)),
-      radial-gradient(circle at 22% 24%, rgba(59, 130, 246, .34), transparent 30%),
-      radial-gradient(circle at 82% 18%, rgba(34, 211, 238, .24), transparent 28%),
-      linear-gradient(135deg, #06101f 0%, #0b1220 44%, #13233d 100%);
-  }
-
-  .hero-visual {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .hero-visual::before,
-  .hero-visual::after {
-    content: "";
-    position: absolute;
-    width: 760px;
-    height: 760px;
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 50%;
-  }
-
-  .hero-visual::before {
-    top: -280px;
-    right: -180px;
-  }
-
-  .hero-visual::after {
-    bottom: -380px;
-    left: -260px;
-  }
-
-  .job-stream {
-    position: absolute;
-    inset: 110px -40px auto auto;
-    width: min(620px, 52vw);
-    display: grid;
-    gap: 16px;
-    transform: rotate(-7deg);
-    opacity: .52;
-  }
-
-  .stream-row {
-    display: grid;
-    grid-template-columns: 52px 1fr 110px;
-    align-items: center;
-    gap: 14px;
-    padding: 14px;
-    border: 1px solid rgba(255, 255, 255, .12);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, .08);
-    box-shadow: 0 24px 70px rgba(0, 0, 0, .18);
-  }
-
-  .stream-row:nth-child(2) {
-    margin-left: 54px;
-  }
-
-  .stream-row:nth-child(3) {
-    margin-left: 108px;
-  }
-
-  .stream-mark {
-    width: 52px;
-    height: 52px;
-    border-radius: 15px;
-    background: linear-gradient(135deg, rgba(37, 99, 235, .96), rgba(34, 211, 238, .86));
-  }
-
-  .stream-lines {
-    display: grid;
-    gap: 9px;
-  }
-
-  .stream-lines span {
-    display: block;
-    height: 9px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, .44);
-  }
-
-  .stream-lines span:last-child {
-    width: 66%;
-    background: rgba(255, 255, 255, .24);
-  }
-
-  .stream-pill {
-    height: 30px;
-    border-radius: 999px;
-    background: rgba(34, 211, 238, .24);
+    background: var(--hero-bg) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    color: #fff !important;
   }
 
   .hero-content {
-    position: relative;
-    z-index: 2;
-    width: min(820px, 100%);
-    padding: 110px 0 98px;
+    width: min(760px, 100%);
+    padding: 70px 0 84px;
   }
 
   .eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-height: 34px;
-    padding: 6px 13px;
-    border: 1px solid rgba(255, 255, 255, .16);
+    padding: 0 12px;
+    border: 1px solid rgba(219, 228, 255, .24);
     border-radius: 999px;
-    background: rgba(255, 255, 255, .08);
-    color: #bfdbfe;
+    background: rgba(255, 255, 255, .10);
+    color: #dce7ff;
     font-size: 13px;
     font-weight: 800;
   }
 
-  .eyebrow-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 999px;
-    background: #22d3ee;
-    box-shadow: 0 0 0 5px rgba(34, 211, 238, .16);
-  }
-
-  .hero h1 {
-    margin-top: 24px;
-    max-width: 760px;
-    font-size: clamp(44px, 7vw, 78px);
-    line-height: 1.02;
+  .shell .hero h1 {
+    margin: 22px 0 16px;
+    color: #fff !important;
+    font-size: clamp(40px, 6vw, 68px);
+    line-height: 1.05;
     font-weight: 900;
   }
 
-  .hero p {
-    max-width: 650px;
-    margin-top: 24px;
-    color: #cbd5e1;
-    font-size: clamp(16px, 2vw, 19px);
+  .shell .hero-copy {
+    max-width: 660px;
+    margin: 0 0 30px;
+    color: #d8e3f3 !important;
+    font-size: 17px;
+    line-height: 1.75;
   }
 
-  .search-panel {
-    width: min(860px, 100%);
-    margin-top: 36px;
-    padding: 12px;
+  .search-strip {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto;
+    grid-template-columns: 1fr 1fr auto;
     gap: 10px;
-    border: 1px solid rgba(255, 255, 255, .18);
-    border-radius: 22px;
-    background: rgba(255, 255, 255, .96);
-    box-shadow: 0 28px 70px rgba(0, 0, 0, .28);
+    max-width: 860px;
+    margin-bottom: 24px;
   }
 
   .search-field {
-    min-height: 58px;
+    min-height: 54px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     padding: 0 16px;
-    border: 1px solid #dbe4ef;
-    border-radius: 16px;
-    background: #ffffff;
+    border: 1px solid rgba(219, 228, 255, .24);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .94);
+    color: #1f314a;
   }
 
-  .search-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 11px;
+  .search-field i { color: var(--accent); font-size: 18px; }
+  .search-field input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 14px; }
+  .search-field input::placeholder { color: #7a8ba2; }
+  .search-strip .btn { min-height: 54px; }
+
+  .location-pin-field {
+    min-height: 54px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px 8px 16px;
+    border: 1px solid rgba(219, 228, 255, .24);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .94);
+    color: #1f314a;
+  }
+
+  .location-pin-field > i {
+    color: var(--accent);
+    font-size: 18px;
+  }
+
+  .pin-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .pin-label {
+    color: #1f314a;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .pin-status {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .btn-pin {
+    min-height: 38px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 auto;
-    background: #eff6ff;
-    color: var(--blue-600);
-    font-size: 16px;
-  }
-
-  .search-field input {
-    width: 100%;
-    border: 0;
-    outline: 0;
-    color: var(--text);
-    background: transparent;
-    font-size: 15px;
-    font-weight: 650;
-  }
-
-  .search-field input::placeholder {
-    color: #94a3b8;
-    font-weight: 600;
-  }
-
-  .search-btn {
-    min-height: 58px;
-    border-radius: 16px;
-    padding: 0 28px;
-  }
-
-  .hero-trust {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    flex-wrap: wrap;
-    margin-top: 28px;
-    color: #cbd5e1;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .trust-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .trust-check {
-    color: #22d3ee;
-    font-weight: 900;
-  }
-
-  section {
-    padding: 86px 0;
-  }
-
-  .section-head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 30px;
-  }
-
-  .section-kicker {
-    color: var(--blue-600);
+    gap: 6px;
+    border: 1px solid #c7d2fe;
+    border-radius: 9px;
+    background: #eef2ff;
+    color: var(--accent);
+    padding: 0 12px;
     font-size: 12px;
     font-weight: 900;
-    text-transform: uppercase;
+    cursor: pointer;
   }
 
-  .section-title {
-    margin-top: 8px;
-    color: #071327;
-    font-size: clamp(28px, 4vw, 42px);
-    line-height: 1.18;
-    font-weight: 900;
+  .btn-pin:hover {
+    background: #dfe6ff;
   }
 
-  .section-copy {
-    max-width: 430px;
-    color: var(--muted);
-    font-size: 15px;
-  }
-
-  .category-grid,
-  .company-grid {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 16px;
-  }
-
-  .category-card,
-  .company-card,
-  .job-card,
-  .stat-card {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: rgba(255, 255, 255, .96);
-    box-shadow: var(--shadow-sm);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  }
-
-  .category-card:hover,
-  .company-card:hover,
-  .job-card:hover,
-  .stat-card:hover {
-    transform: translateY(-5px);
-    border-color: #bfdbfe;
-    box-shadow: var(--shadow-md);
-  }
-
-  .category-card {
-    min-height: 156px;
-    padding: 22px;
-  }
-
-  .category-icon,
-  .company-mark {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    display: inline-flex;
+  .map-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #eff6ff, #dbeafe);
-    color: var(--blue-600);
-    font-size: 14px;
+    padding: 22px;
+    background: rgba(15, 23, 42, .62);
+  }
+
+  .map-modal.active { display: flex; }
+
+  .map-container {
+    width: min(900px, 100%);
+    height: min(760px, 92vh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .32);
+  }
+
+  .map-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .map-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: #172033;
+    font-size: 17px;
     font-weight: 900;
   }
 
-  .category-card h3 {
-    margin-top: 18px;
-    color: #0f172a;
-    font-size: 17px;
-    font-weight: 850;
+  .map-close {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
   }
 
-  .category-card p {
-    margin-top: 4px;
-    color: var(--muted);
+  .map-info {
+    margin: 16px 16px 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #eef2ff;
+    color: #3730a3;
     font-size: 13px;
     font-weight: 700;
   }
 
-  .jobs-section {
+  .map-radius-control {
+    margin: 12px 16px 14px;
+    padding: 13px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+
+  .radius-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .radius-row span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .radius-value {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .radius-slider {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+
+  .radius-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  #index-map {
+    flex: 1;
+    min-height: 360px;
+  }
+
+  .map-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .map-footer button {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .btn-map-cancel {
+    background: var(--light);
+    color: var(--text);
+  }
+
+  .btn-map-confirm {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .hero-metrics {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 32px;
+    color: #dce7ff;
+  }
+
+  .metric {
+    min-width: 132px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255, 255, 255, .22);
+  }
+
+  .metric strong {
+    display: block;
+    margin-bottom: 2px;
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .metric span { font-size: 12px; font-weight: 800; color: #b9c8dd; }
+
+  section {
+    padding: 64px 0;
+    border-top: 1px solid rgba(219, 228, 239, .74);
+  }
+
+  .categories-band {
     background:
-      linear-gradient(180deg, #ffffff 0%, #f6f9fd 100%);
+      linear-gradient(180deg, #f8fbff 0%, #f4f8fd 100%);
+  }
+
+  .jobs-band {
+    background:
+      linear-gradient(120deg, rgba(91, 95, 244, .06), transparent 38%),
+      linear-gradient(240deg, rgba(20, 184, 166, .08), transparent 34%),
+      #eef5fb;
+  }
+
+  .companies-band {
+    background:
+      linear-gradient(120deg, rgba(6, 182, 212, .07), transparent 42%),
+      #f7fbff;
+  }
+
+  .start-band {
+    background:
+      linear-gradient(135deg, rgba(91, 95, 244, .07), rgba(20, 184, 166, .06)),
+      #f1f7fb;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 26px;
+  }
+
+  .section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    margin: 0;
+    color: #071327 !important;
+    font-size: clamp(26px, 4vw, 38px);
+    line-height: 1.18;
+    font-weight: 900;
+  }
+
+  .section-desc {
+    max-width: 460px;
+    margin: 0;
+    color: #5d6f86;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+  }
+
+  .category-card,
+  .job-card,
+  .company-card,
+  .path-card,
+  .empty-state,
+  .db-alert {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .category-card {
+    min-height: 142px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 18px;
+  }
+
+  .category-card:hover,
+  .job-card:hover,
+  .company-card:hover,
+  .path-card:hover {
+    border-color: #bcc8ff;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .category-icon {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #eef2ff;
+    color: var(--accent);
+    font-size: 20px;
+  }
+
+  .category-card h3,
+  .job-title,
+  .company-card h3,
+  .path-card h3 {
+    margin: 0;
+    color: #172033;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.3;
+  }
+
+  .category-card p,
+  .company-card p,
+  .path-card p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.55;
   }
 
   .job-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
   }
 
   .job-card {
-    position: relative;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    padding: 22px;
   }
 
-  .job-card::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 4px;
-    background: linear-gradient(90deg, var(--blue-600), var(--cyan-400));
+  .job-media {
+    height: 148px;
+    background: linear-gradient(135deg, #eef2ff, #dff8f7);
+    overflow: hidden;
+  }
+
+  .job-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .job-media-fallback {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 42px;
+  }
+
+  .job-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
   }
 
   .job-top {
     display: flex;
-    align-items: flex-start;
     justify-content: space-between;
-    gap: 14px;
+    gap: 12px;
+    margin-bottom: 10px;
   }
 
-  .job-title {
-    color: #071327;
-    font-size: 19px;
-    line-height: 1.3;
-    font-weight: 900;
-  }
-
-  .job-tag {
+  .job-chip {
     flex: 0 0 auto;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
     border-radius: 999px;
-    padding: 6px 10px;
-    background: #eff6ff;
-    color: var(--blue-600);
-    font-size: 12px;
+    background: #eef2ff;
+    color: var(--accent);
+    font-size: 11px;
     font-weight: 900;
   }
 
   .company-name {
-    margin-top: 8px;
-    color: #475569;
-    font-size: 14px;
-    font-weight: 750;
+    margin: 0 0 12px;
+    color: #52657e;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .job-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 44px;
+    margin: 0 0 14px;
+    color: #5d6f86;
+    font-size: 13px;
+    line-height: 1.65;
   }
 
   .job-meta {
     display: grid;
-    gap: 9px;
-    margin-top: 22px;
-    color: #475569;
-    font-size: 14px;
-    font-weight: 650;
+    gap: 8px;
+    margin: auto 0 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
   }
 
   .job-meta span {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
+    color: #52657e;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .job-meta i { color: var(--accent); }
+
+  .company-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .company-card {
+    padding: 18px;
+  }
+
+  .company-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    color: #fff;
+    font-weight: 900;
+  }
+
+  .company-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .company-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    color: #047857;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .path-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .path-card {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .path-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0faef;
+    color: #047857;
+    font-size: 25px;
+  }
+
+  .path-card:nth-child(2) .path-icon {
+    background: #eef2ff;
+    color: var(--accent);
   }
 
   .db-alert,
   .empty-state {
-    grid-column: 1 / -1;
-    padding: 22px;
-    border: 1px solid #bfdbfe;
-    border-radius: var(--radius);
-    background: #eff6ff;
-    color: #1e3a8a;
-    font-size: 15px;
-    font-weight: 750;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .db-alert {
-    margin-bottom: 24px;
-    border-color: #fecaca;
-    background: #fff1f2;
-    color: #991b1b;
-  }
-
-  .meta-dot {
-    width: 26px;
-    height: 26px;
-    border-radius: 9px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #f1f5f9;
-    color: var(--blue-600);
-    font-size: 13px;
-  }
-
-  .apply-btn {
-    width: 100%;
-    margin-top: 24px;
-    color: #ffffff;
-    background: var(--navy-900);
-  }
-
-  .apply-btn:hover {
-    background: linear-gradient(135deg, var(--blue-600), var(--navy-800));
-    transform: translateY(-2px);
-  }
-
-  .companies-section {
-    background: var(--navy-950);
-    color: #ffffff;
-  }
-
-  .companies-section .section-title {
-    color: #ffffff;
-  }
-
-  .companies-section .section-copy {
-    color: #aebed2;
-  }
-
-  .company-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .company-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 22px;
-    background: rgba(255, 255, 255, .06);
-    border-color: rgba(255, 255, 255, .12);
-    box-shadow: none;
-  }
-
-  .company-card:hover {
-    border-color: rgba(34, 211, 238, .42);
-    background: rgba(255, 255, 255, .09);
-  }
-
-  .company-card h3 {
-    color: #ffffff;
-    font-size: 18px;
-    font-weight: 850;
-  }
-
-  .company-card p {
-    color: #aebed2;
-    font-size: 13px;
-  }
-
-  .company-card strong {
-    color: #bfdbfe;
-  }
-
-  .stats-section {
-    padding: 64px 0;
-    background:
-      linear-gradient(135deg, rgba(37, 99, 235, .10), rgba(34, 211, 238, .08)),
-      #ffffff;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-  }
-
-  .stat-card {
-    padding: 28px;
+    padding: 24px;
+    color: #52657e;
     text-align: center;
   }
 
-  .stat-number {
-    color: #071327;
-    font-size: clamp(32px, 5vw, 48px);
-    line-height: 1;
-    font-weight: 950;
+  .db-alert {
+    margin-bottom: 16px;
+    border-color: #fecdd3;
+    background: #fff1f2;
+    color: #be123c;
   }
 
-  .stat-label {
-    margin-top: 9px;
-    color: var(--muted);
-    font-size: 15px;
-    font-weight: 800;
+  @media (max-width: 1024px) {
+    .nav-links { display: none; }
+    .category-grid { grid-template-columns: repeat(3, 1fr); }
+    .job-grid { grid-template-columns: repeat(2, 1fr); }
+    .company-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
-  .footer {
-    padding: 54px 0 34px;
-    color: #aebed2;
-    background: var(--navy-950);
-  }
-
-  .footer-grid {
-    display: grid;
-    grid-template-columns: 1.2fr .8fr .8fr;
-    gap: 28px;
-  }
-
-  .footer h3,
-  .footer h4 {
-    color: #ffffff;
-  }
-
-  .footer h3 {
-    font-size: 24px;
-    font-weight: 900;
-  }
-
-  .footer p,
-  .footer a {
-    color: #aebed2;
-    font-size: 14px;
-  }
-
-  .footer a:hover {
-    color: #ffffff;
-  }
-
-  .footer-links,
-  .social-links {
-    display: grid;
-    gap: 10px;
-    margin-top: 14px;
-  }
-
-  .copyright {
-    margin-top: 34px;
-    padding-top: 22px;
-    border-top: 1px solid rgba(255, 255, 255, .10);
-    color: #71839d;
-    font-size: 13px;
-  }
-
-  @media (max-width: 980px) {
-    .nav-inner {
-      align-items: flex-start;
-      flex-direction: column;
-      padding: 16px 0;
-    }
-
-    .nav-links,
-    .nav-actions {
-      width: 100%;
-      flex-wrap: wrap;
-    }
-
-    .search-panel {
-      grid-template-columns: 1fr;
-    }
-
-    .category-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .job-grid,
-    .company-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .job-stream {
-      width: 720px;
-      inset: auto -240px 20px auto;
-      opacity: .22;
-    }
-  }
-
-  @media (max-width: 680px) {
-    .container {
-      width: min(100% - 28px, 1180px);
-    }
-
-    .hero {
-      min-height: auto;
-    }
-
-    .hero-content {
-      padding: 82px 0 72px;
-    }
-
-    .hero h1 {
-      font-size: clamp(40px, 13vw, 56px);
-    }
-
-    .nav-links a {
-      padding: 0 10px;
-    }
-
-    .nav-actions .btn {
-      flex: 1;
-    }
-
-    section {
-      padding: 62px 0;
-    }
-
-    .section-head {
-      display: block;
-    }
-
-    .section-copy {
-      margin-top: 12px;
-    }
-
+  @media (max-width: 720px) {
+    .container { width: min(100% - 28px, 1160px); }
+    .nav-inner { min-height: auto; padding: 14px 0; flex-wrap: wrap; }
+    .brand { flex: 1 1 100%; }
+    .nav-actions { width: 100%; }
+    .nav-actions .btn { flex: 1; padding: 0 10px; }
+    .hero { min-height: auto; }
+    .hero-content { padding: 54px 0 58px; }
+    .hero h1 { font-size: clamp(34px, 12vw, 48px); }
+    .search-strip { grid-template-columns: 1fr; }
+    .hero-actions .btn { width: 100%; }
+    .section-head { align-items: flex-start; flex-direction: column; }
+    section { padding: 46px 0; }
     .category-grid,
     .job-grid,
     .company-grid,
-    .stats-grid,
-    .footer-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .category-card {
-      min-height: auto;
-    }
+    .path-grid { grid-template-columns: 1fr; }
+    .path-card { grid-template-columns: 48px 1fr; }
+    .path-card .btn { grid-column: 1 / -1; }
   }
 </style>
 </head>
 <body>
-<div class="page">
-  <nav class="navbar">
+<div class="shell">
+  <nav class="top-nav">
     <div class="container nav-inner">
-      <a class="logo" href="index.php" aria-label="JobFind home">
-        <span class="logo-mark">JF</span>
-        <span>JobFind</span>
+      <a class="brand" href="index.php" aria-label="FreelanceHub home">
+        <span class="brand-icon"><i class="bi bi-lightning-charge-fill"></i></span>
+        <span class="brand-name">FreelanceHub</span>
       </a>
 
       <div class="nav-links" aria-label="Primary navigation">
-        <a href="#home">หน้าแรก</a>
-        <a href="#jobs">ค้นหางาน</a>
-        <a href="#companies">บริษัท</a>
-        <a href="#about">เกี่ยวกับเรา</a>
+        <a href="#jobs">งานล่าสุด</a>
+        <a href="#categories">หมวดงาน</a>
+        <a href="#companies">ผู้ว่าจ้าง</a>
+        <a href="#start">เริ่มใช้งาน</a>
       </div>
 
       <div class="nav-actions">
-        <a class="btn btn-outline" href="login.php">เข้าสู่ระบบ</a>
-        <a class="btn btn-primary" href="register.php">สมัครสมาชิก</a>
+        <a class="btn btn-secondary" href="<?php echo e($secondaryCtaUrl); ?>"><?php echo e($secondaryCtaText); ?></a>
+        <a class="btn btn-primary" href="<?php echo e($primaryCtaUrl); ?>"><?php echo e($primaryCtaText); ?></a>
       </div>
     </div>
   </nav>
 
-  <header class="hero" id="home">
-    <div class="hero-visual" aria-hidden="true">
-      <div class="job-stream">
-        <div class="stream-row">
-          <span class="stream-mark"></span>
-          <span class="stream-lines"><span></span><span></span></span>
-          <span class="stream-pill"></span>
-        </div>
-        <div class="stream-row">
-          <span class="stream-mark"></span>
-          <span class="stream-lines"><span></span><span></span></span>
-          <span class="stream-pill"></span>
-        </div>
-        <div class="stream-row">
-          <span class="stream-mark"></span>
-          <span class="stream-lines"><span></span><span></span></span>
-          <span class="stream-pill"></span>
-        </div>
-      </div>
-    </div>
-
+  <header class="hero" style="<?php echo $heroStyle; ?>">
     <div class="container">
       <div class="hero-content">
-        <div class="eyebrow"><span class="eyebrow-dot"></span> แพลตฟอร์มหางานสำหรับทีมยุคใหม่ | Modern Hiring</div>
-        <h1>หางานที่ใช่ เริ่มต้นที่ JobFind</h1>
-        <p>ค้นหางานคุณภาพจากบริษัทที่น่าเชื่อถือ เปรียบเทียบตำแหน่งได้มั่นใจ และสมัครงานได้เร็วขึ้นแบบ Find Your Dream Job.</p>
+        <span class="eyebrow"><i class="bi bi-stars"></i> แพลตฟอร์มจ้างงานและหางานฟรีแลนซ์</span>
+        <h1>FreelanceHub</h1>
+        <p class="hero-copy">ค้นหางานที่ตรงทักษะ สมัครงาน ติดตามสถานะ และรีวิวผู้ว่าจ้างได้ในระบบเดียว ผู้ว่าจ้างก็สามารถโพสต์งาน จัดการผู้สมัคร และเก็บประวัติการทำงานได้ครบถ้วน</p>
 
-        <form class="search-panel" method="GET" action="index.php#jobs">
+        <form class="search-strip" method="GET" action="index.php#jobs">
           <label class="search-field">
-            <span class="search-icon">Q</span>
-            <input type="text" name="title" value="<?php echo e($titleSearch); ?>" placeholder="ตำแหน่งงาน, keyword, หรือบริษัท">
+            <i class="bi bi-search"></i>
+            <input type="text" name="title" value="<?php echo e($titleSearch); ?>" placeholder="ค้นหาชื่องาน หมวดงาน หรือบริษัท">
           </label>
-          <label class="search-field">
-            <span class="search-icon">L</span>
-            <input type="text" name="location" value="<?php echo e($locationSearch); ?>" placeholder="จังหวัดหรือพื้นที่ทำงาน">
-          </label>
-          <button class="btn btn-primary search-btn" type="submit">ค้นหางาน</button>
+          <div class="location-pin-field">
+            <i class="bi bi-geo-alt"></i>
+            <div class="pin-copy">
+              <span class="pin-label">ปักหมุดพื้นที่หางาน</span>
+              <span class="pin-status" id="index-location-status"><?php echo e($pinStatusText); ?></span>
+            </div>
+            <button class="btn-pin" type="button" onclick="openIndexMapModal()">
+              <i class="bi bi-pin-map"></i> เลือก
+            </button>
+            <input type="hidden" name="location" id="index-location" value="<?php echo e($locationSearch); ?>">
+            <input type="hidden" name="latitude" id="index-latitude" value="<?php echo $hasLocationPin ? e($searchLat) : ''; ?>">
+            <input type="hidden" name="longitude" id="index-longitude" value="<?php echo $hasLocationPin ? e($searchLng) : ''; ?>">
+            <input type="hidden" name="preferred_radius_km" id="index-radius" value="<?php echo e($searchRadiusKm); ?>">
+          </div>
+          <button class="btn btn-primary" type="submit"><i class="bi bi-arrow-right"></i> ค้นหา</button>
         </form>
 
-        <div class="hero-trust">
-          <span class="trust-item"><span class="trust-check">+</span> บริษัทตรวจสอบแล้ว</span>
-          <span class="trust-item"><span class="trust-check">+</span> เงินเดือนชัดเจน</span>
-          <span class="trust-item"><span class="trust-check">+</span> สมัครง่ายแบบ Fast Apply</span>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="<?php echo e($primaryCtaUrl); ?>"><i class="bi bi-person-plus"></i> <?php echo e($primaryCtaText); ?></a>
+          <a class="btn btn-ghost" href="#jobs"><i class="bi bi-briefcase"></i> ดูงานล่าสุด</a>
+        </div>
+
+        <div class="hero-metrics" aria-label="Platform statistics">
+          <div class="metric"><strong><?php echo e(number_format($stats['jobs'])); ?></strong><span>งานในระบบ</span></div>
+          <div class="metric"><strong><?php echo e(number_format($stats['employers'])); ?></strong><span>ผู้ว่าจ้าง</span></div>
+          <div class="metric"><strong><?php echo e(number_format($stats['freelancers'])); ?></strong><span>ฟรีแลนซ์</span></div>
         </div>
       </div>
     </div>
   </header>
 
-  <section id="categories">
+  <section class="categories-band" id="categories">
     <div class="container">
       <div class="section-head">
         <div>
-          <div class="section-kicker">หมวดยอดนิยม / Popular Categories</div>
-          <h2 class="section-title">สายงานที่กำลังต้องการคน</h2>
+          <div class="section-kicker"><i class="bi bi-grid"></i> หมวดงาน</div>
+          <h2 class="section-title">เริ่มจากสายงานที่สนใจ</h2>
         </div>
-        <p class="section-copy">เลือกดูหมวดงานจากฐานข้อมูลจริง ทั้งสายเทคโนโลยี ดีไซน์ การตลาด บัญชี และงานธุรกิจดิจิทัล</p>
+        <p class="section-desc">เลือกหมวดเพื่อกรองงานจากข้อมูลจริงในระบบ หรือค้นหาต่อจากช่องด้านบน</p>
       </div>
 
       <div class="category-grid">
+        <?php if(count($categories) === 0): ?>
+          <div class="empty-state">ยังไม่มีหมวดงานในระบบ</div>
+        <?php endif; ?>
         <?php foreach($categories as $category): ?>
-        <article class="category-card">
-          <div class="category-icon"><?php echo e(($category["icon"] ?? '') === '?' ? initials($category["name"]) : $category["icon"]); ?></div>
-          <h3><?php echo e($category["name"]); ?></h3>
-          <p><?php echo e(number_format((int)$category["jobs"])); ?> ตำแหน่งที่เปิดรับ</p>
-        </article>
+          <a class="category-card" href="index.php?title=<?php echo urlencode($category['name']); ?>#jobs">
+            <span class="category-icon"><i class="bi <?php echo e(category_icon($category['name'])); ?>"></i></span>
+            <span>
+              <h3><?php echo e($category['name']); ?></h3>
+              <p><?php echo e(number_format((int)$category['jobs'])); ?> งานที่เปิดรับ</p>
+            </span>
+          </a>
         <?php endforeach; ?>
       </div>
     </div>
   </section>
 
-  <section class="jobs-section" id="jobs">
+  <section class="jobs-band" id="jobs">
     <div class="container">
       <div class="section-head">
         <div>
-          <div class="section-kicker">งานแนะนำ / Featured Jobs</div>
-          <h2 class="section-title">งานล่าสุดจากฐานข้อมูล JobFind</h2>
+          <div class="section-kicker"><i class="bi bi-briefcase"></i> งานล่าสุด</div>
+          <h2 class="section-title"><?php echo ($titleSearch !== '' || $locationSearch !== '') ? 'ผลการค้นหา' : 'งานที่กำลังเปิดรับ'; ?></h2>
         </div>
-        <p class="section-copy">
-          <?php if($dbError): ?>
-            ไม่สามารถโหลดข้อมูลจากฐานข้อมูลได้ในขณะนี้
-          <?php elseif($titleSearch !== '' || $locationSearch !== ''): ?>
-            แสดงงานที่ผ่านการอนุมัติจากฐานข้อมูล และตรงกับคำค้นหาของคุณ
-          <?php else: ?>
-            รวมตำแหน่งงานที่ผ่านการอนุมัติล่าสุดจากระบบจริงของ JobFind
-          <?php endif; ?>
-        </p>
+        <p class="section-desc">ดูรายละเอียดงานก่อนสมัครได้ เมื่อเข้าสู่ระบบด้วยบัญชี Freelancer</p>
       </div>
 
       <?php if($dbError): ?>
-      <div class="db-alert"><?php echo e($dbError); ?></div>
+        <div class="db-alert"><?php echo e($dbError); ?></div>
       <?php endif; ?>
 
       <div class="job-grid">
         <?php if(count($featuredJobs) === 0): ?>
-        <div class="empty-state">ไม่พบงานในฐานข้อมูลที่ตรงกับคำค้นหานี้</div>
+          <div class="empty-state">ไม่พบงานที่ตรงกับเงื่อนไขนี้</div>
         <?php endif; ?>
 
         <?php foreach($featuredJobs as $job): ?>
-        <article class="job-card">
-          <div class="job-top">
-            <div>
-              <h3 class="job-title"><?php echo e($job["title"]); ?></h3>
-              <p class="company-name"><?php echo e($job["company"]); ?></p>
+          <?php
+            $jobImage = trim($job['job_image'] ?? '');
+            $jobHref = $role === 'freelancer'
+              ? 'view_job.php?job_id=' . urlencode($job['job_id']) . '&return_url=' . urlencode('index.php')
+              : 'login.php';
+          ?>
+          <article class="job-card">
+            <div class="job-media">
+              <?php if($jobImage !== ''): ?>
+                <img src="<?php echo e($jobImage); ?>" alt="<?php echo e($job['title']); ?>">
+              <?php else: ?>
+                <div class="job-media-fallback"><i class="bi <?php echo e(category_icon($job['category'])); ?>"></i></div>
+              <?php endif; ?>
             </div>
-            <span class="job-tag"><?php echo e($job["category"] ?: "Job"); ?></span>
-          </div>
-
-          <div class="job-meta">
-            <span><span class="meta-dot">$</span><?php echo ((float)$job["salary"] > 0) ? "THB " . e(number_format((float)$job["salary"], 2)) : "ไม่ระบุเงินเดือน"; ?></span>
-            <span><span class="meta-dot">L</span><?php echo e(trim($job["location"]) !== '' ? $job["location"] : "ไม่ระบุสถานที่"); ?></span>
-            <span><span class="meta-dot">S</span><?php echo e(job_status_label($job["status"])); ?></span>
-          </div>
-
-          <a class="btn apply-btn" href="view_job.php?job_id=<?php echo e($job["job_id"]); ?>">สมัครงาน / Apply</a>
-        </article>
+            <div class="job-body">
+              <div class="job-top">
+                <div>
+                  <h3 class="job-title"><?php echo e($job['title']); ?></h3>
+                  <p class="company-name"><?php echo e($job['company']); ?></p>
+                </div>
+                <span class="job-chip"><?php echo e($job['category'] ?: 'ทั่วไป'); ?></span>
+              </div>
+              <p class="job-desc"><?php echo e($job['description'] ?: 'ไม่มีรายละเอียดเพิ่มเติม'); ?></p>
+              <div class="job-meta">
+                <span><i class="bi bi-cash-coin"></i><?php echo e(format_salary($job['salary'])); ?></span>
+                <span><i class="bi bi-geo-alt"></i><?php echo e(trim($job['location']) !== '' ? $job['location'] : 'ไม่ระบุสถานที่'); ?></span>
+                <?php if($hasLocationPin && isset($job['distance_km'])): ?>
+                  <span><i class="bi bi-signpost-split"></i>ห่างประมาณ <?php echo e(number_format((float)$job['distance_km'], 1)); ?> กม.</span>
+                <?php endif; ?>
+                <span><i class="bi bi-circle-fill"></i><?php echo e(job_status_label($job['status'])); ?></span>
+              </div>
+              <a class="btn btn-primary" href="<?php echo e($jobHref); ?>"><i class="bi bi-eye"></i> ดูรายละเอียด</a>
+            </div>
+          </article>
         <?php endforeach; ?>
       </div>
     </div>
   </section>
 
-  <section class="companies-section" id="companies">
+  <section class="companies-band" id="companies">
     <div class="container">
       <div class="section-head">
         <div>
-          <div class="section-kicker">บริษัทแนะนำ / Top Companies</div>
-          <h2 class="section-title">บริษัทที่กำลังเปิดรับสมัคร</h2>
+          <div class="section-kicker"><i class="bi bi-building"></i> ผู้ว่าจ้าง</div>
+          <h2 class="section-title">บริษัทที่มีงานเปิดรับ</h2>
         </div>
-        <p class="section-copy">ดูรายชื่อนายจ้างจริงในระบบ พร้อมจำนวนงานที่เปิดรับสมัครบน JobFind</p>
+        <p class="section-desc">ดูภาพรวมผู้ว่าจ้างที่ใช้งานระบบและจำนวนงานที่เปิดรับอยู่</p>
       </div>
 
       <div class="company-grid">
         <?php if(count($companies) === 0): ?>
-        <div class="empty-state">ยังไม่มีข้อมูลบริษัทในฐานข้อมูล</div>
+          <div class="empty-state">ยังไม่มีข้อมูลผู้ว่าจ้าง</div>
         <?php endif; ?>
-
         <?php foreach($companies as $company): ?>
-        <article class="company-card">
-          <div class="company-mark"><?php echo e(initials($company["name"])); ?></div>
-          <div>
-            <h3><?php echo e($company["name"]); ?></h3>
-            <p><?php echo e($company["industry"]); ?> - <strong><?php echo e(number_format((int)$company["jobs"])); ?> งานที่เปิดรับ</strong></p>
-          </div>
-        </article>
+          <article class="company-card">
+            <div class="company-avatar">
+              <?php if(trim($company['profile_image'] ?? '') !== ''): ?>
+                <img src="<?php echo e($company['profile_image']); ?>" alt="<?php echo e($company['name']); ?>">
+              <?php else: ?>
+                <?php echo e(initials($company['name'])); ?>
+              <?php endif; ?>
+            </div>
+            <h3><?php echo e($company['name']); ?></h3>
+            <p><?php echo e($company['description']); ?></p>
+            <span class="company-count"><i class="bi bi-briefcase-fill"></i> <?php echo e(number_format((int)$company['jobs'])); ?> งานเปิดรับ</span>
+          </article>
         <?php endforeach; ?>
       </div>
     </div>
   </section>
 
-  <section class="stats-section" id="about">
+  <section class="start-band" id="start">
     <div class="container">
-      <div class="stats-grid">
-        <article class="stat-card">
-          <div class="stat-number"><?php echo e(number_format($stats["jobs"])); ?></div>
-          <div class="stat-label">งานทั้งหมด</div>
+      <div class="section-head">
+        <div>
+          <div class="section-kicker"><i class="bi bi-arrow-up-right-circle"></i> เริ่มใช้งาน</div>
+          <h2 class="section-title">เลือกทางเข้าที่ตรงกับงานของคุณ</h2>
+        </div>
+        <p class="section-desc">หน้าแรกนี้ออกแบบให้พาไป workflow หลักได้ทันที ไม่ว่าจะสมัครงานหรือจ้างฟรีแลนซ์</p>
+      </div>
+
+      <div class="path-grid">
+        <article class="path-card">
+          <span class="path-icon"><i class="bi bi-person-workspace"></i></span>
+          <div>
+            <h3>สำหรับ Freelancer</h3>
+            <p>ค้นหางาน สมัครงาน ติดตามสถานะ และรีวิวผู้ว่าจ้างหลังจบงาน</p>
+          </div>
+          <a class="btn btn-primary" href="<?php echo $role === 'freelancer' ? 'browse_jobs.php' : 'register.php'; ?>">เริ่มหางาน</a>
         </article>
-        <article class="stat-card">
-          <div class="stat-number"><?php echo e(number_format($stats["companies"])); ?></div>
-          <div class="stat-label">บริษัท</div>
-        </article>
-        <article class="stat-card">
-          <div class="stat-number"><?php echo e(number_format($stats["users"])); ?></div>
-          <div class="stat-label">ผู้ใช้งาน</div>
+        <article class="path-card">
+          <span class="path-icon"><i class="bi bi-building-add"></i></span>
+          <div>
+            <h3>สำหรับ Employer</h3>
+            <p>โพสต์งาน จัดการผู้สมัคร บันทึกรีวิว และดูภาพรวมการจ้างงาน</p>
+          </div>
+          <a class="btn btn-secondary" href="<?php echo $role === 'employer' ? 'post_job.php' : 'register.php'; ?>">เริ่มจ้างงาน</a>
         </article>
       </div>
     </div>
   </section>
 
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div>
-          <h3>JobFind</h3>
-          <p>แพลตฟอร์มหางานสำหรับผู้สมัครและบริษัทที่ต้องการทีมคุณภาพ พร้อมประสบการณ์แบบ modern job board.</p>
+  <div class="map-modal" id="indexMapModal">
+    <div class="map-container">
+      <div class="map-header">
+        <h3><i class="bi bi-geo"></i> ปักพื้นที่หางาน</h3>
+        <button type="button" class="map-close" onclick="closeIndexMapModal()">&times;</button>
+      </div>
+      <div class="map-info">
+        กดบนแผนที่เพื่อปักหมุดพื้นที่ที่ต้องการหางาน แล้วกำหนดรัศมีการค้นหา
+      </div>
+      <div class="map-radius-control">
+        <div class="radius-row">
+          <span>วงค้นหางานบนแผนที่</span>
+          <strong class="radius-value"><span id="index-map-radius-label"><?php echo e(number_format($searchRadiusKm, 0)); ?></span> กม.</strong>
         </div>
-        <div>
-          <h4>ติดต่อเรา</h4>
-          <div class="footer-links">
-            <a href="mailto:hello@jobfind.local">hello@jobfind.local</a>
-            <a href="tel:+6620000000">+66 2 000 0000</a>
-            <span>Bangkok, Thailand</span>
-          </div>
-        </div>
-        <div>
-          <h4>ช่องทาง Social</h4>
-          <div class="social-links">
-            <a href="#">LinkedIn</a>
-            <a href="#">Facebook</a>
-            <a href="#">X</a>
-          </div>
+        <input class="radius-slider" type="range" id="index-map-radius-slider"
+               min="1" max="300" step="1"
+               value="<?php echo e($searchRadiusKm); ?>"
+               oninput="updateIndexRadius(this.value)">
+        <div class="radius-scale">
+          <span>1 กม.</span>
+          <span>300 กม.</span>
         </div>
       </div>
-
-      <div class="copyright">&copy; 2026 JobFind. สงวนลิขสิทธิ์</div>
+      <div id="index-map"></div>
+      <div class="map-footer">
+        <button type="button" class="btn-map-cancel" onclick="closeIndexMapModal()">ยกเลิก</button>
+        <button type="button" class="btn-map-confirm" onclick="confirmIndexMapLocation()">ยืนยันตำแหน่ง</button>
+      </div>
     </div>
-  </footer>
+  </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/js/location-map-picker.js"></script>
+<script>
+let indexMapInstance = null;
+let indexSelectedLat = <?php echo $hasLocationPin ? json_encode($searchLat) : '13.7563'; ?>;
+let indexSelectedLng = <?php echo $hasLocationPin ? json_encode($searchLng) : '100.5018'; ?>;
+let indexHasSelectedPin = <?php echo $hasLocationPin ? 'true' : 'false'; ?>;
+let indexSelectedRadiusKm = Number(document.getElementById('index-radius')?.value || 30);
+
+function setIndexSelectedPosition(lat, lng) {
+  indexSelectedLat = Number(lat);
+  indexSelectedLng = Number(lng);
+  indexHasSelectedPin = true;
+}
+
+function updateIndexRadius(value) {
+  indexSelectedRadiusKm = Math.max(1, Math.min(300, Number(value) || 30));
+  const hiddenRadius = document.getElementById('index-radius');
+  const mapRadius = document.getElementById('index-map-radius-slider');
+  const mapLabel = document.getElementById('index-map-radius-label');
+
+  if (hiddenRadius) hiddenRadius.value = indexSelectedRadiusKm;
+  if (mapRadius) mapRadius.value = indexSelectedRadiusKm;
+  if (mapLabel) mapLabel.textContent = indexSelectedRadiusKm;
+  if (indexMapInstance) indexMapInstance.setRadius(indexSelectedRadiusKm);
+}
+
+function openIndexMapModal() {
+  const modal = document.getElementById('indexMapModal');
+  modal.classList.add('active');
+
+  setTimeout(() => {
+    if (!indexMapInstance) {
+      indexMapInstance = createJobFindMapPicker({
+        elementId: 'index-map',
+        lat: indexSelectedLat,
+        lng: indexSelectedLng,
+        hasPin: indexHasSelectedPin,
+        radiusKm: indexSelectedRadiusKm,
+        showCircle: true,
+        onChange: setIndexSelectedPosition
+      });
+    }
+
+    if (indexMapInstance) {
+      indexMapInstance.resize();
+      if (indexHasSelectedPin) {
+        indexMapInstance.setView(indexSelectedLat, indexSelectedLng);
+        indexMapInstance.setRadius(indexSelectedRadiusKm);
+      }
+    }
+  }, 100);
+}
+
+function closeIndexMapModal() {
+  document.getElementById('indexMapModal').classList.remove('active');
+}
+
+function confirmIndexMapLocation() {
+  if (!indexHasSelectedPin) {
+    alert('กรุณาเลือกตำแหน่งบนแผนที่');
+    return;
+  }
+
+  document.getElementById('index-latitude').value = indexSelectedLat.toFixed(6);
+  document.getElementById('index-longitude').value = indexSelectedLng.toFixed(6);
+  document.getElementById('index-radius').value = indexSelectedRadiusKm;
+  document.getElementById('index-location').value = '';
+  document.getElementById('index-location-status').textContent = `ปักหมุดแล้ว รัศมี ${indexSelectedRadiusKm} กม.`;
+  closeIndexMapModal();
+}
+
+document.getElementById('indexMapModal').addEventListener('click', function(event) {
+  if (event.target === this) {
+    closeIndexMapModal();
+  }
+});
+
+updateIndexRadius(indexSelectedRadiusKm);
+</script>
 </body>
 </html>
