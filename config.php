@@ -8,8 +8,13 @@ mysqli_report(MYSQLI_REPORT_OFF);
 
 $host = "sql205.infinityfree.com";
 $user = "if0_42031060";
-$pass = "333759110";
+$pass = "";
 $db = "if0_42031060_jobfind";
+
+$local_config = __DIR__ . "/config.local.php";
+if (is_file($local_config)) {
+    require $local_config;
+}
 
 $conn = mysqli_connect($host, $user, $pass, $db);
 $db_error = "";
