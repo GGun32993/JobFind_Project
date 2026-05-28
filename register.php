@@ -22,6 +22,11 @@ if(isset($_POST['register'])){
     $phone    = mysqli_real_escape_string($conn, trim($_POST['phone']));
     $role_raw = $_POST['role'] ?? 'freelancer';
     $role     = in_array($role_raw, ['freelancer', 'employer'], true) ? $role_raw : 'freelancer';
+    $gender_raw = $_POST['gender'] ?? '';
+    $gender = jobfind_normalize_gender($gender_raw);
+    $gender_sql = $gender !== ''
+        ? "'" . mysqli_real_escape_string($conn, $gender) . "'"
+        : "NULL";
     $address_raw  = trim($_POST['address'] ?? '');
     $province_raw = trim($_POST['province'] ?? '');
     $district_raw = trim($_POST['district'] ?? '');
@@ -52,8 +57,8 @@ if(isset($_POST['register'])){
         mysqli_begin_transaction($conn);
 
         $user_ok = mysqli_query($conn,"
-            INSERT INTO users (username,email,password,fullname,phone,role,latitude,longitude)
-            VALUES ('$username','$email','$password','$fullname','$phone','$role',$latitude_sql,$longitude_sql)
+            INSERT INTO users (username,email,password,fullname,phone,gender,role,latitude,longitude)
+            VALUES ('$username','$email','$password','$fullname','$phone',$gender_sql,'$role',$latitude_sql,$longitude_sql)
         ");
         $user_id = $user_ok ? mysqli_insert_id($conn) : 0;
         $profile_ok = false;
@@ -86,6 +91,8 @@ if(isset($_POST['register'])){
         $error = "สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
     }
 }
+
+$selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -374,6 +381,21 @@ if(isset($_POST['register'])){
                    placeholder="0xx-xxx-xxxx"
                    value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
           </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>เพศ</label>
+        <div class="input-wrap">
+          <i class="bi bi-gender-ambiguous prefix"></i>
+          <select name="gender" class="form-input">
+            <option value="">เลือกเพศ</option>
+            <?php foreach(jobfind_gender_options() as $gender_value => $gender_label): ?>
+              <option value="<?php echo htmlspecialchars($gender_value); ?>" <?php echo $selected_gender === $gender_value ? 'selected' : ''; ?>>
+                <?php echo htmlspecialchars($gender_label); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
         </div>
       </div>
 

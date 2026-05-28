@@ -2,6 +2,9 @@
 
 session_start();
 require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/location_schema.php";
+
+ensure_location_schema($conn);
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "freelancer"){
 header("Location: login.php");
@@ -20,12 +23,17 @@ if(isset($_POST['update'])){
 $fullname = $_POST['fullname'];
 $phone = $_POST['phone'];
 $email = $_POST['email'];
+$gender = jobfind_normalize_gender($_POST['gender'] ?? '');
+$gender_sql = $gender !== ''
+    ? "'" . mysqli_real_escape_string($conn, $gender) . "'"
+    : "NULL";
 
 mysqli_query($conn,"
 UPDATE users SET
 fullname='$fullname',
 phone='$phone',
-email='$email'
+email='$email',
+gender=$gender_sql
 WHERE user_id='$user_id'
 ");
 
@@ -44,6 +52,7 @@ WHERE user_id='$user_id'
 ");
 
 $user = mysqli_fetch_assoc($query);
+$selected_gender = jobfind_normalize_gender($user['gender'] ?? '');
 
 ?>
 
@@ -100,6 +109,17 @@ required>
 name="phone"
 class="form-control mb-3"
 value="<?php echo $user['phone']; ?>">
+
+<label>เพศ</label>
+
+<select name="gender" class="form-control mb-3">
+<option value="">เลือกเพศ</option>
+<?php foreach(jobfind_gender_options() as $gender_value => $gender_label): ?>
+<option value="<?php echo htmlspecialchars($gender_value); ?>" <?php echo $selected_gender === $gender_value ? 'selected' : ''; ?>>
+<?php echo htmlspecialchars($gender_label); ?>
+</option>
+<?php endforeach; ?>
+</select>
 
 
 

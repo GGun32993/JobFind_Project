@@ -355,6 +355,7 @@ CREATE TABLE `users` (
   `password` varchar(255) DEFAULT NULL,
   `fullname` varchar(100) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
+  `gender` varchar(20) DEFAULT NULL,
   `role` enum('admin','employer','freelancer') DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `latitude` double DEFAULT NULL,
@@ -366,11 +367,11 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `fullname`, `phone`, `role`, `created_at`, `latitude`, `longitude`, `company_details`) VALUES
-(1, 'NonFreelance', 'non@non.com', '1234', 'Non', '1234567890', 'freelancer', '2026-02-25 10:05:27', 13.7563, 100.5018, NULL),
-(2, 'GuntinanCompany', 'gun@company.com', '1234', 'Guntinan Company', '1234567890', 'employer', '2026-02-25 10:08:15', NULL, NULL, NULL),
-(3, 'Admin', 'admin@admin.com', '1234', 'tester3', '1234567890', 'admin', '2026-02-25 10:13:45', NULL, NULL, NULL),
-(4, 'test4', 'test@test4.com', '1234', 'tester4', '1234567890', 'freelancer', '2026-02-25 13:53:32', NULL, NULL, NULL);
+INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `fullname`, `phone`, `gender`, `role`, `created_at`, `latitude`, `longitude`, `company_details`) VALUES
+(1, 'NonFreelance', 'non@non.com', '1234', 'Non', '1234567890', NULL, 'freelancer', '2026-02-25 10:05:27', 13.7563, 100.5018, NULL),
+(2, 'GuntinanCompany', 'gun@company.com', '1234', 'Guntinan Company', '1234567890', NULL, 'employer', '2026-02-25 10:08:15', NULL, NULL, NULL),
+(3, 'Admin', 'admin@admin.com', '1234', 'tester3', '1234567890', NULL, 'admin', '2026-02-25 10:13:45', NULL, NULL, NULL),
+(4, 'test4', 'test@test4.com', '1234', 'tester4', '1234567890', NULL, 'freelancer', '2026-02-25 13:53:32', NULL, NULL, NULL);
 
 --
 -- Indexes for dumped tables

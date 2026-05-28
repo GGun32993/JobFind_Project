@@ -63,6 +63,28 @@ function jobfind_add_index_if_missing($conn, $table, $index, $definition)
     return (bool)$ok;
 }
 
+function jobfind_gender_options()
+{
+    return [
+        'male' => 'ชาย',
+        'female' => 'หญิง',
+        'lgbtq' => 'LGBTQ+',
+    ];
+}
+
+function jobfind_normalize_gender($gender)
+{
+    $gender = strtolower(trim((string)$gender));
+    return array_key_exists($gender, jobfind_gender_options()) ? $gender : '';
+}
+
+function jobfind_gender_label($gender)
+{
+    $gender = jobfind_normalize_gender($gender);
+    $options = jobfind_gender_options();
+    return $gender !== '' ? $options[$gender] : '';
+}
+
 function ensure_location_schema($conn)
 {
     static $done = false;
@@ -98,6 +120,7 @@ function ensure_location_schema($conn)
     }
 
     if (jobfind_table_exists($conn, 'users')) {
+        jobfind_add_column_if_missing($conn, 'users', 'gender', "VARCHAR(20) DEFAULT NULL AFTER `phone`");
         jobfind_add_column_if_missing($conn, 'users', 'latitude', 'DOUBLE DEFAULT NULL AFTER `phone`');
         jobfind_add_column_if_missing($conn, 'users', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
 

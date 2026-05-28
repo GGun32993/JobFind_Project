@@ -18,6 +18,8 @@ $username = $_SESSION['username'];
 $user         = mysqli_query($conn,"SELECT * FROM users WHERE user_id='$user_id'");
 $user_data    = mysqli_fetch_assoc($user);
 $profile_image = trim($user_data['profile_image'] ?? '');
+$selected_gender = jobfind_normalize_gender($user_data['gender'] ?? '');
+$gender_label = jobfind_gender_label($selected_gender);
 
 $profile      = mysqli_query($conn,"SELECT * FROM freelancer_profile WHERE user_id='$user_id'");
 $profile_data = mysqli_fetch_assoc($profile);
@@ -70,6 +72,10 @@ if(isset($_POST['update'])){
     $email        = mysqli_real_escape_string($conn, trim($_POST['email']));
     $fullname     = mysqli_real_escape_string($conn, $_POST['fullname']);
     $phone        = mysqli_real_escape_string($conn, $_POST['phone']);
+    $gender       = jobfind_normalize_gender($_POST['gender'] ?? '');
+    $gender_sql   = $gender !== ''
+        ? "'" . mysqli_real_escape_string($conn, $gender) . "'"
+        : "NULL";
     $skill        = mysqli_real_escape_string($conn, $_POST['skill']);
     $experience   = mysqli_real_escape_string($conn, $_POST['experience']);
     $address_raw  = trim($_POST['address'] ?? '');
@@ -121,6 +127,7 @@ if(isset($_POST['update'])){
 
         mysqli_query($conn,"
             UPDATE users SET username='$new_username', email='$email', fullname='$fullname', phone='$phone',
+                gender=$gender_sql,
                 latitude=$latitude_sql, longitude=$longitude_sql
                 $profile_image_set
             WHERE user_id='$user_id'
@@ -152,6 +159,11 @@ if(isset($_POST['update'])){
         exit();
         }
     }
+}
+
+if(isset($_POST['update']) && ($dup_err || $image_err !== '')){
+    $selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
+    $gender_label = jobfind_gender_label($selected_gender);
 }
 
 $initials = profile_initials($user_data['fullname'] ?: $username);
@@ -466,6 +478,9 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
         <?php if(!empty($user_data['phone'])): ?>
         <span class="btag"><i class="bi bi-telephone"></i><?php echo htmlspecialchars($user_data['phone']); ?></span>
         <?php endif; ?>
+        <?php if($gender_label !== ''): ?>
+        <span class="btag"><i class="bi bi-gender-ambiguous"></i><?php echo htmlspecialchars($gender_label); ?></span>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -533,13 +548,29 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
       </div>
     </div>
 
-    <div class="field-group">
-      <label>Email</label>
-      <div class="input-icon-wrap">
-        <i class="bi bi-envelope"></i>
-        <input class="form-input" type="email" name="email"
-               value="<?php echo htmlspecialchars($user_data['email']); ?>"
-               placeholder="email@example.com" required>
+    <div class="two-col">
+      <div class="field-group">
+        <label>Email</label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-envelope"></i>
+          <input class="form-input" type="email" name="email"
+                 value="<?php echo htmlspecialchars($user_data['email']); ?>"
+                 placeholder="email@example.com" required>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>เพศ</label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-gender-ambiguous"></i>
+          <select class="form-input" name="gender">
+            <option value="">เลือกเพศ</option>
+            <?php foreach(jobfind_gender_options() as $gender_value => $gender_option_label): ?>
+              <option value="<?php echo htmlspecialchars($gender_value); ?>" <?php echo $selected_gender === $gender_value ? 'selected' : ''; ?>>
+                <?php echo htmlspecialchars($gender_option_label); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
       </div>
     </div>
 
