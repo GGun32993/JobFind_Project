@@ -91,6 +91,7 @@ if(isset($_POST['login'])){
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - FreelanceHub</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
   *,
   *::before,
@@ -191,17 +192,15 @@ if(isset($_POST['login'])){
   }
 
   .brand-mark {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--accent), var(--green));
-    box-shadow: 0 12px 24px rgba(91, 95, 244, .28);
+    background: var(--accent);
     color: #ffffff;
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 22px;
   }
 
   .brand-name {
@@ -594,7 +593,7 @@ if(isset($_POST['login'])){
 <main class="auth-shell">
   <section class="brand-panel" aria-label="FreelanceHub">
     <div class="brand-lockup">
-      <div class="brand-mark">FH</div>
+      <div class="brand-mark"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="brand-name">FreelanceHub</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
@@ -627,7 +626,7 @@ if(isset($_POST['login'])){
   <section class="form-panel">
     <div class="form-inner">
       <div class="mobile-brand">
-        <div class="brand-mark">FH</div>
+        <div class="brand-mark"><i class="bi bi-lightning-charge-fill"></i></div>
         <div>
           <div class="brand-name">FreelanceHub</div>
           <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
