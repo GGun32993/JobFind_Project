@@ -290,7 +290,7 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
       <?php endif; ?>
 
         <div class="field-group">
-          <label>ชื่อหมวดหมู่ <span></span></label>
+          <label>ชื่อหมวดหมู่</label>
           <input type="text" name="name" class="form-input"
                  placeholder="เช่น IT & Software"
                  value="<?php echo htmlspecialchars($edit_cat['name'] ?? ''); ?>"
