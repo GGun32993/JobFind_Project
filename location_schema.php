@@ -85,6 +85,17 @@ function jobfind_gender_label($gender)
     return $gender !== '' ? $options[$gender] : '';
 }
 
+function jobfind_normalize_age($age)
+{
+    $age = trim((string)$age);
+    if ($age === '' || !ctype_digit($age)) {
+        return null;
+    }
+
+    $age = (int)$age;
+    return ($age >= 1 && $age <= 120) ? $age : null;
+}
+
 function ensure_location_schema($conn)
 {
     static $done = false;
@@ -94,6 +105,7 @@ function ensure_location_schema($conn)
     }
 
     if (jobfind_table_exists($conn, 'freelancer_profile')) {
+        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'age', 'INT DEFAULT NULL AFTER `experience`');
         jobfind_add_column_if_missing($conn, 'freelancer_profile', 'address', 'VARCHAR(255) DEFAULT NULL AFTER `location`');
         jobfind_add_column_if_missing($conn, 'freelancer_profile', 'province', 'VARCHAR(100) DEFAULT NULL AFTER `address`');
         jobfind_add_column_if_missing($conn, 'freelancer_profile', 'district', 'VARCHAR(100) DEFAULT NULL AFTER `province`');

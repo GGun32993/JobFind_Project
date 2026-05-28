@@ -153,6 +153,7 @@ CREATE TABLE `freelancer_profile` (
   `user_id` int(11) DEFAULT NULL,
   `skill` text DEFAULT NULL,
   `experience` text DEFAULT NULL,
+  `age` int(11) DEFAULT NULL,
   `location` varchar(100) DEFAULT NULL,
   `rating` float DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -162,12 +163,12 @@ CREATE TABLE `freelancer_profile` (
 -- Dumping data for table `freelancer_profile`
 --
 
-INSERT INTO `freelancer_profile` (`freelancer_id`, `user_id`, `skill`, `experience`, `location`, `rating`, `created_at`) VALUES
-(1, 3, 'PHP, Web Developmen', '2 Years', 'Banhkok', 0, '2026-02-25 13:25:20'),
-(2, 1, 'ซ่อมท่อ, PHP, Java', '1 years', 'Bangkok', 0, '2026-02-25 13:41:09'),
-(3, 4, 'ไม่มี', '-', 'Chiang Mai', 0, '2026-02-25 13:53:33'),
-(4, 5, '', '', '', 0, '2026-02-26 12:51:18'),
-(5, 6, '', '', '', 0, '2026-05-18 05:59:00');
+INSERT INTO `freelancer_profile` (`freelancer_id`, `user_id`, `skill`, `experience`, `age`, `location`, `rating`, `created_at`) VALUES
+(1, 3, 'PHP, Web Developmen', '2 Years', NULL, 'Banhkok', 0, '2026-02-25 13:25:20'),
+(2, 1, 'ซ่อมท่อ, PHP, Java', '1 years', NULL, 'Bangkok', 0, '2026-02-25 13:41:09'),
+(3, 4, 'ไม่มี', '-', NULL, 'Chiang Mai', 0, '2026-02-25 13:53:33'),
+(4, 5, '', '', NULL, '', 0, '2026-02-26 12:51:18'),
+(5, 6, '', '', NULL, '', 0, '2026-05-18 05:59:00');
 
 -- --------------------------------------------------------
 

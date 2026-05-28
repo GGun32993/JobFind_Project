@@ -27,6 +27,8 @@ $gender = jobfind_normalize_gender($_POST['gender'] ?? '');
 $gender_sql = $gender !== ''
     ? "'" . mysqli_real_escape_string($conn, $gender) . "'"
     : "NULL";
+$age = jobfind_normalize_age($_POST['age'] ?? '');
+$age_sql = $age !== null ? (string)$age : "NULL";
 
 mysqli_query($conn,"
 UPDATE users SET
@@ -36,6 +38,20 @@ email='$email',
 gender=$gender_sql
 WHERE user_id='$user_id'
 ");
+
+$profile_exists = mysqli_fetch_assoc(mysqli_query($conn,"SELECT freelancer_id FROM freelancer_profile WHERE user_id='$user_id' LIMIT 1"));
+if($profile_exists){
+mysqli_query($conn,"
+UPDATE freelancer_profile
+SET age=$age_sql
+WHERE user_id='$user_id'
+");
+} else {
+mysqli_query($conn,"
+INSERT INTO freelancer_profile (user_id, age)
+VALUES ('$user_id', $age_sql)
+");
+}
 
 echo "<script>alert('Profile updated');</script>";
 
@@ -53,6 +69,13 @@ WHERE user_id='$user_id'
 
 $user = mysqli_fetch_assoc($query);
 $selected_gender = jobfind_normalize_gender($user['gender'] ?? '');
+
+$profile_query = mysqli_query($conn,"
+SELECT age FROM freelancer_profile
+WHERE user_id='$user_id'
+LIMIT 1
+");
+$profile = mysqli_fetch_assoc($profile_query) ?: ['age' => null];
 
 ?>
 
@@ -120,6 +143,17 @@ value="<?php echo $user['phone']; ?>">
 </option>
 <?php endforeach; ?>
 </select>
+
+<label>อายุ</label>
+
+<input type="number"
+name="age"
+class="form-control mb-3"
+min="1"
+max="120"
+inputmode="numeric"
+placeholder="เช่น 25"
+value="<?php echo htmlspecialchars($profile['age'] ?? ''); ?>">
 
 
 

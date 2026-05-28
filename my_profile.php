@@ -29,6 +29,7 @@ if(!$profile_data){
     $profile_data = [
         "skill"=>"",
         "experience"=>"",
+        "age"=>null,
         "location"=>"",
         "address"=>"",
         "province"=>"",
@@ -38,6 +39,9 @@ if(!$profile_data){
         "longitude"=>null,
         "preferred_radius_km"=>30
     ];
+}
+if(!array_key_exists('age', $profile_data)){
+    $profile_data['age'] = null;
 }
 if(empty($profile_data['latitude']) && !empty($user_data['latitude'])){
     $profile_data['latitude'] = $user_data['latitude'];
@@ -78,6 +82,8 @@ if(isset($_POST['update'])){
         : "NULL";
     $skill        = mysqli_real_escape_string($conn, $_POST['skill']);
     $experience   = mysqli_real_escape_string($conn, $_POST['experience']);
+    $age          = jobfind_normalize_age($_POST['age'] ?? '');
+    $age_sql      = $age !== null ? (string)$age : "NULL";
     $address_raw  = trim($_POST['address'] ?? '');
     $province_raw = trim($_POST['province'] ?? '');
     $district_raw = trim($_POST['district'] ?? '');
@@ -137,7 +143,7 @@ if(isset($_POST['update'])){
         if($profile_exists){
             mysqli_query($conn,"
                 UPDATE freelancer_profile
-                SET skill='$skill', experience='$experience', location='$location',
+                SET skill='$skill', experience='$experience', age=$age_sql, location='$location',
                     address='$address', province='$province', district='$district', postal_code='$postal_code',
                     latitude=$latitude_sql, longitude=$longitude_sql, preferred_radius_km=$radius_sql
                 WHERE user_id='$user_id'
@@ -145,9 +151,9 @@ if(isset($_POST['update'])){
         } else {
             mysqli_query($conn,"
                 INSERT INTO freelancer_profile
-                    (user_id, skill, experience, location, address, province, district, postal_code, latitude, longitude, preferred_radius_km)
+                    (user_id, skill, experience, age, location, address, province, district, postal_code, latitude, longitude, preferred_radius_km)
                 VALUES
-                    ('$user_id', '$skill', '$experience', '$location', '$address', '$province', '$district', '$postal_code', $latitude_sql, $longitude_sql, $radius_sql)
+                    ('$user_id', '$skill', '$experience', $age_sql, '$location', '$address', '$province', '$district', '$postal_code', $latitude_sql, $longitude_sql, $radius_sql)
             ");
         }
         $_SESSION['username'] = $new_username;
@@ -164,6 +170,7 @@ if(isset($_POST['update'])){
 if(isset($_POST['update']) && ($dup_err || $image_err !== '')){
     $selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
     $gender_label = jobfind_gender_label($selected_gender);
+    $profile_data['age'] = jobfind_normalize_age($_POST['age'] ?? '');
 }
 
 $initials = profile_initials($user_data['fullname'] ?: $username);
@@ -481,6 +488,9 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
         <?php if($gender_label !== ''): ?>
         <span class="btag"><i class="bi bi-gender-ambiguous"></i><?php echo htmlspecialchars($gender_label); ?></span>
         <?php endif; ?>
+        <?php if(!empty($profile_data['age'])): ?>
+        <span class="btag"><i class="bi bi-calendar3"></i><?php echo htmlspecialchars($profile_data['age']); ?> ปี</span>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -576,6 +586,17 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
 
     <!-- Freelancer info -->
     <div class="section-title" style="margin-top:8px;"><i class="bi bi-tools"></i> ข้อมูล Freelancer</div>
+
+    <div class="field-group">
+      <label>อายุ</label>
+      <div class="input-icon-wrap">
+        <i class="bi bi-calendar3"></i>
+        <input class="form-input" type="number" name="age"
+               min="1" max="120" inputmode="numeric"
+               value="<?php echo htmlspecialchars($profile_data['age'] ?? ''); ?>"
+               placeholder="เช่น 25">
+      </div>
+    </div>
 
     <div class="field-group">
       <label>Skills <span>(คั่นด้วยคอมม่า เช่น PHP, React, Figma)</span></label>

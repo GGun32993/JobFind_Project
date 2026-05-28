@@ -27,6 +27,8 @@ if(isset($_POST['register'])){
     $gender_sql = $gender !== ''
         ? "'" . mysqli_real_escape_string($conn, $gender) . "'"
         : "NULL";
+    $age = jobfind_normalize_age($_POST['age'] ?? '');
+    $age_sql = $age !== null ? (string)$age : "NULL";
     $address_raw  = trim($_POST['address'] ?? '');
     $province_raw = trim($_POST['province'] ?? '');
     $district_raw = trim($_POST['district'] ?? '');
@@ -66,9 +68,9 @@ if(isset($_POST['register'])){
         if($user_ok && $user_id > 0 && $role == "freelancer"){
             $profile_ok = mysqli_query($conn,"
                 INSERT INTO freelancer_profile
-                    (user_id,skill,experience,location,address,province,district,postal_code,latitude,longitude,preferred_radius_km)
+                    (user_id,skill,experience,age,location,address,province,district,postal_code,latitude,longitude,preferred_radius_km)
                 VALUES
-                    ('$user_id','','','$location','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql,$radius_sql)
+                    ('$user_id','','',$age_sql,'$location','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql,$radius_sql)
             ");
         }
         if($user_ok && $user_id > 0 && $role == "employer"){
@@ -93,6 +95,7 @@ if(isset($_POST['register'])){
 }
 
 $selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
+$selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -206,6 +209,7 @@ $selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
   .role-opt input:checked + label { border-color:var(--accent); background:#eef2ff; color:var(--accent); }
   .role-opt label .checkmark { margin-left:auto; width:18px; height:18px; border-radius:50%; border:2px solid var(--border); transition:all .15s; flex-shrink:0; }
   .role-opt input:checked + label .checkmark { border-color:var(--accent); background:var(--accent); box-shadow:inset 0 0 0 3px #fff; }
+  .freelancer-only.is-hidden { display:none; }
 
   /* Address and map */
   .textarea-wrap i.prefix { top:18px; transform:none; }
@@ -422,6 +426,17 @@ $selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
         </div>
       </div>
 
+      <div class="field-group freelancer-only" id="freelancer-age-field">
+        <label>อายุ</label>
+        <div class="input-wrap">
+          <i class="bi bi-calendar3 prefix"></i>
+          <input type="number" name="age" class="form-input"
+                 min="1" max="120" inputmode="numeric"
+                 placeholder="เช่น 25"
+                 value="<?php echo htmlspecialchars($selected_age ?? ''); ?>">
+        </div>
+      </div>
+
       <!-- Address -->
       <div class="section-label" style="margin-top:4px;" id="address-section-label">ที่อยู่และพื้นที่หางาน</div>
 
@@ -559,6 +574,9 @@ $selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
       : 'คลิกบนแผนที่เพื่อเลือกตำแหน่งบริษัท ระบบจะใช้ตำแหน่งนี้ช่วยแมชงานกับ freelancer';
 
     document.getElementById('map-radius-control').classList.toggle('active', isFreelancer);
+    document.querySelectorAll('.freelancer-only').forEach(el => {
+      el.classList.toggle('is-hidden', !isFreelancer);
+    });
 
     if (registerMap && registerMapRole !== role && typeof registerMap.destroy === 'function') {
       registerMap.destroy();
