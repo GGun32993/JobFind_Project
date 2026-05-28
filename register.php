@@ -23,7 +23,7 @@ if(isset($_POST['register'])){
     $role_raw = $_POST['role'] ?? 'freelancer';
     $role     = in_array($role_raw, ['freelancer', 'employer'], true) ? $role_raw : 'freelancer';
     $gender_raw = $_POST['gender'] ?? '';
-    $gender = jobfind_normalize_gender($gender_raw);
+    $gender = $role === 'freelancer' ? jobfind_normalize_gender($gender_raw) : '';
     $gender_sql = $gender !== ''
         ? "'" . mysqli_real_escape_string($conn, $gender) . "'"
         : "NULL";
@@ -94,7 +94,9 @@ if(isset($_POST['register'])){
     }
 }
 
-$selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
+$selected_role = $_POST['role'] ?? 'freelancer';
+$selected_role = in_array($selected_role, ['freelancer', 'employer'], true) ? $selected_role : 'freelancer';
+$selected_gender = $selected_role === 'freelancer' ? jobfind_normalize_gender($_POST['gender'] ?? '') : '';
 $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 ?>
 <!DOCTYPE html>
@@ -388,7 +390,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
         </div>
       </div>
 
-      <div class="field-group">
+      <div class="field-group freelancer-only" id="freelancer-gender-field">
         <label>เพศ</label>
         <div class="input-wrap">
           <i class="bi bi-gender-ambiguous prefix"></i>
@@ -576,6 +578,9 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
     document.getElementById('map-radius-control').classList.toggle('active', isFreelancer);
     document.querySelectorAll('.freelancer-only').forEach(el => {
       el.classList.toggle('is-hidden', !isFreelancer);
+      el.querySelectorAll('input, select, textarea').forEach(control => {
+        control.disabled = !isFreelancer;
+      });
     });
 
     if (registerMap && registerMapRole !== role && typeof registerMap.destroy === 'function') {
