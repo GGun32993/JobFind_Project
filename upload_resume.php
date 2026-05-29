@@ -249,7 +249,7 @@ if($data){
 <!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-brand">
-    <a href="#" class="logo">
+    <a href="index.php" class="logo">
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="logo-text">FreelanceHub</div>

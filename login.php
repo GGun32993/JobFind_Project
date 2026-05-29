@@ -189,6 +189,7 @@ if(isset($_POST['login'])){
     display: flex;
     align-items: center;
     gap: 12px;
+    text-decoration: none;
   }
 
   .brand-mark {
@@ -546,6 +547,7 @@ if(isset($_POST['login'])){
       display: flex;
       align-items: center;
       gap: 12px;
+      text-decoration: none;
     }
 
     .mobile-brand .brand-name {
@@ -592,13 +594,13 @@ if(isset($_POST['login'])){
 
 <main class="auth-shell">
   <section class="brand-panel" aria-label="FreelanceHub">
-    <div class="brand-lockup">
+    <a class="brand-lockup" href="index.php" aria-label="FreelanceHub home">
       <div class="brand-mark"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="brand-name">FreelanceHub</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
       </div>
-    </div>
+    </a>
 
     <div class="brand-copy">
       <h1>กลับเข้าสู่พื้นที่ทำงานของคุณ</h1>
@@ -625,13 +627,13 @@ if(isset($_POST['login'])){
 
   <section class="form-panel">
     <div class="form-inner">
-      <div class="mobile-brand">
+      <a class="mobile-brand" href="index.php" aria-label="FreelanceHub home">
         <div class="brand-mark"><i class="bi bi-lightning-charge-fill"></i></div>
         <div>
           <div class="brand-name">FreelanceHub</div>
           <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
         </div>
-      </div>
+      </a>
 
       <div class="form-kicker">Account Login</div>
       <h2>เข้าสู่ระบบ</h2>

@@ -154,7 +154,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
     bottom:-60px; left:-60px;
   }
 
-  .brand { display:flex; align-items:center; gap:12px; z-index:1; }
+  .brand { display:flex; align-items:center; gap:12px; z-index:1; text-decoration:none; }
   .brand-icon { width:44px; height:44px; border-radius:12px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; }
   .brand-name { font-size:20px; font-weight:700; color:#fff; }
   .brand-sub  { font-size:12px; color:#94a3b8; }
@@ -281,13 +281,13 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 
   <!-- ── Left Panel ── -->
   <div class="left-panel">
-    <div class="brand">
+    <a class="brand" href="index.php" aria-label="FreelanceHub home">
       <div class="brand-icon"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="brand-name">FreelanceHub</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
       </div>
-    </div>
+    </a>
 
     <div class="left-content">
       <h2>เริ่มต้นกับเรา วันนี้ 🚀</h2>

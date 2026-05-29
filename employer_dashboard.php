@@ -382,7 +382,7 @@ $most_applied_count = count($most_applied_jobs_list);
 <!-- ── Sidebar ── -->
 <aside class="sidebar">
   <div class="sidebar-brand">
-    <a href="#" class="logo">
+    <a href="index.php" class="logo">
       <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
       <div>
         <div class="logo-text">FreelanceHub</div>
