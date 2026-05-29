@@ -99,6 +99,16 @@ function dashboard_for_role($role){
     return $targets[$role] ?? 'login.php';
 }
 
+function account_profile_for_role($role){
+    $targets = [
+        'admin' => 'admin_dashboard.php',
+        'employer' => 'employer_profile.php',
+        'freelancer' => 'my_profile.php',
+    ];
+
+    return $targets[$role] ?? 'login.php';
+}
+
 function job_status_label($status){
     $status = trim((string)$status);
     $labels = [
@@ -131,9 +141,10 @@ function category_icon($name){
 $role = $_SESSION['role'] ?? '';
 $isLoggedIn = isset($_SESSION['user_id']) && $role !== '';
 $dashboardUrl = dashboard_for_role($role);
+$accountProfileUrl = account_profile_for_role($role);
 $primaryCtaUrl = $isLoggedIn ? $dashboardUrl : 'register.php';
 $primaryCtaText = $isLoggedIn ? 'ไปที่แดชบอร์ด' : 'เริ่มต้นใช้งาน';
-$secondaryCtaUrl = $isLoggedIn ? $dashboardUrl : 'login.php';
+$secondaryCtaUrl = $isLoggedIn ? $accountProfileUrl : 'login.php';
 $secondaryCtaText = $isLoggedIn ? 'จัดการบัญชีของฉัน' : 'เข้าสู่ระบบ';
 
 $categories = [];
