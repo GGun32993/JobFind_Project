@@ -129,13 +129,13 @@ function format_salary($salary){
 
 function category_icon($name){
     $name = strtolower((string)$name);
-    if(str_contains($name, 'design')) return 'bi-palette';
-    if(str_contains($name, 'marketing')) return 'bi-megaphone';
-    if(str_contains($name, 'writing')) return 'bi-pencil-square';
-    if(str_contains($name, 'finance') || str_contains($name, 'account')) return 'bi-cash-coin';
-    if(str_contains($name, 'education')) return 'bi-mortarboard';
-    if(str_contains($name, 'it') || str_contains($name, 'software') || str_contains($name, 'php') || str_contains($name, 'java')) return 'bi-code-slash';
-    return 'bi-briefcase';
+    if(str_contains($name, 'design')) return '🎨';
+    if(str_contains($name, 'marketing')) return '📢';
+    if(str_contains($name, 'writing')) return '✍️';
+    if(str_contains($name, 'finance') || str_contains($name, 'account')) return '💰';
+    if(str_contains($name, 'education')) return '🎓';
+    if(str_contains($name, 'it') || str_contains($name, 'software') || str_contains($name, 'php') || str_contains($name, 'java')) return '💻';
+    return '💼';
 }
 
 $role = $_SESSION['role'] ?? '';
@@ -1117,7 +1117,7 @@ $pinStatusText = $hasLocationPin
         <?php endif; ?>
         <?php foreach($categories as $category): ?>
           <a class="category-card" href="index.php?title=<?php echo urlencode($category['name']); ?>#jobs">
-            <span class="category-icon"><i class="bi <?php echo e(category_icon($category['name'])); ?>"></i></span>
+            <span class="category-icon"><?php echo e(category_icon($category['name'])); ?></span>
             <span>
               <h3><?php echo e($category['name']); ?></h3>
               <p><?php echo e(number_format((int)$category['jobs'])); ?> งานที่เปิดรับ</p>
@@ -1159,7 +1159,7 @@ $pinStatusText = $hasLocationPin
               <?php if($jobImage !== ''): ?>
                 <img src="<?php echo e($jobImage); ?>" alt="<?php echo e($job['title']); ?>">
               <?php else: ?>
-                <div class="job-media-fallback"><i class="bi <?php echo e(category_icon($job['category'])); ?>"></i></div>
+                <div class="job-media-fallback"><?php echo e(category_icon($job['category'])); ?></div>
               <?php endif; ?>
             </div>
             <div class="job-body">
