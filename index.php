@@ -1058,6 +1058,8 @@ $pinStatusText = $hasLocationPin
     </div>
   </nav>
 
+  
+
   <header class="hero" style="<?php echo $heroStyle; ?>">
     <div class="container">
       <div class="hero-content">
