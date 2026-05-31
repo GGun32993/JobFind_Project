@@ -94,7 +94,7 @@ if(isset($_POST['register'])){
     }
 }
 
-$selected_role = $_POST['role'] ?? 'freelancer';
+$selected_role = $_POST['role'] ?? ($_GET['role'] ?? 'freelancer');
 $selected_role = in_array($selected_role, ['freelancer', 'employer'], true) ? $selected_role : 'freelancer';
 $selected_gender = $selected_role === 'freelancer' ? jobfind_normalize_gender($_POST['gender'] ?? '') : '';
 $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
@@ -410,7 +410,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
       <div class="role-select-wrap">
         <div class="role-opt">
           <input type="radio" name="role" id="role-fl" value="freelancer"
-                 <?php echo (($_POST['role'] ?? 'freelancer')==='freelancer')?'checked':''; ?>>
+                 <?php echo $selected_role === 'freelancer' ? 'checked' : ''; ?>>
           <label for="role-fl">
             <span class="role-icon">💼</span>
             Freelancer
@@ -419,7 +419,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
         </div>
         <div class="role-opt">
           <input type="radio" name="role" id="role-em" value="employer"
-                 <?php echo (($_POST['role'] ?? '')==='employer')?'checked':''; ?>>
+                 <?php echo $selected_role === 'employer' ? 'checked' : ''; ?>>
           <label for="role-em">
             <span class="role-icon">🏢</span>
             Employer

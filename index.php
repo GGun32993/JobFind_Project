@@ -146,6 +146,12 @@ $primaryCtaUrl = $isLoggedIn ? $dashboardUrl : 'register.php';
 $primaryCtaText = $isLoggedIn ? 'ไปที่แดชบอร์ด' : 'เริ่มต้นใช้งาน';
 $secondaryCtaUrl = $isLoggedIn ? $accountProfileUrl : 'login.php';
 $secondaryCtaText = $isLoggedIn ? 'จัดการบัญชีของฉัน' : 'เข้าสู่ระบบ';
+$freelancerStartUrl = $role === 'freelancer'
+    ? 'browse_jobs.php'
+    : ($isLoggedIn ? $dashboardUrl : 'register.php?role=freelancer');
+$employerStartUrl = $role === 'employer'
+    ? 'post_job.php'
+    : ($isLoggedIn ? $dashboardUrl : 'register.php?role=employer');
 
 $categories = [];
 $featuredJobs = [];
@@ -393,7 +399,7 @@ $pinStatusText = $hasLocationPin
   .btn-ghost:hover { background: rgba(255, 255, 255, .18); color: #fff; }
 
   .shell .hero {
-    min-height: clamp(560px, 82vh, 720px);
+    min-height: clamp(640px, 86vh, 780px);
     display: flex;
     align-items: center;
     background: var(--hero-bg) !important;
@@ -402,8 +408,15 @@ $pinStatusText = $hasLocationPin
     color: #fff !important;
   }
 
+  .hero-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 430px);
+    align-items: center;
+    gap: 34px;
+  }
+
   .hero-content {
-    width: min(760px, 100%);
+    width: 100%;
     padding: 70px 0 84px;
   }
 
@@ -690,6 +703,118 @@ $pinStatusText = $hasLocationPin
 
   .metric span { font-size: 12px; font-weight: 800; color: #b9c8dd; }
 
+  .role-choice-panel {
+    border: 1px solid rgba(219, 228, 255, .24);
+    border-radius: 8px;
+    background: rgba(8, 16, 31, .76);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .24);
+    backdrop-filter: blur(14px);
+    padding: 24px;
+  }
+
+  .role-choice-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .10);
+    color: #a7f3d0;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .role-choice-panel h2 {
+    margin: 16px 0 8px;
+    color: #fff !important;
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.16;
+    font-weight: 900;
+  }
+
+  .role-choice-panel p {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .role-choice-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .role-choice-card {
+    min-height: 104px;
+    display: grid;
+    grid-template-columns: 50px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid rgba(219, 228, 255, .18);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+    text-decoration: none;
+    transition: transform .15s, border-color .15s, background .15s;
+  }
+
+  .role-choice-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(167, 243, 208, .62);
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+  }
+
+  .role-choice-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #dcfce7;
+    color: #047857;
+    font-size: 22px;
+  }
+
+  .role-choice-card:nth-child(2) .role-choice-icon {
+    background: #eef2ff;
+    color: var(--accent);
+  }
+
+  .role-choice-card h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+    line-height: 1.25;
+    font-weight: 900;
+  }
+
+  .role-choice-card p {
+    margin-top: 5px;
+    color: #b9c7d9;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  .role-choice-action {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
   section {
     padding: 64px 0;
     border-top: 1px solid rgba(219, 228, 239, .74);
@@ -711,12 +836,6 @@ $pinStatusText = $hasLocationPin
     background:
       linear-gradient(120deg, rgba(6, 182, 212, .07), transparent 42%),
       #f7fbff;
-  }
-
-  .start-band {
-    background:
-      linear-gradient(135deg, rgba(91, 95, 244, .07), rgba(20, 184, 166, .06)),
-      #f1f7fb;
   }
 
   .section-head {
@@ -762,7 +881,6 @@ $pinStatusText = $hasLocationPin
   .category-card,
   .job-card,
   .company-card,
-  .path-card,
   .empty-state,
   .db-alert {
     border: 1px solid var(--border);
@@ -781,8 +899,7 @@ $pinStatusText = $hasLocationPin
 
   .category-card:hover,
   .job-card:hover,
-  .company-card:hover,
-  .path-card:hover {
+  .company-card:hover {
     border-color: #bcc8ff;
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
@@ -802,8 +919,7 @@ $pinStatusText = $hasLocationPin
 
   .category-card h3,
   .job-title,
-  .company-card h3,
-  .path-card h3 {
+  .company-card h3 {
     margin: 0;
     color: #172033;
     font-size: 16px;
@@ -812,8 +928,7 @@ $pinStatusText = $hasLocationPin
   }
 
   .category-card p,
-  .company-card p,
-  .path-card p {
+  .company-card p {
     margin: 6px 0 0;
     color: var(--muted);
     font-size: 13px;
@@ -961,37 +1076,6 @@ $pinStatusText = $hasLocationPin
     font-weight: 900;
   }
 
-  .path-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-
-  .path-card {
-    display: grid;
-    grid-template-columns: 56px 1fr auto;
-    align-items: center;
-    gap: 16px;
-    padding: 20px;
-  }
-
-  .path-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #e0faef;
-    color: #047857;
-    font-size: 25px;
-  }
-
-  .path-card:nth-child(2) .path-icon {
-    background: #eef2ff;
-    color: var(--accent);
-  }
-
   .db-alert,
   .empty-state {
     padding: 24px;
@@ -1008,6 +1092,9 @@ $pinStatusText = $hasLocationPin
 
   @media (max-width: 1024px) {
     .nav-links { display: none; }
+    .hero-layout { grid-template-columns: 1fr; gap: 0; padding-bottom: 54px; }
+    .hero-content { padding-bottom: 32px; }
+    .role-choice-panel { width: min(100%, 720px); }
     .category-grid { grid-template-columns: repeat(3, 1fr); }
     .job-grid { grid-template-columns: repeat(2, 1fr); }
     .company-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1020,18 +1107,20 @@ $pinStatusText = $hasLocationPin
     .nav-actions { width: 100%; }
     .nav-actions .btn { flex: 1; padding: 0 10px; }
     .hero { min-height: auto; }
-    .hero-content { padding: 54px 0 58px; }
+    .hero-layout { padding-bottom: 42px; }
+    .hero-content { padding: 54px 0 24px; }
     .hero h1 { font-size: clamp(34px, 12vw, 48px); }
     .search-strip { grid-template-columns: 1fr; }
     .hero-actions .btn { width: 100%; }
+    .role-choice-panel { padding: 18px; }
+    .role-choice-card { grid-template-columns: 44px 1fr; align-items: flex-start; }
+    .role-choice-icon { width: 44px; height: 44px; }
+    .role-choice-action { grid-column: 1 / -1; }
     .section-head { align-items: flex-start; flex-direction: column; }
     section { padding: 46px 0; }
     .category-grid,
     .job-grid,
-    .company-grid,
-    .path-grid { grid-template-columns: 1fr; }
-    .path-card { grid-template-columns: 48px 1fr; }
-    .path-card .btn { grid-column: 1 / -1; }
+    .company-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1062,43 +1151,71 @@ $pinStatusText = $hasLocationPin
 
   <header class="hero" style="<?php echo $heroStyle; ?>">
     <div class="container">
-      <div class="hero-content">
-        <span class="eyebrow"><i class="bi bi-stars"></i> แพลตฟอร์มจ้างงานและหางานฟรีแลนซ์</span>
-        <h1>FreelanceHub</h1>
-        <p class="hero-copy">ค้นหางานที่ตรงทักษะ สมัครงาน ติดตามสถานะ และรีวิวผู้ว่าจ้างได้ในระบบเดียว ผู้ว่าจ้างก็สามารถโพสต์งาน จัดการผู้สมัคร และเก็บประวัติการทำงานได้ครบถ้วน</p>
+      <div class="hero-layout">
+        <div class="hero-content">
+          <span class="eyebrow"><i class="bi bi-stars"></i> แพลตฟอร์มจ้างงานและหางานฟรีแลนซ์</span>
+          <h1>FreelanceHub</h1>
+          <p class="hero-copy">ค้นหางานที่ตรงทักษะ สมัครงาน ติดตามสถานะ และรีวิวผู้ว่าจ้างได้ในระบบเดียว ผู้ว่าจ้างก็สามารถโพสต์งาน จัดการผู้สมัคร และเก็บประวัติการทำงานได้ครบถ้วน</p>
 
-        <form class="search-strip" method="GET" action="index.php#jobs">
-          <label class="search-field">
-            <i class="bi bi-search"></i>
-            <input type="text" name="title" value="<?php echo e($titleSearch); ?>" placeholder="ค้นหาชื่องาน หมวดงาน หรือบริษัท">
-          </label>
-          <div class="location-pin-field">
-            <i class="bi bi-geo-alt"></i>
-            <div class="pin-copy">
-              <span class="pin-label">ปักหมุดพื้นที่หางาน</span>
-              <span class="pin-status" id="index-location-status"><?php echo e($pinStatusText); ?></span>
+          <form class="search-strip" method="GET" action="index.php#jobs">
+            <label class="search-field">
+              <i class="bi bi-search"></i>
+              <input type="text" name="title" value="<?php echo e($titleSearch); ?>" placeholder="ค้นหาชื่องาน หมวดงาน หรือบริษัท">
+            </label>
+            <div class="location-pin-field">
+              <i class="bi bi-geo-alt"></i>
+              <div class="pin-copy">
+                <span class="pin-label">ปักหมุดพื้นที่หางาน</span>
+                <span class="pin-status" id="index-location-status"><?php echo e($pinStatusText); ?></span>
+              </div>
+              <button class="btn-pin" type="button" onclick="openIndexMapModal()">
+                <i class="bi bi-pin-map"></i> เลือก
+              </button>
+              <input type="hidden" name="location" id="index-location" value="<?php echo e($locationSearch); ?>">
+              <input type="hidden" name="latitude" id="index-latitude" value="<?php echo $hasLocationPin ? e($searchLat) : ''; ?>">
+              <input type="hidden" name="longitude" id="index-longitude" value="<?php echo $hasLocationPin ? e($searchLng) : ''; ?>">
+              <input type="hidden" name="preferred_radius_km" id="index-radius" value="<?php echo e($searchRadiusKm); ?>">
             </div>
-            <button class="btn-pin" type="button" onclick="openIndexMapModal()">
-              <i class="bi bi-pin-map"></i> เลือก
-            </button>
-            <input type="hidden" name="location" id="index-location" value="<?php echo e($locationSearch); ?>">
-            <input type="hidden" name="latitude" id="index-latitude" value="<?php echo $hasLocationPin ? e($searchLat) : ''; ?>">
-            <input type="hidden" name="longitude" id="index-longitude" value="<?php echo $hasLocationPin ? e($searchLng) : ''; ?>">
-            <input type="hidden" name="preferred_radius_km" id="index-radius" value="<?php echo e($searchRadiusKm); ?>">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-arrow-right"></i> ค้นหา</button>
+          </form>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="<?php echo e($primaryCtaUrl); ?>"><i class="bi bi-person-plus"></i> <?php echo e($primaryCtaText); ?></a>
+            <a class="btn btn-ghost" href="#jobs"><i class="bi bi-briefcase"></i> ดูงานล่าสุด</a>
           </div>
-          <button class="btn btn-primary" type="submit"><i class="bi bi-arrow-right"></i> ค้นหา</button>
-        </form>
 
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="<?php echo e($primaryCtaUrl); ?>"><i class="bi bi-person-plus"></i> <?php echo e($primaryCtaText); ?></a>
-          <a class="btn btn-ghost" href="#jobs"><i class="bi bi-briefcase"></i> ดูงานล่าสุด</a>
+          <div class="hero-metrics" aria-label="Platform statistics">
+            <div class="metric"><strong><?php echo e(number_format($stats['jobs'])); ?></strong><span>งานในระบบ</span></div>
+            <div class="metric"><strong><?php echo e(number_format($stats['employers'])); ?></strong><span>ผู้ว่าจ้าง</span></div>
+            <div class="metric"><strong><?php echo e(number_format($stats['freelancers'])); ?></strong><span>ฟรีแลนซ์</span></div>
+          </div>
         </div>
 
-        <div class="hero-metrics" aria-label="Platform statistics">
-          <div class="metric"><strong><?php echo e(number_format($stats['jobs'])); ?></strong><span>งานในระบบ</span></div>
-          <div class="metric"><strong><?php echo e(number_format($stats['employers'])); ?></strong><span>ผู้ว่าจ้าง</span></div>
-          <div class="metric"><strong><?php echo e(number_format($stats['freelancers'])); ?></strong><span>ฟรีแลนซ์</span></div>
-        </div>
+        <aside class="role-choice-panel" id="start" aria-label="เลือกเส้นทางเริ่มใช้งาน">
+          <span class="role-choice-kicker"><i class="bi bi-arrow-up-right-circle"></i> เริ่มใช้งาน</span>
+          <h2>คุณกำลังหางานหรือต้องการลูกจ้าง</h2>
+          <p>เลือกบทบาทที่ตรงกับคุณ แล้วไปยังขั้นตอนที่เหมาะกับงานของคุณทันที</p>
+
+          <div class="role-choice-list">
+            <a class="role-choice-card" href="<?php echo e($freelancerStartUrl); ?>">
+              <span class="role-choice-icon"><i class="bi bi-person-workspace"></i></span>
+              <span>
+                <h3>Freelancer</h3>
+                <p>ค้นหางาน สมัครงาน และจัดการโปรไฟล์สำหรับรับงาน</p>
+              </span>
+              <span class="role-choice-action">เริ่มหางาน <i class="bi bi-arrow-right"></i></span>
+            </a>
+
+            <a class="role-choice-card" href="<?php echo e($employerStartUrl); ?>">
+              <span class="role-choice-icon"><i class="bi bi-building-add"></i></span>
+              <span>
+                <h3>Employer</h3>
+                <p>โพสต์งาน คัดเลือกผู้สมัคร และจัดการการจ้างงาน</p>
+              </span>
+              <span class="role-choice-action">เริ่มจ้างงาน <i class="bi bi-arrow-right"></i></span>
+            </a>
+          </div>
+        </aside>
       </div>
     </div>
   </header>
@@ -1217,37 +1334,6 @@ $pinStatusText = $hasLocationPin
             <span class="company-count"><i class="bi bi-briefcase-fill"></i> <?php echo e(number_format((int)$company['jobs'])); ?> งานเปิดรับ</span>
           </article>
         <?php endforeach; ?>
-      </div>
-    </div>
-  </section>
-
-  <section class="start-band" id="start">
-    <div class="container">
-      <div class="section-head">
-        <div>
-          <div class="section-kicker"><i class="bi bi-arrow-up-right-circle"></i> เริ่มใช้งาน</div>
-          <h2 class="section-title">คุณกำลังหางานหรือต้องการลูกจ้าง</h2>
-        </div>
-        <p class="section-desc">เลือกเส้นทางที่เหมาะกับคุณเพื่อเริ่มต้นใช้งานระบบได้ทันที</p>
-      </div>
-
-      <div class="path-grid">
-        <article class="path-card">
-          <span class="path-icon"><i class="bi bi-person-workspace"></i></span>
-          <div>
-            <h3>สำหรับ Freelancer</h3>
-            <p>ค้นหางาน สมัครงาน ติดตามสถานะ และรีวิวผู้ว่าจ้างหลังจบงาน</p>
-          </div>
-          <a class="btn btn-primary" href="<?php echo $role === 'freelancer' ? 'browse_jobs.php' : 'register.php'; ?>">เริ่มหางาน</a>
-        </article>
-        <article class="path-card">
-          <span class="path-icon"><i class="bi bi-building-add"></i></span>
-          <div>
-            <h3>สำหรับ Employer</h3>
-            <p>โพสต์งาน จัดการผู้สมัคร บันทึกรีวิว และดูภาพรวมการจ้างงาน</p>
-          </div>
-          <a class="btn btn-primary" href="<?php echo $role === 'employer' ? 'post_job.php' : 'register.php'; ?>">เริ่มจ้างงาน</a>
-        </article>
       </div>
     </div>
   </section>
