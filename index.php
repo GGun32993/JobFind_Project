@@ -1224,7 +1224,7 @@ $pinStatusText = $hasLocationPin
       <div class="section-head">
         <div>
           <div class="section-kicker"><i class="bi bi-arrow-up-right-circle"></i> เริ่มใช้งาน</div>
-          <h2 class="section-title">เลือกทางเข้าที่ตรงกับงานของคุณ</h2>
+          <h2 class="section-title">คุณกำลังหางานหรือต้องการลูกจ้าง</h2>
         </div>
         <p class="section-desc">หน้าแรกนี้ออกแบบให้พาไป workflow หลักได้ทันที ไม่ว่าจะสมัครงานหรือจ้างฟรีแลนซ์</p>
       </div>
