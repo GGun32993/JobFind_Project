@@ -1244,7 +1244,7 @@ $pinStatusText = $hasLocationPin
             <h3>สำหรับ Employer</h3>
             <p>โพสต์งาน จัดการผู้สมัคร บันทึกรีวิว และดูภาพรวมการจ้างงาน</p>
           </div>
-          <a class="btn btn-secondary" href="<?php echo $role === 'employer' ? 'post_job.php' : 'register.php'; ?>">เริ่มจ้างงาน</a>
+          <a class="btn btn-primary" href="<?php echo $role === 'employer' ? 'post_job.php' : 'register.php'; ?>">เริ่มจ้างงาน</a>
         </article>
       </div>
     </div>
