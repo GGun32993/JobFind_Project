@@ -107,8 +107,8 @@ if($data){
   .nav-logout:hover { background:rgba(239,68,68,.12); }
 
   /* ── Main ── */
-  .main { margin-left:240px; flex:1; padding:36px 40px; min-height:100vh; }
-  .content-wrap { max-width:600px; }
+  .main { margin-left:240px; flex:1; padding:36px 40px; min-height:100vh; display:flex; justify-content:center; }
+  .content-wrap { width:100%; max-width:760px; }
 
   .topbar { margin-bottom:28px; }
   .topbar h2 { font-size:22px; font-weight:600; }
@@ -230,7 +230,7 @@ if($data){
 
   @media(max-width:768px){
     .sidebar { display:none; }
-    .main { margin-left:0; padding:20px 16px; }
+    .main { margin-left:0; padding:20px 16px; display:block; }
   }
 </style>
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
