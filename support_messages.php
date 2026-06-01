@@ -46,6 +46,7 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
 <!DOCTYPE html>
 <html lang="th">
 <head>
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Support Chat</title>

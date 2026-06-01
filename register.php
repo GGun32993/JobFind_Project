@@ -102,6 +102,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 <!DOCTYPE html>
 <html lang="th">
 <head>
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register — FreelanceHub</title>

@@ -189,6 +189,7 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
 <!DOCTYPE html>
 <html lang="th">
 <head>
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Edit Job - FreelanceHub</title>
