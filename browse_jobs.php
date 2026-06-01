@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . "/config.php";
+require_once "location_schema.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
     header("Location: login.php");
@@ -7,6 +8,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
 }
 
 $user_id = $_SESSION['user_id'];
+ensure_location_schema($conn);
 
 // ตรวจสอบ category จาก URL parameter
 $selected_category = isset($_GET['category']) ? trim($_GET['category']) : '';
@@ -427,6 +429,8 @@ $result = mysqli_query($conn, $query);
 
       // ---- category: ดึงจาก DB (ถ้ามี field 'category') หรือ fallback ว่าง
       $cat = isset($row['category']) ? htmlspecialchars($row['category']) : '';
+      $employment_type_label = jobfind_employment_type_label($row['employment_type'] ?? '');
+      $employment_type_display = $employment_type_label !== '' ? $employment_type_label : 'ไม่ระบุ';
 
       // star display
       $stars = '';
@@ -481,6 +485,7 @@ $result = mysqli_query($conn, $query);
 
       <div class="job-meta">
         <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($row['location']); ?></span>
+        <span><i class="bi bi-briefcase"></i>ลักษณะการจ้าง <?php echo htmlspecialchars($employment_type_display); ?></span>
         <span><i class="bi bi-currency-dollar"></i>งบประมาณ <?php echo htmlspecialchars($budget_display); ?></span>
         <span><i class="bi bi-clock"></i>ลงประกาศเมื่อ <?php echo $posted_display; ?></span>
         <span><i class="bi bi-calendar-event"></i>วันสิ้นสุดการรับสมัคร <?php echo $deadline_display; ?></span>

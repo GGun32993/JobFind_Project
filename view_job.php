@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . "/config.php";
 require_once "job_image_helpers.php";
 require_once "profile_image_helpers.php";
+require_once "location_schema.php";
 
 // ตรวจสอบว่าเป็น Freelancer หรือไม่
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
@@ -13,6 +14,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
 $job_id = $_GET['job_id'] ?? 0;
 ensure_job_image_schema($conn);
 ensure_profile_image_schema($conn);
+ensure_location_schema($conn);
 
 function safe_return_url($url, $fallback = ''){
     $url = trim((string)$url);
@@ -51,6 +53,8 @@ if (!$job) {
 
 $job_images = get_job_images($conn, $job_id);
 $job_status = trim($job['status'] ?? '') ?: 'open';
+$employment_type_label = jobfind_employment_type_label($job['employment_type'] ?? '');
+$employment_type_display = $employment_type_label !== '' ? $employment_type_label : 'ไม่ระบุ';
 
 // ✅ ดึงข้อมูลนายจ้าง + รายละเอียดบริษัท (JOIN 2 ตาราง)
 $employer_query = "
@@ -1173,6 +1177,10 @@ $employer_js_data = [
                         <strong><?php echo htmlspecialchars($job['location'] ?? 'ไม่ระบุสถานที่'); ?></strong>
                     </div>
                     <div class="meta-item">
+                        <i class="bi bi-briefcase-fill"></i>
+                        ลักษณะการจ้าง: <strong><?php echo htmlspecialchars($employment_type_display); ?></strong>
+                    </div>
+                    <div class="meta-item">
                         <i class="bi bi-clock-fill"></i>
                         ลงประกาศเมื่อ <?php echo date('d M Y', strtotime($job['created_at'])); ?>
                     </div>
@@ -1225,6 +1233,13 @@ $employer_js_data = [
                     <div class="info-value">
                         <i class="bi bi-geo-alt-fill"></i>
                         <?php echo htmlspecialchars($job['location'] ?? 'ไม่ระบุ'); ?>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">ลักษณะการจ้าง</div>
+                    <div class="info-value">
+                        <i class="bi bi-briefcase-fill"></i>
+                        <?php echo htmlspecialchars($employment_type_display); ?>
                     </div>
                 </div>
                 <div class="info-card">
