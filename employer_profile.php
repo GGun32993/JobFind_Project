@@ -209,7 +209,7 @@ if($is_public){
   .nav-logout:hover { background:rgba(239,68,68,.12); }
 
   .main { margin-left:240px; flex:1; padding:36px 40px; display:flex; justify-content:center; }
-  .content-wrap { width:100%; max-width:560px; }
+  .content-wrap { width:100%; max-width:760px; }
   .topbar { margin-bottom:28px; }
   .topbar h2 { font-size:22px; font-weight:600; }
   .topbar p  { font-size:13px; color:var(--muted); margin-top:2px; }
@@ -246,7 +246,7 @@ if($is_public){
   .profile-image-preview img { width:100%; height:100%; object-fit:cover; display:block; }
   .profile-image-copy strong { display:block; font-size:14px; margin-bottom:4px; color:var(--text); }
   .profile-image-copy p { margin:0 0 10px; font-size:12.5px; color:var(--muted); line-height:1.6; }
-  .profile-file-input { width:100%; max-width:360px; font-size:13px; }
+  .profile-file-input { width:100%; max-width:480px; font-size:13px; }
   .image-delete-form { display:flex; justify-content:flex-end; margin:-4px 0 18px; }
   .btn-delete-image {
     display:inline-flex; align-items:center; gap:7px;
