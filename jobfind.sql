@@ -236,6 +236,7 @@ CREATE TABLE `job` (
   `admin_status` enum('pending','approved','rejected') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `category` varchar(100) DEFAULT NULL,
+  `employment_type` varchar(40) DEFAULT NULL,
   `image_path` varchar(255) DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

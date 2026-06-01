@@ -96,6 +96,29 @@ function jobfind_normalize_age($age)
     return ($age >= 1 && $age <= 120) ? $age : null;
 }
 
+function jobfind_employment_type_options()
+{
+    return [
+        'freelance_project' => 'ฟรีแลนซ์ (จ้างเป็นโปรเจกต์)',
+        'contract' => 'สัญญาจ้าง (รายเดือน/รายปี)',
+        'part_time' => 'พาร์ทไทม์ (รายชั่วโมง/รายวัน)',
+        'full_time' => 'งานประจำ',
+    ];
+}
+
+function jobfind_normalize_employment_type($employment_type)
+{
+    $employment_type = trim((string)$employment_type);
+    return array_key_exists($employment_type, jobfind_employment_type_options()) ? $employment_type : 'freelance_project';
+}
+
+function jobfind_employment_type_label($employment_type)
+{
+    $employment_type = trim((string)$employment_type);
+    $options = jobfind_employment_type_options();
+    return array_key_exists($employment_type, $options) ? $options[$employment_type] : '';
+}
+
 function ensure_location_schema($conn)
 {
     static $done = false;
@@ -142,6 +165,7 @@ function ensure_location_schema($conn)
     if (jobfind_table_exists($conn, 'job')) {
         jobfind_add_column_if_missing($conn, 'job', 'latitude', 'DOUBLE DEFAULT NULL AFTER `location`');
         jobfind_add_column_if_missing($conn, 'job', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
+        jobfind_add_column_if_missing($conn, 'job', 'employment_type', 'VARCHAR(40) DEFAULT NULL AFTER `category`');
 
         jobfind_add_index_if_missing($conn, 'job', 'idx_job_geo', '(`latitude`, `longitude`)');
         jobfind_add_index_if_missing($conn, 'job', 'idx_job_status_admin', '(`status`, `admin_status`)');

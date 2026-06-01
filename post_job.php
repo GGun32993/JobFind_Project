@@ -53,6 +53,8 @@ if(isset($_POST['submit'])){
     $deadline    = mysqli_real_escape_string($conn, $deadline_raw);
     $deadline_sql = $deadline !== '' ? "'$deadline'" : "NULL";
     $category    = mysqli_real_escape_string($conn, $_POST['category'] ?? '');
+    $employment_type = jobfind_normalize_employment_type($_POST['employment_type'] ?? 'freelance_project');
+    $employment_type_sql = mysqli_real_escape_string($conn, $employment_type);
     $latitude     = !empty($_POST['latitude']) ? floatval($_POST['latitude']) : (!empty($employer_location['latitude']) ? floatval($employer_location['latitude']) : null);
     $longitude    = !empty($_POST['longitude']) ? floatval($_POST['longitude']) : (!empty($employer_location['longitude']) ? floatval($employer_location['longitude']) : null);
     if($latitude === null && !empty($employer_location['user_lat'])){
@@ -69,8 +71,8 @@ if(isset($_POST['submit'])){
         $job_image_path = $job_image_paths[0] ?? '';
         $job_image_sql = $job_image_path !== '' ? "'" . mysqli_real_escape_string($conn, $job_image_path) . "'" : "NULL";
         $result = mysqli_query($conn,"
-            INSERT INTO job (employer_id,title,description,location,salary,latitude,longitude,deadline,category,image_path,status,admin_status)
-            VALUES ('$employer_id','$title','$description','$location','$salary',$latitude_sql,$longitude_sql,$deadline_sql,'$category',$job_image_sql,'open','pending')
+            INSERT INTO job (employer_id,title,description,location,salary,latitude,longitude,deadline,category,employment_type,image_path,status,admin_status)
+            VALUES ('$employer_id','$title','$description','$location','$salary',$latitude_sql,$longitude_sql,$deadline_sql,'$category','$employment_type_sql',$job_image_sql,'open','pending')
         ");
 
         if($result){
@@ -125,6 +127,7 @@ if(empty($cats)){
         ['name'=>'Other','icon'=>'📦'],
     ];
 }
+$selected_employment_type = jobfind_normalize_employment_type($_POST['employment_type'] ?? 'freelance_project');
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -340,6 +343,21 @@ if(empty($cats)){
     <?php else: ?>
     <input type="hidden" name="category" value="">
     <?php endif; ?>
+
+    <div class="field-group">
+      <label>ลักษณะการจ้าง <span class="req">*</span></label>
+      <div class="input-icon-wrap">
+        <i class="bi bi-briefcase"></i>
+        <select name="employment_type" class="form-input" style="padding-left:40px;cursor:pointer;" required>
+          <?php foreach(jobfind_employment_type_options() as $type_value => $type_label): ?>
+          <option value="<?php echo htmlspecialchars($type_value); ?>"
+            <?php echo $selected_employment_type === $type_value ? 'selected' : ''; ?>>
+            <?php echo htmlspecialchars($type_label); ?>
+          </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+    </div>
 
     <!-- รายละเอียดเพิ่มเติม -->
     <div class="section-title" style="margin-top:8px;"><i class="bi bi-map"></i> สถานที่และค่าตอบแทน</div>
