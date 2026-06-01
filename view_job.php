@@ -1174,11 +1174,11 @@ $employer_js_data = [
                     </div>
                     <div class="meta-item">
                         <i class="bi bi-clock-fill"></i>
-                        ลงเมื่อ <?php echo date('d M Y', strtotime($job['created_at'])); ?>
+                        ลงประกาศเมื่อ <?php echo date('d M Y', strtotime($job['created_at'])); ?>
                     </div>
                     <div class="meta-item">
                         <i class="bi bi-calendar-event-fill"></i>
-                        Deadline: <?php echo !empty($job['deadline']) ? date('d M Y', strtotime($job['deadline'])) : 'ไม่ระบุ'; ?>
+                        วันสิ้นสุดการรับสมัคร: <?php echo !empty($job['deadline']) ? date('d M Y', strtotime($job['deadline'])) : 'ไม่ระบุ'; ?>
                     </div>
                 </div>
             </div>
@@ -1228,7 +1228,7 @@ $employer_js_data = [
                     </div>
                 </div>
                 <div class="info-card">
-                    <div class="info-label">ค่าตอบแทน</div>
+                    <div class="info-label">งบประมาณ</div>
                     <div class="info-value">
                         <i class="bi bi-currency-dollar"></i>
                         <?php echo number_format($job['salary'] ?? 0, 2); ?> บาท
@@ -1242,7 +1242,7 @@ $employer_js_data = [
                     </div>
                 </div>
                 <div class="info-card">
-                    <div class="info-label">Deadline</div>
+                    <div class="info-label">วันสิ้นสุดการรับสมัคร</div>
                     <div class="info-value">
                         <i class="bi bi-calendar-x"></i>
                         <?php echo !empty($job['deadline']) ? date('d M Y', strtotime($job['deadline'])) : 'ไม่ระบุ'; ?>

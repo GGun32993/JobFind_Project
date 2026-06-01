@@ -444,6 +444,12 @@ $result = mysqli_query($conn, $query);
           preg_match('/[\d,]+/', str_replace(',','',$row['salary']), $m);
           $salary_num = isset($m[0]) ? intval($m[0]) : 0;
       }
+      $budget_display = trim((string)($row['salary'] ?? ''));
+      if($budget_display === ''){
+          $budget_display = 'ไม่ระบุ';
+      }
+      $posted_display = !empty($row['created_at']) ? date('d M Y', strtotime($row['created_at'])) : 'ไม่ระบุ';
+      $deadline_display = !empty($row['deadline']) ? date('d M Y', strtotime($row['deadline'])) : 'ไม่ระบุ';
   ?>
   <div class="job-card"
        data-title="<?php echo strtolower(htmlspecialchars($row['title'])); ?>"
@@ -475,10 +481,9 @@ $result = mysqli_query($conn, $query);
 
       <div class="job-meta">
         <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($row['location']); ?></span>
-        <span><i class="bi bi-currency-dollar"></i><?php echo htmlspecialchars($row['salary']); ?></span>
-        <?php if(!empty($row['created_at'])): ?>
-        <span><i class="bi bi-clock"></i><?php echo date('d M Y', strtotime($row['created_at'])); ?></span>
-        <?php endif; ?>
+        <span><i class="bi bi-currency-dollar"></i>งบประมาณ <?php echo htmlspecialchars($budget_display); ?></span>
+        <span><i class="bi bi-clock"></i>ลงประกาศเมื่อ <?php echo $posted_display; ?></span>
+        <span><i class="bi bi-calendar-event"></i>วันสิ้นสุดการรับสมัคร <?php echo $deadline_display; ?></span>
         <span>
           <?php if($avg_rating > 0): ?>
             <span class="stars"><?php echo $stars; ?></span>
