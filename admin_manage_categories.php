@@ -68,11 +68,110 @@ if(isset($_POST['edit'])){
     header("Location: admin_manage_categories.php?toast=edited"); exit();
 }
 
+// ── ADD SUBCATEGORY ──
+if(isset($_POST['add_subcategory'])){
+    $category_id = intval($_POST['subcategory_category_id'] ?? 0);
+    $name = mysqli_real_escape_string($conn, trim($_POST['subcategory_name'] ?? ''));
+
+    if($category_id > 0 && $name !== ''){
+        $exists = mysqli_fetch_assoc(mysqli_query($conn,"
+            SELECT subcategory_id
+            FROM job_subcategories
+            WHERE category_id='$category_id' AND name='$name'
+            LIMIT 1
+        "));
+        if($exists){
+            $toast = 'sub_dup';
+        } else {
+            $r = mysqli_query($conn,"
+                INSERT INTO job_subcategories (category_id, name)
+                VALUES ('$category_id', '$name')
+            ");
+            $toast = $r ? 'sub_added' : 'sub_dup';
+        }
+    } else {
+        $toast = 'sub_dup';
+    }
+    header("Location: admin_manage_categories.php?toast=$toast"); exit();
+}
+
+// ── EDIT SUBCATEGORY ──
+if(isset($_POST['edit_subcategory'])){
+    $subcategory_id = intval($_POST['subcategory_id'] ?? 0);
+    $category_id = intval($_POST['subcategory_category_id'] ?? 0);
+    $name = mysqli_real_escape_string($conn, trim($_POST['subcategory_name'] ?? ''));
+
+    $old_sub = mysqli_fetch_assoc(mysqli_query($conn,"
+        SELECT js.name, js.category_id, c.name AS category_name
+        FROM job_subcategories js
+        JOIN categories c ON c.category_id=js.category_id
+        WHERE js.subcategory_id='$subcategory_id'
+        LIMIT 1
+    "));
+
+    $dup = ($category_id <= 0 || $name === '')
+        ? true
+        : mysqli_fetch_assoc(mysqli_query($conn,"
+            SELECT subcategory_id
+            FROM job_subcategories
+            WHERE category_id='$category_id' AND name='$name' AND subcategory_id!='$subcategory_id'
+            LIMIT 1
+        "));
+
+    if($dup){
+        header("Location: admin_manage_categories.php?toast=sub_dup"); exit();
+    }
+
+    $new_cat = mysqli_fetch_assoc(mysqli_query($conn,"SELECT name FROM categories WHERE category_id='$category_id' LIMIT 1"));
+    mysqli_query($conn,"
+        UPDATE job_subcategories
+        SET category_id='$category_id', name='$name'
+        WHERE subcategory_id='$subcategory_id'
+    ");
+
+    if($old_sub && $new_cat){
+        $old_category_name = mysqli_real_escape_string($conn, $old_sub['category_name']);
+        $old_sub_name = mysqli_real_escape_string($conn, $old_sub['name']);
+        $new_category_name = mysqli_real_escape_string($conn, $new_cat['name']);
+        mysqli_query($conn,"
+            UPDATE job
+            SET category='$new_category_name', job_subcategory='$name'
+            WHERE category='$old_category_name' AND job_subcategory='$old_sub_name'
+        ");
+    }
+
+    header("Location: admin_manage_categories.php?toast=sub_edited"); exit();
+}
+
 // ── DELETE ──
 if(isset($_GET['delete'])){
     $id = intval($_GET['delete']);
+    mysqli_query($conn,"DELETE FROM job_subcategories WHERE category_id='$id'");
     mysqli_query($conn,"DELETE FROM categories WHERE category_id='$id'");
     header("Location: admin_manage_categories.php?toast=deleted"); exit();
+}
+
+// ── DELETE SUBCATEGORY ──
+if(isset($_GET['delete_subcategory'])){
+    $id = intval($_GET['delete_subcategory']);
+    $old_sub = mysqli_fetch_assoc(mysqli_query($conn,"
+        SELECT js.name, c.name AS category_name
+        FROM job_subcategories js
+        JOIN categories c ON c.category_id=js.category_id
+        WHERE js.subcategory_id='$id'
+        LIMIT 1
+    "));
+    if($old_sub){
+        $old_category_name = mysqli_real_escape_string($conn, $old_sub['category_name']);
+        $old_sub_name = mysqli_real_escape_string($conn, $old_sub['name']);
+        mysqli_query($conn,"
+            UPDATE job
+            SET job_subcategory=NULL
+            WHERE category='$old_category_name' AND job_subcategory='$old_sub_name'
+        ");
+    }
+    mysqli_query($conn,"DELETE FROM job_subcategories WHERE subcategory_id='$id'");
+    header("Location: admin_manage_categories.php?toast=sub_deleted"); exit();
 }
 
 // ── GET ALL ──
@@ -80,11 +179,39 @@ $cats = [];
 $res  = mysqli_query($conn,"SELECT * FROM categories ORDER BY " . jobfind_category_order_clause($conn));
 while($r = mysqli_fetch_assoc($res)) $cats[] = $r;
 
+$subcats_by_category = [];
+$subcat_res = mysqli_query($conn,"
+    SELECT js.*, c.name AS category_name
+    FROM job_subcategories js
+    JOIN categories c ON c.category_id=js.category_id
+    ORDER BY " . jobfind_category_sort_expression($conn, 'c.name') . " ASC,
+             " . jobfind_category_sort_expression($conn, 'js.name') . " ASC,
+             js.subcategory_id ASC
+");
+if($subcat_res){
+    while($sr = mysqli_fetch_assoc($subcat_res)){
+        $subcats_by_category[(int)$sr['category_id']][] = $sr;
+    }
+}
+
 // edit mode
 $edit_cat = null;
 if(isset($_GET['edit'])){
     $eid = intval($_GET['edit']);
     foreach($cats as $c){ if($c['category_id']==$eid){ $edit_cat=$c; break; } }
+}
+
+$edit_subcat = null;
+if(isset($_GET['edit_subcategory'])){
+    $sid = intval($_GET['edit_subcategory']);
+    foreach($subcats_by_category as $items){
+        foreach($items as $subcat){
+            if((int)$subcat['subcategory_id'] === $sid){
+                $edit_subcat = $subcat;
+                break 2;
+            }
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -172,11 +299,12 @@ if(isset($_GET['edit'])){
   .list-head h4 { font-size:15px; font-weight:600; }
   .count-badge { background:#eef2ff; color:var(--accent); font-size:12px; font-weight:600; padding:3px 10px; border-radius:20px; }
 
-  .cat-item { display:flex; align-items:center; gap:14px; padding:14px 22px; border-bottom:1px solid var(--border); transition:background .15s; }
+  .cat-item { display:block; padding:14px 22px; border-bottom:1px solid var(--border); transition:background .15s; }
   .cat-item:last-child { border-bottom:none; }
   .cat-item:hover { background:#f8f9ff; }
   .cat-item.editing { background:#eef2ff; }
 
+  .cat-row { display:flex; align-items:center; gap:14px; }
   .cat-icon-box { width:42px; height:42px; border-radius:11px; background:var(--light); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
   .cat-name { font-size:14px; font-weight:600; flex:1; }
   .cat-date { font-size:12px; color:var(--muted); margin-right:10px; }
@@ -185,6 +313,16 @@ if(isset($_GET['edit'])){
   .act-btn:hover { opacity:.85; }
   .ab-edit   { background:#fef9c3; color:#854d0e; }
   .ab-delete { background:#fee2e2; color:#991b1b; }
+
+  .sub-form-divider { height:1px; background:var(--border); margin:22px 0; }
+  .subcat-list { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0 56px; }
+  .subcat-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 9px; border-radius:999px; background:#f8fafc; border:1px solid var(--border); font-size:12.5px; color:var(--muted); }
+  .subcat-chip.editing { background:#eef2ff; border-color:#c7d2fe; color:var(--accent); }
+  .subcat-chip a,
+  .subcat-chip button { width:22px; height:22px; border-radius:50%; border:none; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit; background:transparent; cursor:pointer; }
+  .subcat-chip a:hover,
+  .subcat-chip button:hover { background:#e2e8f0; color:var(--text); }
+  .subcat-empty { font-size:12.5px; color:var(--muted); }
 
   .empty-list { text-align:center; padding:40px; color:var(--muted); }
   .empty-list i { font-size:36px; color:#c7d2fe; margin-bottom:10px; display:block; }
@@ -216,7 +354,11 @@ $toasts = [
     'added'  => ['ok',  'bi-check-circle-fill', 'เพิ่มหมวดหมู่เรียบร้อยแล้ว'],
     'edited' => ['ok',  'bi-check-circle-fill', 'แก้ไขหมวดหมู่เรียบร้อยแล้ว'],
     'deleted'=> ['ok',  'bi-check-circle-fill', 'ลบหมวดหมู่เรียบร้อยแล้ว'],
+    'sub_added'  => ['ok',  'bi-check-circle-fill', 'เพิ่มงานย่อยเรียบร้อยแล้ว'],
+    'sub_edited' => ['ok',  'bi-check-circle-fill', 'แก้ไขงานย่อยเรียบร้อยแล้ว'],
+    'sub_deleted'=> ['ok',  'bi-check-circle-fill', 'ลบงานย่อยเรียบร้อยแล้ว'],
     'dup'    => ['err', 'bi-exclamation-triangle-fill', 'ชื่อหมวดหมู่นี้มีอยู่แล้ว'],
+    'sub_dup'=> ['err', 'bi-exclamation-triangle-fill', 'ชื่องานย่อยนี้มีอยู่แล้ว หรือข้อมูลไม่ครบ'],
 ];
 if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
     [$type,$icon,$msg] = $toasts[$_GET['toast']];
@@ -232,8 +374,8 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
 <div class="modal-overlay" id="del-modal">
   <div class="modal-box">
     <div class="modal-icon"><i class="bi bi-trash3"></i></div>
-    <div class="modal-title">ยืนยันการลบหมวดหมู่</div>
-    <div class="modal-sub">ลบ <strong id="del-name"></strong> ออกจากระบบ?<br>งานที่ใช้หมวดหมู่นี้อยู่จะยังคงอยู่ แต่ไม่มีหมวดหมู่แสดง</div>
+    <div class="modal-title" id="del-title">ยืนยันการลบหมวดหมู่</div>
+    <div class="modal-sub" id="del-sub">ลบ <strong id="del-name"></strong> ออกจากระบบ?</div>
     <div class="modal-actions">
       <button class="btn-mc" onclick="closeModal()">ยกเลิก</button>
       <a href="#" id="del-link" class="btn-md"><i class="bi bi-trash3"></i> ลบเลย</a>
@@ -330,6 +472,56 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
           <?php endif; ?>
         </div>
       </form>
+
+      <div class="sub-form-divider"></div>
+
+      <?php if($edit_subcat): ?>
+      <h4><i class="bi bi-pencil-square" style="color:var(--accent);"></i> แก้ไขงานย่อย</h4>
+      <form method="POST">
+        <input type="hidden" name="subcategory_id" value="<?php echo (int)$edit_subcat['subcategory_id']; ?>">
+      <?php else: ?>
+      <h4><i class="bi bi-diagram-3" style="color:var(--accent);"></i> เพิ่มงานย่อย</h4>
+      <form method="POST">
+      <?php endif; ?>
+
+        <div class="field-group">
+          <label>หมวดหมู่หลัก</label>
+          <select name="subcategory_category_id" class="form-input" required>
+            <option value="">เลือกหมวดหมู่หลัก</option>
+            <?php foreach($cats as $cat_option): ?>
+              <?php
+                $selected_subcat_category = (int)($edit_subcat['category_id'] ?? 0) === (int)$cat_option['category_id'] ? 'selected' : '';
+              ?>
+              <option value="<?php echo (int)$cat_option['category_id']; ?>" <?php echo $selected_subcat_category; ?>>
+                <?php echo htmlspecialchars($cat_option['name']); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>ชื่องานย่อย</label>
+          <input type="text" name="subcategory_name" class="form-input"
+                 placeholder="เช่น Website Development"
+                 value="<?php echo htmlspecialchars($edit_subcat['name'] ?? ''); ?>"
+                 required maxlength="120">
+        </div>
+
+        <div class="form-actions">
+          <?php if($edit_subcat): ?>
+          <button type="submit" name="edit_subcategory" class="btn-save">
+            <i class="bi bi-check-lg"></i> บันทึก
+          </button>
+          <a href="admin_manage_categories.php" class="btn-cancel-edit">
+            <i class="bi bi-x-lg"></i> ยกเลิก
+          </a>
+          <?php else: ?>
+          <button type="submit" name="add_subcategory" class="btn-save">
+            <i class="bi bi-plus-lg"></i> เพิ่มงานย่อย
+          </button>
+          <?php endif; ?>
+        </div>
+      </form>
     </div>
 
     <!-- Category list -->
@@ -348,22 +540,46 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
       <?php foreach($cats as $c):
         $is_editing = ($edit_cat && $edit_cat['category_id']==$c['category_id']);
         $date_str   = !empty($c['created_at']) ? date('d M Y', strtotime($c['created_at'])) : '';
+        $subcats = $subcats_by_category[(int)$c['category_id']] ?? [];
       ?>
       <div class="cat-item <?php echo $is_editing?'editing':''; ?>">
-        <div class="cat-icon-box"><?php echo $c['icon']; ?></div>
-        <div class="cat-name"><?php echo htmlspecialchars($c['name']); ?></div>
-        <?php if($date_str): ?>
-        <div class="cat-date"><?php echo $date_str; ?></div>
-        <?php endif; ?>
-        <div class="cat-actions">
-          <a href="admin_manage_categories.php?edit=<?php echo $c['category_id']; ?>"
-             class="act-btn ab-edit">
-            <i class="bi bi-pencil"></i> แก้ไข
-          </a>
-          <button class="act-btn ab-delete"
-            onclick="confirmDelete(<?php echo $c['category_id']; ?>,'<?php echo htmlspecialchars($c['name'],ENT_QUOTES); ?>')">
-            <i class="bi bi-trash3"></i> ลบ
-          </button>
+        <div class="cat-row">
+          <div class="cat-icon-box"><?php echo $c['icon']; ?></div>
+          <div class="cat-name"><?php echo htmlspecialchars($c['name']); ?></div>
+          <?php if($date_str): ?>
+          <div class="cat-date"><?php echo $date_str; ?></div>
+          <?php endif; ?>
+          <div class="cat-actions">
+            <a href="admin_manage_categories.php?edit=<?php echo $c['category_id']; ?>"
+               class="act-btn ab-edit">
+              <i class="bi bi-pencil"></i> แก้ไข
+            </a>
+            <button class="act-btn ab-delete"
+              onclick='confirmDelete(<?php echo (int)$c['category_id']; ?>, <?php echo json_encode($c['name'], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
+              <i class="bi bi-trash3"></i> ลบ
+            </button>
+          </div>
+        </div>
+        <div class="subcat-list">
+          <?php if(empty($subcats)): ?>
+            <span class="subcat-empty">ยังไม่มีงานย่อย</span>
+          <?php else: ?>
+            <?php foreach($subcats as $subcat):
+              $is_sub_editing = ($edit_subcat && (int)$edit_subcat['subcategory_id'] === (int)$subcat['subcategory_id']);
+            ?>
+            <span class="subcat-chip <?php echo $is_sub_editing ? 'editing' : ''; ?>">
+              <i class="bi bi-diagram-3"></i>
+              <?php echo htmlspecialchars($subcat['name']); ?>
+              <a href="admin_manage_categories.php?edit_subcategory=<?php echo (int)$subcat['subcategory_id']; ?>" title="แก้ไขงานย่อย">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button type="button" title="ลบงานย่อย"
+                onclick='confirmDeleteSubcategory(<?php echo (int)$subcat['subcategory_id']; ?>, <?php echo json_encode($subcat['name'], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>, <?php echo json_encode($c['name'], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
+                <i class="bi bi-trash3"></i>
+              </button>
+            </span>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </div>
       </div>
       <?php endforeach; ?>
@@ -388,9 +604,22 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
   });
 
   function confirmDelete(id, name){
+    document.getElementById('del-title').textContent = 'ยืนยันการลบหมวดหมู่';
     document.getElementById('del-name').textContent = name;
+    document.getElementById('del-sub').innerHTML = 'ลบ <strong id="del-name">' + escapeHtml(name) + '</strong> ออกจากระบบ?<br>งานที่ใช้หมวดหมู่นี้อยู่จะยังคงอยู่ แต่รายการงานย่อยของหมวดนี้จะถูกลบ';
     document.getElementById('del-link').href = 'admin_manage_categories.php?delete=' + id;
     document.getElementById('del-modal').classList.add('show');
+  }
+  function confirmDeleteSubcategory(id, name, categoryName){
+    document.getElementById('del-title').textContent = 'ยืนยันการลบงานย่อย';
+    document.getElementById('del-sub').innerHTML = 'ลบ <strong id="del-name">' + escapeHtml(name) + '</strong> ในหมวด ' + escapeHtml(categoryName) + '?<br>งานเดิมที่เลือกงานย่อยนี้จะถูกล้างเฉพาะค่างานย่อย';
+    document.getElementById('del-link').href = 'admin_manage_categories.php?delete_subcategory=' + id;
+    document.getElementById('del-modal').classList.add('show');
+  }
+  function escapeHtml(value){
+    const div = document.createElement('div');
+    div.textContent = value;
+    return div.innerHTML;
   }
   function closeModal(){
     document.getElementById('del-modal').classList.remove('show');

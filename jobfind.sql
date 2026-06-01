@@ -48,6 +48,34 @@ INSERT INTO `categories` (`category_id`, `name`, `icon`, `description`, `created
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `job_subcategories`
+--
+
+CREATE TABLE `job_subcategories` (
+  `subcategory_id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_id` int(11) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`subcategory_id`),
+  UNIQUE KEY `uq_job_subcategory` (`category_id`,`name`),
+  KEY `idx_job_subcategory_category` (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `category_seed_runs`
+--
+
+CREATE TABLE `category_seed_runs` (
+  `seed_key` varchar(100) NOT NULL,
+  `applied_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`seed_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `chat_messages`
 --
 
@@ -236,6 +264,7 @@ CREATE TABLE `job` (
   `admin_status` enum('pending','approved','rejected') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `category` varchar(100) DEFAULT NULL,
+  `job_subcategory` varchar(120) DEFAULT NULL,
   `employment_type` varchar(40) DEFAULT NULL,
   `image_path` varchar(255) DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL

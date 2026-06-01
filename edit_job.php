@@ -55,13 +55,32 @@ if(isset($_POST['update'])){
     $location    = mysqli_real_escape_string($conn, jobfind_location_text_from_profile($employer_location, trim($job['location'] ?? '')));
     $salary      = mysqli_real_escape_string($conn, trim($_POST['salary']));
     $deadline    = mysqli_real_escape_string($conn, trim($_POST['deadline']));
-    $category    = mysqli_real_escape_string($conn, trim($_POST['category'] ?? ''));
+    $category_raw = trim($_POST['category'] ?? '');
+    $job_subcategory_raw = trim($_POST['job_subcategory'] ?? '');
+    $category    = mysqli_real_escape_string($conn, $category_raw);
+    $job_subcategory = mysqli_real_escape_string($conn, $job_subcategory_raw);
     $employment_type = jobfind_normalize_employment_type($_POST['employment_type'] ?? ($job['employment_type'] ?? 'freelance_project'));
     $employment_type_sql = mysqli_real_escape_string($conn, $employment_type);
     $image_error = '';
     $delete_image_ids = array_map('intval', $_POST['delete_image_ids'] ?? []);
     $uploaded_images = save_uploaded_job_images($_FILES['job_images'] ?? [], $employer_id, $image_error);
     $remaining_count = count($job_images) - count($delete_image_ids) + count($uploaded_images);
+
+    if($category_raw === '' || $job_subcategory_raw === ''){
+        $image_error = 'กรุณาเลือกประเภทงานหลักและงานย่อย';
+    }
+    if($image_error === ''){
+        $valid_category_pair = mysqli_fetch_assoc(mysqli_query($conn, "
+            SELECT js.subcategory_id
+            FROM job_subcategories js
+            JOIN categories c ON c.category_id=js.category_id
+            WHERE c.name='$category' AND js.name='$job_subcategory'
+            LIMIT 1
+        "));
+        if(!$valid_category_pair){
+            $image_error = 'กรุณาเลือกงานย่อยที่อยู่ในประเภทงานหลัก';
+        }
+    }
 
     if($remaining_count > job_image_max_count()){
         $image_error = 'รูปภาพประกอบใส่ได้ไม่เกิน ' . job_image_max_count() . ' รูปต่อหนึ่งงาน';
@@ -85,6 +104,7 @@ if(isset($_POST['update'])){
             salary='$salary',
             deadline='$deadline',
             category='$category',
+            job_subcategory='$job_subcategory',
             employment_type='$employment_type_sql',
             updated_at=NOW()
         WHERE job_id='$job_id' AND employer_id='$employer_id'
@@ -160,15 +180,10 @@ if(!$job){
 $job_images = get_job_images($conn, $job_id);
 
 // ดึง categories
-$cats = [];
-$cat_check = mysqli_query($conn,"SHOW TABLES LIKE 'categories'");
-if($cat_check && mysqli_num_rows($cat_check) > 0){
-    $cat_res = mysqli_query($conn,"SELECT * FROM categories ORDER BY " . jobfind_category_order_clause($conn));
-    while($c = mysqli_fetch_assoc($cat_res)) $cats[] = $c;
-}
-if(empty($cats)){
-    $cats = jobfind_default_job_categories();
-}
+$cats = jobfind_get_categories_with_subcategories($conn);
+$category_subcategory_map = jobfind_category_subcategory_map($cats);
+$selected_category = $job['category'] ?? '';
+$selected_job_subcategory = $job['job_subcategory'] ?? '';
 $selected_employment_type = jobfind_normalize_employment_type($job['employment_type'] ?? 'freelance_project');
 ?>
 <!DOCTYPE html>
@@ -344,19 +359,31 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
     </div>
 
     <?php if(!empty($cats)): ?>
-    <div class="field-group">
-      <label>หมวดหมู่งาน <span class="req">*</span></label>
-      <div class="input-icon-wrap">
-        <i class="bi bi-tag"></i>
-        <select name="category" class="form-input" style="padding-left:40px;cursor:pointer;" required>
-          <option value="">-- เลือกหมวดหมู่ --</option>
-          <?php foreach($cats as $cat): ?>
-          <option value="<?php echo htmlspecialchars($cat['name']); ?>"
-            <?php echo ($job['category'] ?? '') === $cat['name'] ? 'selected' : ''; ?>>
-            <?php echo $cat['icon'].' '.$cat['name']; ?>
-          </option>
-          <?php endforeach; ?>
-        </select>
+    <div class="two-col">
+      <div class="field-group">
+        <label>ประเภทงานหลัก <span class="req">*</span></label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-tag"></i>
+          <select name="category" id="category-select" class="form-input" style="padding-left:40px;cursor:pointer;" required>
+            <option value="">-- เลือกประเภทงานหลัก --</option>
+            <?php foreach($cats as $cat): ?>
+            <option value="<?php echo htmlspecialchars($cat['name']); ?>"
+              <?php echo $selected_category === $cat['name'] ? 'selected' : ''; ?>>
+              <?php echo $cat['icon'].' '.$cat['name']; ?>
+            </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>งานย่อย <span class="req">*</span></label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-diagram-3"></i>
+          <select name="job_subcategory" id="job-subcategory-select" class="form-input" style="padding-left:40px;cursor:pointer;" required
+                  data-selected="<?php echo htmlspecialchars($selected_job_subcategory); ?>">
+            <option value="">-- เลือกประเภทงานหลักก่อน --</option>
+          </select>
+        </div>
       </div>
     </div>
     <?php else: ?>
@@ -448,6 +475,40 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
 </main>
 
 <script>
+  const categorySubcategoryMap = <?php echo json_encode($category_subcategory_map, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+
+  function updateJobSubcategoryOptions(resetSelected = false){
+    const categorySelect = document.getElementById('category-select');
+    const subcategorySelect = document.getElementById('job-subcategory-select');
+    if(!categorySelect || !subcategorySelect) return;
+
+    const selectedCategory = categorySelect.value;
+    const currentValue = resetSelected ? '' : (subcategorySelect.dataset.selected || subcategorySelect.value || '');
+    const options = categorySubcategoryMap[selectedCategory] || [];
+
+    subcategorySelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = selectedCategory ? '-- เลือกงานย่อย --' : '-- เลือกประเภทงานหลักก่อน --';
+    subcategorySelect.appendChild(placeholder);
+
+    options.forEach((name) => {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      option.selected = name === currentValue;
+      subcategorySelect.appendChild(option);
+    });
+
+    subcategorySelect.disabled = !selectedCategory;
+    if(options.length === 0 && selectedCategory){
+      placeholder.textContent = 'ยังไม่มีงานย่อยในประเภทนี้';
+    }
+  }
+
+  document.getElementById('category-select')?.addEventListener('change', () => updateJobSubcategoryOptions(true));
+  updateJobSubcategoryOptions(false);
+
   function previewJobImages(input){
     const files = Array.from(input.files || []);
     const grid = document.getElementById('job-image-preview-grid');

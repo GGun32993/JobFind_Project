@@ -426,7 +426,10 @@ $result = mysqli_query($conn, $query);
       $job_image = trim($row['image_path'] ?? '');
 
       // ---- category: ดึงจาก DB (ถ้ามี field 'category') หรือ fallback ว่าง
-      $cat = isset($row['category']) ? htmlspecialchars($row['category']) : '';
+      $cat_raw = isset($row['category']) ? trim((string)$row['category']) : '';
+      $cat = htmlspecialchars($cat_raw);
+      $job_subcategory_raw = trim((string)($row['job_subcategory'] ?? ''));
+      $job_subcategory_display = htmlspecialchars($job_subcategory_raw);
       $employment_type_label = jobfind_employment_type_label($row['employment_type'] ?? '');
       $employment_type_display = $employment_type_label !== '' ? $employment_type_label : 'ไม่ระบุ';
 
@@ -458,6 +461,7 @@ $result = mysqli_query($conn, $query);
        data-location="<?php echo strtolower(htmlspecialchars($row['location'])); ?>"
        data-desc="<?php echo strtolower(htmlspecialchars(strip_tags($row['description']))); ?>"
        data-cat="<?php echo $cat; ?>"
+       data-subcategory="<?php echo strtolower(htmlspecialchars($job_subcategory_raw)); ?>"
        data-salary="<?php echo $salary_num; ?>">
 
     <div class="job-logo <?php echo $job_image !== '' ? 'has-image' : ''; ?>">
@@ -475,6 +479,9 @@ $result = mysqli_query($conn, $query);
           <?php if($cat): ?>
           <span class="tag tag-cat"><i class="bi bi-tag"></i> <?php echo $cat; ?></span>
           <?php endif; ?>
+          <?php if($job_subcategory_display !== ''): ?>
+          <span class="tag tag-cat"><i class="bi bi-diagram-3"></i> <?php echo $job_subcategory_display; ?></span>
+          <?php endif; ?>
           <span class="tag tag-status"><?php echo htmlspecialchars($row['status']); ?></span>
         </div>
       </div>
@@ -484,6 +491,9 @@ $result = mysqli_query($conn, $query);
       <div class="job-meta">
         <span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($row['location']); ?></span>
         <span><i class="bi bi-briefcase"></i>ลักษณะการจ้าง <?php echo htmlspecialchars($employment_type_display); ?></span>
+        <?php if($job_subcategory_display !== ''): ?>
+        <span><i class="bi bi-diagram-3"></i>งานย่อย <?php echo $job_subcategory_display; ?></span>
+        <?php endif; ?>
         <span><i class="bi bi-currency-dollar"></i>งบประมาณ <?php echo htmlspecialchars($budget_display); ?></span>
         <span><i class="bi bi-clock"></i>ลงประกาศเมื่อ <?php echo $posted_display; ?></span>
         <span><i class="bi bi-calendar-event"></i>วันสิ้นสุดการรับสมัคร <?php echo $deadline_display; ?></span>
@@ -589,7 +599,9 @@ $result = mysqli_query($conn, $query);
       const matchKw = !kw ||
         card.dataset.title.includes(kw) ||
         card.dataset.location.includes(kw) ||
-        card.dataset.desc.includes(kw);
+        card.dataset.desc.includes(kw) ||
+        card.dataset.cat.toLowerCase().includes(kw) ||
+        (card.dataset.subcategory || '').includes(kw);
 
       const matchCat = !currentCat || card.dataset.cat === currentCat;
 
