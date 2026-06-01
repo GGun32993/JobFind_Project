@@ -9,6 +9,8 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
     exit();
 }
 
+ensure_profile_image_schema($conn);
+
 $employer_id   = $_SESSION['user_id'];
 $freelancer_id = intval($_GET['freelancer_id'] ?? 0);
 $job_id        = intval($_GET['job_id'] ?? 0);
@@ -20,8 +22,10 @@ if(!$freelancer_id || !$job_id){
 }
 
 // ── ดึงข้อมูล freelancer และงาน ──
-$fl   = mysqli_fetch_assoc(mysqli_query($conn,"SELECT username FROM users WHERE user_id='$freelancer_id'"));
+$fl   = mysqli_fetch_assoc(mysqli_query($conn,"SELECT username, fullname, profile_image FROM users WHERE user_id='$freelancer_id'"));
 $job  = mysqli_fetch_assoc(mysqli_query($conn,"SELECT title FROM job WHERE job_id='$job_id'"));
+$fl_profile_image = trim($fl['profile_image'] ?? '');
+$fl_display_name = trim($fl['fullname'] ?? '') !== '' ? $fl['fullname'] : ($fl['username'] ?? 'Unknown');
 
 // ── เช็คว่ารีวิวไปแล้วหรือยัง ──
 $already = mysqli_fetch_assoc(mysqli_query($conn,"
@@ -102,7 +106,8 @@ if($_POST && !$already){
 
   /* ── Freelancer info card ── */
   .fl-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:20px; display:flex; align-items:center; gap:16px; }
-  .fl-avatar { width:52px; height:52px; border-radius:50%; background:var(--accent); color:#fff; font-size:19px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .fl-avatar { width:52px; height:52px; border-radius:50%; background:var(--accent); color:#fff; font-size:19px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; border:1px solid var(--border); }
+  .fl-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .fl-name { font-size:15px; font-weight:600; }
   .fl-job  { font-size:13px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:5px; }
 
@@ -121,13 +126,13 @@ if($_POST && !$already){
   .star-rating { display:flex; flex-direction:row-reverse; justify-content:flex-end; gap:6px; margin-bottom:20px; }
   .star-rating input { display:none; }
   .star-rating label {
-    font-size:42px; color:#e2e8f0; cursor:pointer;
+    font-size:42px; color:#e2e8f0 !important; cursor:pointer;
     transition:color .15s, transform .1s;
     line-height:1;
   }
   .star-rating label:hover,
   .star-rating label:hover ~ label,
-  .star-rating input:checked ~ label { color:var(--yellow); }
+  .star-rating input:checked ~ label { color:var(--yellow) !important; }
   .star-rating label:hover { transform:scale(1.15); }
 
   .star-desc { font-size:13px; color:var(--muted); margin-bottom:16px; height:20px; }
@@ -195,9 +200,15 @@ if($_POST && !$already){
 
   <!-- Freelancer info -->
   <div class="fl-card">
-    <div class="fl-avatar"><?php echo profile_initials($fl['username'] ?? '?'); ?></div>
+    <div class="fl-avatar">
+      <?php if($fl_profile_image !== ''): ?>
+        <img src="<?php echo profile_image_src($fl_profile_image); ?>" alt="<?php echo htmlspecialchars($fl_display_name); ?>">
+      <?php else: ?>
+        <?php echo profile_initials($fl_display_name); ?>
+      <?php endif; ?>
+    </div>
     <div>
-      <div class="fl-name"><?php echo htmlspecialchars($fl['username'] ?? 'Unknown'); ?></div>
+      <div class="fl-name"><?php echo htmlspecialchars($fl_display_name); ?></div>
       <div class="fl-job">
         <i class="bi bi-briefcase" style="font-size:12px;"></i>
         <?php echo htmlspecialchars($job['title'] ?? 'Unknown Job'); ?>
