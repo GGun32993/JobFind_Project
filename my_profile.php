@@ -223,7 +223,8 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
   .nav-logout:hover { background:rgba(239,68,68,.12); }
 
   /* ── Main ── */
-  .main { margin-left:240px; flex:1; padding:36px 40px; min-height:100vh; }
+  .main { margin-left:240px; flex:1; padding:36px 40px; min-height:100vh; display:flex; justify-content:center; }
+  .content-wrap { width:100%; max-width:760px; }
 
   /* ── Topbar ── */
   .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; }
@@ -279,7 +280,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
   .profile-image-preview img { width:100%; height:100%; object-fit:cover; display:block; }
   .profile-image-copy strong { display:block; font-size:14px; margin-bottom:4px; color:var(--text); }
   .profile-image-copy p { margin:0 0 10px; font-size:12.5px; color:var(--muted); line-height:1.6; }
-  .profile-file-input { width:100%; max-width:360px; font-size:13px; }
+  .profile-file-input { width:100%; max-width:480px; font-size:13px; }
   .image-delete-form { display:flex; justify-content:flex-end; margin:-4px 0 18px; }
   .btn-delete-image {
     display:inline-flex; align-items:center; gap:7px;
@@ -458,6 +459,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
 
 <!-- ── Main ── -->
 <main class="main">
+<div class="content-wrap">
 
   <div class="topbar">
     <div>
@@ -722,6 +724,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
     </div>
   </div>
 
+</div>
 </main>
 
 <script src="assets/vendor/leaflet/leaflet.min.js"></script>
