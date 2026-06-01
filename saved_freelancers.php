@@ -53,7 +53,7 @@ function skill_list($skills){
 <link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Saved Freelancers - FreelanceHub</title>
+<title>Saved Freelancers - JobFind</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
@@ -169,9 +169,9 @@ function skill_list($skills){
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+      <div class="logo-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
       <div>
-        <div class="logo-text">FreelanceHub</div>
+        <div class="logo-text">JobFind</div>
         <div class="logo-sub">Employer</div>
       </div>
     </a>

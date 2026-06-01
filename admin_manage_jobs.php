@@ -232,9 +232,9 @@ while($r = mysqli_fetch_assoc($result)){
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><i class="bi bi-shield-check"></i></div>
+      <div class="logo-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
       <div>
-        <div class="logo-text">FreelanceHub</div>
+        <div class="logo-text">JobFind</div>
         <div class="logo-sub">Admin Panel</div>
       </div>
     </a>

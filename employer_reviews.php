@@ -155,9 +155,9 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+      <div class="logo-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
       <div>
-        <div class="logo-text">FreelanceHub</div>
+        <div class="logo-text">JobFind</div>
         <div class="logo-sub">Employer</div>
       </div>
     </a>

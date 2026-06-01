@@ -105,7 +105,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 <link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Register — FreelanceHub</title>
+<title>Register — JobFind</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.min.css" />
@@ -282,10 +282,10 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 
   <!-- ── Left Panel ── -->
   <div class="left-panel">
-    <a class="brand" href="index.php" aria-label="FreelanceHub home">
-      <div class="brand-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+    <a class="brand" href="index.php" aria-label="JobFind home">
+      <div class="brand-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
       <div>
-        <div class="brand-name">FreelanceHub</div>
+        <div class="brand-name">JobFind</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
       </div>
     </a>
@@ -307,7 +307,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
     </div>
 
     <div class="left-footer">
-      <p>© 2026 FreelanceHub. All rights reserved.</p>
+      <p>© 2026 JobFind. All rights reserved.</p>
     </div>
   </div>
 

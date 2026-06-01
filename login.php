@@ -91,7 +91,7 @@ if(isset($_POST['login'])){
 <link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - FreelanceHub</title>
+<title>Login - JobFind</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
   *,
@@ -200,9 +200,19 @@ if(isset($_POST['login'])){
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent);
+    background: #ffffff;
     color: #ffffff;
     font-size: 22px;
+    overflow: hidden;
+    padding: 4px;
+    box-shadow: 0 12px 24px rgba(91, 95, 244, .18);
+  }
+
+  .brand-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
   }
 
   .brand-name {
@@ -594,11 +604,11 @@ if(isset($_POST['login'])){
 <?php endif; ?>
 
 <main class="auth-shell">
-  <section class="brand-panel" aria-label="FreelanceHub">
-    <a class="brand-lockup" href="index.php" aria-label="FreelanceHub home">
-      <div class="brand-mark"><i class="bi bi-lightning-charge-fill"></i></div>
+  <section class="brand-panel" aria-label="JobFind">
+    <a class="brand-lockup" href="index.php" aria-label="JobFind home">
+      <div class="brand-mark"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
       <div>
-        <div class="brand-name">FreelanceHub</div>
+        <div class="brand-name">JobFind</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
       </div>
     </a>
@@ -623,15 +633,15 @@ if(isset($_POST['login'])){
       </div>
     </div>
 
-    <div class="brand-footer">© 2026 FreelanceHub</div>
+    <div class="brand-footer">© 2026 JobFind</div>
   </section>
 
   <section class="form-panel">
     <div class="form-inner">
-      <a class="mobile-brand" href="index.php" aria-label="FreelanceHub home">
-        <div class="brand-mark"><i class="bi bi-lightning-charge-fill"></i></div>
+      <a class="mobile-brand" href="index.php" aria-label="JobFind home">
+        <div class="brand-mark"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
         <div>
-          <div class="brand-name">FreelanceHub</div>
+          <div class="brand-name">JobFind</div>
           <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
         </div>
       </a>

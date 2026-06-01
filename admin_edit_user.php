@@ -154,7 +154,7 @@ if ($profile_location_display === '' && $profile_address !== '') {
 <link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Edit User - FreelanceHub Admin</title>
+<title>Edit User - JobFind Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
@@ -273,9 +273,9 @@ if(isset($_GET['toast'])):
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><i class="bi bi-shield-check"></i></div>
+      <div class="logo-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
       <div>
-        <div class="logo-text">FreelanceHub</div>
+        <div class="logo-text">JobFind</div>
         <div class="logo-sub">Admin Panel</div>
       </div>
     </a>

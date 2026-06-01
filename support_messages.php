@@ -256,9 +256,9 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+      <div class="logo-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
       <div>
-        <div class="logo-text">FreelanceHub</div>
+        <div class="logo-text">JobFind</div>
         <div class="logo-sub"><?php echo $role === 'employer' ? 'Employer' : ($role === 'admin' ? 'Admin' : 'Freelancer'); ?></div>
       </div>
     </a>

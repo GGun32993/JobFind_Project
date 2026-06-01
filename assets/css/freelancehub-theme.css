@@ -79,8 +79,19 @@ a:hover {
   width: 42px !important;
   height: 42px !important;
   border-radius: 12px !important;
-  background: linear-gradient(135deg, #5b5ff4 0%, #14b8a6 100%) !important;
-  box-shadow: 0 12px 24px rgba(91, 95, 244, .28);
+  background: #ffffff !important;
+  box-shadow: 0 12px 24px rgba(91, 95, 244, .18);
+  overflow: hidden !important;
+  padding: 4px !important;
+}
+
+.logo-icon img,
+.brand-icon img,
+.brand-mark img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
 }
 
 .logo-text,
