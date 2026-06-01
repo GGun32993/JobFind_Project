@@ -53,6 +53,8 @@ if(isset($_POST['update'])){
     $salary      = mysqli_real_escape_string($conn, trim($_POST['salary']));
     $deadline    = mysqli_real_escape_string($conn, trim($_POST['deadline']));
     $category    = mysqli_real_escape_string($conn, trim($_POST['category'] ?? ''));
+    $employment_type = jobfind_normalize_employment_type($_POST['employment_type'] ?? ($job['employment_type'] ?? 'freelance_project'));
+    $employment_type_sql = mysqli_real_escape_string($conn, $employment_type);
     $image_error = '';
     $delete_image_ids = array_map('intval', $_POST['delete_image_ids'] ?? []);
     $uploaded_images = save_uploaded_job_images($_FILES['job_images'] ?? [], $employer_id, $image_error);
@@ -80,6 +82,7 @@ if(isset($_POST['update'])){
             salary='$salary',
             deadline='$deadline',
             category='$category',
+            employment_type='$employment_type_sql',
             updated_at=NOW()
         WHERE job_id='$job_id' AND employer_id='$employer_id'
     ");
@@ -168,6 +171,7 @@ if(empty($cats)){
         ['name'=>'Other','icon'=>'📦'],
     ];
 }
+$selected_employment_type = jobfind_normalize_employment_type($job['employment_type'] ?? 'freelance_project');
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -360,6 +364,21 @@ if(empty($cats)){
     <?php else: ?>
     <input type="hidden" name="category" value="<?php echo htmlspecialchars($job['category'] ?? ''); ?>">
     <?php endif; ?>
+
+    <div class="field-group">
+      <label>ลักษณะการจ้าง <span class="req">*</span></label>
+      <div class="input-icon-wrap">
+        <i class="bi bi-briefcase"></i>
+        <select name="employment_type" class="form-input" style="padding-left:40px;cursor:pointer;" required>
+          <?php foreach(jobfind_employment_type_options() as $type_value => $type_label): ?>
+          <option value="<?php echo htmlspecialchars($type_value); ?>"
+            <?php echo $selected_employment_type === $type_value ? 'selected' : ''; ?>>
+            <?php echo htmlspecialchars($type_label); ?>
+          </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+    </div>
 
     <div class="field-group">
       <label>รูปภาพประกอบ</label>
