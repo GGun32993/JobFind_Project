@@ -88,7 +88,7 @@ if(isset($_POST['login'])){
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=6">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=7">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - Job_Find</title>
@@ -188,19 +188,20 @@ if(isset($_POST['login'])){
   .brand-lockup {
     position: relative;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
     text-decoration: none;
   }
 
   .brand-mark {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    max-width: 44px;
-    max-height: 44px;
-    flex: 0 0 44px;
-    border-radius: 12px;
+    width: 180px;
+    height: 180px;
+    min-width: 180px;
+    max-width: 180px;
+    max-height: 180px;
+    flex: 0 0 180px;
+    border-radius: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -208,7 +209,7 @@ if(isset($_POST['login'])){
     color: #ffffff;
     font-size: 22px;
     overflow: hidden;
-    padding: 4px;
+    padding: 0;
     box-shadow: 0 12px 24px rgba(91, 95, 244, .18);
   }
 
@@ -233,6 +234,10 @@ if(isset($_POST['login'])){
     color: #9fb1c7;
     font-size: 12px;
     line-height: 1.3;
+  }
+
+  .brand-lockup > div:not(.brand-mark) {
+    display: none;
   }
 
   .brand-copy {
@@ -562,9 +567,19 @@ if(isset($_POST['login'])){
 
     .mobile-brand {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
       text-decoration: none;
+    }
+
+    .mobile-brand .brand-mark {
+      width: 128px;
+      height: 128px;
+      min-width: 128px;
+      max-width: 128px;
+      max-height: 128px;
+      flex: 0 0 128px;
     }
 
     .mobile-brand .brand-name {
@@ -573,6 +588,10 @@ if(isset($_POST['login'])){
 
     .mobile-brand .brand-sub {
       color: #64748b;
+    }
+
+    .mobile-brand > div:not(.brand-mark) {
+      display: none;
     }
 
     .form-panel {
@@ -612,7 +631,7 @@ if(isset($_POST['login'])){
 <main class="auth-shell">
   <section class="brand-panel" aria-label="Job_Find">
     <a class="brand-lockup" href="index.php" aria-label="Job_Find home">
-      <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=6" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=7" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
         <div class="brand-name">Job_Find</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
@@ -645,7 +664,7 @@ if(isset($_POST['login'])){
   <section class="form-panel">
     <div class="form-inner">
       <a class="mobile-brand" href="index.php" aria-label="Job_Find home">
-        <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=6" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+        <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=7" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
         <div>
           <div class="brand-name">Job_Find</div>
           <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>

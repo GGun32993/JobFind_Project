@@ -287,7 +287,7 @@ $pinStatusText = $hasLocationPin
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=6">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=7">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Job_Find แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
@@ -342,15 +342,15 @@ $pinStatusText = $hasLocationPin
   .shell .brand {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 0;
     color: #14213d !important;
     font-weight: 800;
   }
 
   .shell .brand-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 96px;
+    height: 96px;
+    border-radius: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -358,7 +358,7 @@ $pinStatusText = $hasLocationPin
     color: #fff;
     box-shadow: 0 12px 24px rgba(91, 95, 244, .18);
     overflow: hidden;
-    padding: 4px;
+    padding: 0;
   }
 
   .shell .brand-icon img {
@@ -368,7 +368,7 @@ $pinStatusText = $hasLocationPin
     display: block;
   }
 
-  .shell .brand-name { color: #14213d !important; font-size: 22px; line-height: 1; }
+  .shell .brand-name { display: none; }
 
   .nav-links {
     display: flex;
@@ -1144,7 +1144,7 @@ $pinStatusText = $hasLocationPin
   <nav class="top-nav">
     <div class="container nav-inner">
       <a class="brand" href="index.php" aria-label="Job_Find home">
-        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=6" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
+        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=7" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
         <span class="brand-name">Job_Find</span>
       </a>
 
