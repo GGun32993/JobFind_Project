@@ -471,7 +471,7 @@ if($is_public){
       </div>
       <div class="profile-image-copy">
         <strong>อัปโหลดหรือเปลี่ยนรูปโปรไฟล์</strong>
-        <p>รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 3MB รูปใหม่จะแทนที่รูปเดิมเมื่อกดบันทึก</p>
+        <p>รองรับ JPG, PNG, WEBP ขนาดไม่เกิน <?php echo profile_image_max_size_label(); ?> รูปใหม่จะแทนที่รูปเดิมเมื่อกดบันทึก</p>
         <input class="form-control profile-file-input" type="file" name="profile_image" accept="image/jpeg,image/png,image/webp">
       </div>
     </div>

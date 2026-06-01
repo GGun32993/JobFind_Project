@@ -39,7 +39,13 @@ function profile_initials($name, $max_chars = 1)
 
 function profile_image_max_size()
 {
-    return 3 * 1024 * 1024;
+    return 10 * 1024 * 1024;
+}
+
+function profile_image_max_size_label()
+{
+    $size_mb = profile_image_max_size() / 1024 / 1024;
+    return rtrim(rtrim(number_format($size_mb, 1), '0'), '.') . 'MB';
 }
 
 function profile_image_allowed_mimes()
@@ -90,19 +96,24 @@ function save_uploaded_profile_image($file, $user_id, &$error)
     }
 
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-        $error = 'Profile image upload failed. PHP upload error code: ' . (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        $upload_error = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if (in_array($upload_error, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            $error = 'รูปโปรไฟล์ต้องมีขนาดไม่เกิน ' . profile_image_max_size_label();
+            return '';
+        }
+        $error = 'อัปโหลดรูปโปรไฟล์ไม่สำเร็จ กรุณาลองใหม่';
         return '';
     }
 
     if (($file['size'] ?? 0) > profile_image_max_size()) {
-        $error = 'Profile image must be 3MB or smaller.';
+        $error = 'รูปโปรไฟล์ต้องมีขนาดไม่เกิน ' . profile_image_max_size_label();
         return '';
     }
 
     $allowed = profile_image_allowed_mimes();
     $image_info = @getimagesize($file['tmp_name']);
     if (!$image_info || !isset($allowed[$image_info['mime']])) {
-        $error = 'Only JPG, PNG, or WEBP profile images are allowed.';
+        $error = 'รองรับเฉพาะไฟล์ JPG, PNG หรือ WEBP';
         return '';
     }
 
