@@ -210,8 +210,8 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
   .nav-logout:hover { background:rgba(239,68,68,.12); }
   
   /* Main */
-  .main { margin-left:240px; flex:1; padding:36px 40px; }
-  .content-wrap { max-width:660px; }
+  .main { margin-left:240px; flex:1; padding:36px 40px; display:flex; justify-content:center; }
+  .content-wrap { width:100%; max-width:720px; }
   .topbar-wrap { display:flex; align-items:center; gap:16px; margin-bottom:28px; }
   .btn-back { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--border); border-radius:10px; font-family:'Sora',sans-serif; font-size:13px; color:var(--muted); text-decoration:none; background:var(--white); transition:all .15s; }
   .btn-back:hover { background:var(--light); color:var(--text); border-color:var(--navy3); }
@@ -260,7 +260,7 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
   .badge-approved { background:#d1fae5; color:#065f46; }
   .badge-rejected { background:#fee2e2; color:#991b1b; }
   
-  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
+  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; display:block; } }
 </style>
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
 

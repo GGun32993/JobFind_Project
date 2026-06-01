@@ -171,8 +171,8 @@ $selected_employment_type = jobfind_normalize_employment_type($_POST['employment
   .nav-logout i { font-size:17px; }
 
   /* ── Main ── */
-  .main { margin-left:240px; flex:1; padding:36px 40px; }
-  .content-wrap { max-width:660px; }
+  .main { margin-left:240px; flex:1; padding:36px 40px; display:flex; justify-content:center; }
+  .content-wrap { width:100%; max-width:720px; }
 
   /* ── Topbar ── */
   .topbar { margin-bottom:28px; }
@@ -241,7 +241,7 @@ $selected_employment_type = jobfind_normalize_employment_type($_POST['employment
   .btn-map-cancel { background:var(--light); color:var(--text); }
   .map-info { padding:12px 16px; background:#eef2ff; border-radius:8px; font-size:13px; color:#3730a3; }
 
-  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col { grid-template-columns:1fr; } .file-upload { grid-template-columns:auto 1fr; } .upload-action { grid-column:1 / -1; } .map-container { width:100%; height:100%; max-width:none; border-radius:0; } }
+  @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; display:block; } .two-col { grid-template-columns:1fr; } .file-upload { grid-template-columns:auto 1fr; } .upload-action { grid-column:1 / -1; } .map-container { width:100%; height:100%; max-width:none; border-radius:0; } }
 </style>
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
 
