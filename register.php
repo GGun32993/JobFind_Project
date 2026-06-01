@@ -102,7 +102,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=3">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=6">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register — Job_Find</title>
@@ -283,7 +283,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
   <!-- ── Left Panel ── -->
   <div class="left-panel">
     <a class="brand" href="index.php" aria-label="Job_Find home">
-      <div class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=3" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=6" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
         <div class="brand-name">Job_Find</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>

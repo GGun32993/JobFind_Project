@@ -88,7 +88,7 @@ if(isset($_POST['login'])){
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=3">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=6">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - Job_Find</title>
@@ -612,7 +612,7 @@ if(isset($_POST['login'])){
 <main class="auth-shell">
   <section class="brand-panel" aria-label="Job_Find">
     <a class="brand-lockup" href="index.php" aria-label="Job_Find home">
-      <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=3" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=6" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
         <div class="brand-name">Job_Find</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
@@ -645,7 +645,7 @@ if(isset($_POST['login'])){
   <section class="form-panel">
     <div class="form-inner">
       <a class="mobile-brand" href="index.php" aria-label="Job_Find home">
-        <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=3" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+        <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=6" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
         <div>
           <div class="brand-name">Job_Find</div>
           <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>

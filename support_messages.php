@@ -46,7 +46,7 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=3">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=6">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Support Chat</title>
@@ -256,7 +256,7 @@ $dashboard = $role === "employer" ? "employer_dashboard.php" : "freelancer_dashb
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=3" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=6" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
         <div class="logo-text">Job_Find</div>
         <div class="logo-sub"><?php echo $role === 'employer' ? 'Employer' : ($role === 'admin' ? 'Admin' : 'Freelancer'); ?></div>
