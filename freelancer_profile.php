@@ -83,7 +83,7 @@ $profile = mysqli_fetch_assoc($profile_query) ?: ['age' => null];
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=2">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=3">
 
 <title>Freelancer Profile</title>
 

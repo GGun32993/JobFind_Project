@@ -123,7 +123,7 @@ $admin_unread_support = (int)($unread_support['c'] ?? 0);
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=2">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Support Chat</title>
@@ -279,7 +279,7 @@ $admin_unread_support = (int)($unread_support['c'] ?? 0);
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=2" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=3" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
         <div class="logo-text">Job_Find</div>
         <div class="logo-sub">Admin Panel</div>
