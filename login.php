@@ -88,10 +88,10 @@ if(isset($_POST['login'])){
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - JobFind</title>
+<title>Login - Job_Find</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
   *,
@@ -196,6 +196,10 @@ if(isset($_POST['login'])){
   .brand-mark {
     width: 44px;
     height: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    max-height: 44px;
+    flex: 0 0 44px;
     border-radius: 12px;
     display: inline-flex;
     align-items: center;
@@ -211,6 +215,8 @@ if(isset($_POST['login'])){
   .brand-mark img {
     width: 100%;
     height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
     display: block;
   }
@@ -604,11 +610,11 @@ if(isset($_POST['login'])){
 <?php endif; ?>
 
 <main class="auth-shell">
-  <section class="brand-panel" aria-label="JobFind">
-    <a class="brand-lockup" href="index.php" aria-label="JobFind home">
-      <div class="brand-mark"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
+  <section class="brand-panel" aria-label="Job_Find">
+    <a class="brand-lockup" href="index.php" aria-label="Job_Find home">
+      <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=2" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
-        <div class="brand-name">JobFind</div>
+        <div class="brand-name">Job_Find</div>
         <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
       </div>
     </a>
@@ -633,15 +639,15 @@ if(isset($_POST['login'])){
       </div>
     </div>
 
-    <div class="brand-footer">© 2026 JobFind</div>
+    <div class="brand-footer">© 2026 Job_Find</div>
   </section>
 
   <section class="form-panel">
     <div class="form-inner">
-      <a class="mobile-brand" href="index.php" aria-label="JobFind home">
-        <div class="brand-mark"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
+      <a class="mobile-brand" href="index.php" aria-label="Job_Find home">
+        <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=2" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
         <div>
-          <div class="brand-name">JobFind</div>
+          <div class="brand-name">Job_Find</div>
           <div class="brand-sub">แพลตฟอร์มหางาน Freelance</div>
         </div>
       </a>

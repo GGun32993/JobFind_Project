@@ -44,7 +44,7 @@ echo "<script>window.location='manage_users.php';</script>";
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=2">
 
 <title>Edit User</title>
 

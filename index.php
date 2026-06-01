@@ -256,7 +256,7 @@ if($conn){
         SELECT u.user_id,
                u.profile_image,
                COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS name,
-               COALESCE(NULLIF(ep.employer_description,''), 'ผู้ว่าจ้างในระบบ JobFind') AS description,
+               COALESCE(NULLIF(ep.employer_description,''), 'ผู้ว่าจ้างในระบบ Job_Find') AS description,
                COUNT(j.job_id) AS jobs
         FROM users u
         LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
@@ -287,11 +287,11 @@ $pinStatusText = $hasLocationPin
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="JobFind แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
-<title>JobFind - หางานฟรีแลนซ์และจ้างงาน</title>
+<meta name="description" content="Job_Find แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
+<title>Job_Find - หางานฟรีแลนซ์และจ้างงาน</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.min.css">
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
@@ -1143,9 +1143,9 @@ $pinStatusText = $hasLocationPin
 <div class="shell">
   <nav class="top-nav">
     <div class="container nav-inner">
-      <a class="brand" href="index.php" aria-label="JobFind home">
-        <span class="brand-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></span>
-        <span class="brand-name">JobFind</span>
+      <a class="brand" href="index.php" aria-label="Job_Find home">
+        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=2" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
+        <span class="brand-name">Job_Find</span>
       </a>
 
       <div class="nav-links" aria-label="Primary navigation">
@@ -1169,7 +1169,7 @@ $pinStatusText = $hasLocationPin
       <div class="hero-layout">
         <div class="hero-content">
           <span class="eyebrow"><i class="bi bi-stars"></i> แพลตฟอร์มจ้างงานและหางานฟรีแลนซ์</span>
-          <h1>JobFind</h1>
+          <h1>Job_Find</h1>
           <p class="hero-copy">ค้นหางานที่ตรงทักษะ สมัครงาน ติดตามสถานะ และรีวิวผู้ว่าจ้างได้ในระบบเดียว ผู้ว่าจ้างก็สามารถโพสต์งาน จัดการผู้สมัคร และเก็บประวัติการทำงานได้ครบถ้วน</p>
 
           <form class="search-strip" method="GET" action="index.php#jobs">

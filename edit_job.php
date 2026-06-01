@@ -189,10 +189,10 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Edit Job - JobFind</title>
+<title>Edit Job - Job_Find</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
@@ -292,9 +292,9 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
+      <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=2" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
-        <div class="logo-text">JobFind</div>
+        <div class="logo-text">Job_Find</div>
         <div class="logo-sub">Employer</div>
       </div>
     </a>

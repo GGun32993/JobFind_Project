@@ -9,7 +9,7 @@ session_start();
 <div class="container-fluid">
 
 <a class="navbar-brand" href="index.php">
-JobFind
+Job_Find
 </a>
 
 <div class="ms-auto text-white">

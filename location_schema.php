@@ -43,7 +43,7 @@ function jobfind_add_column_if_missing($conn, $table, $column, $definition)
 
     $ok = mysqli_query($conn, "ALTER TABLE `$table` ADD COLUMN `$column` $definition");
     if (!$ok) {
-        error_log("JobFind location schema: failed adding $table.$column - " . mysqli_error($conn));
+        error_log("Job_Find location schema: failed adding $table.$column - " . mysqli_error($conn));
     }
 
     return (bool)$ok;
@@ -57,7 +57,7 @@ function jobfind_add_index_if_missing($conn, $table, $index, $definition)
 
     $ok = mysqli_query($conn, "ALTER TABLE `$table` ADD INDEX `$index` $definition");
     if (!$ok) {
-        error_log("JobFind location schema: failed adding index $table.$index - " . mysqli_error($conn));
+        error_log("Job_Find location schema: failed adding index $table.$index - " . mysqli_error($conn));
     }
 
     return (bool)$ok;

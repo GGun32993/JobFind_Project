@@ -117,10 +117,10 @@ $employer_js_data = [
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=1">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo.png?v=2">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($job['title']); ?> - JobFind</title>
+    <title><?php echo htmlspecialchars($job['title']); ?> - Job_Find</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
@@ -1083,9 +1083,9 @@ $employer_js_data = [
 <aside class="sidebar">
     <div class="sidebar-brand">
         <a href="index.php" class="logo">
-            <div class="logo-icon"><img src="assets/images/jobfind-logo-icon.png" alt="JobFind logo"></div>
+            <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo-icon.png?v=2" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
             <div>
-                <div class="logo-text">JobFind</div>
+                <div class="logo-text">Job_Find</div>
                 <div class="logo-sub">Freelancer</div>
             </div>
         </a>
