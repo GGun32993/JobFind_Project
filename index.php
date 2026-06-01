@@ -3,6 +3,7 @@ define('JOBFIND_ALLOW_DB_FAILURE', true);
 require_once __DIR__ . "/config.php";
 require_once __DIR__ . "/job_image_helpers.php";
 require_once __DIR__ . "/location_schema.php";
+require_once __DIR__ . "/category_helpers.php";
 
 $titleSearch = trim($_GET['title'] ?? '');
 $locationSearch = trim($_GET['location'] ?? '');
@@ -161,18 +162,22 @@ $stats = ['jobs' => 0, 'employers' => 0, 'freelancers' => 0];
 if($conn){
     ensure_location_schema($conn);
     ensure_job_image_schema($conn);
+    ensure_category_schema($conn);
+    ensure_default_job_categories($conn);
 
     if(table_exists($conn, 'categories')){
+        $categoryOrder = jobfind_category_order_clause($conn, 'c.name', 'c.category_id');
         $categories = db_fetch_all($conn, "
             SELECT c.name,
+                   c.icon,
                    COUNT(j.job_id) AS jobs
             FROM categories c
             LEFT JOIN job j ON j.category = c.name
                 AND j.admin_status = 'approved'
                 AND COALESCE(NULLIF(j.status,''), 'open') != 'closed'
-            GROUP BY c.category_id, c.name
-            ORDER BY jobs DESC, c.name ASC
-            LIMIT 6
+            GROUP BY c.category_id, c.name, c.icon
+            ORDER BY $categoryOrder
+            LIMIT 20
         ");
     }
 
@@ -184,8 +189,8 @@ if($conn){
             WHERE admin_status = 'approved'
               AND COALESCE(NULLIF(status,''), 'open') != 'closed'
             GROUP BY COALESCE(NULLIF(category,''), 'Other')
-            ORDER BY jobs DESC, name ASC
-            LIMIT 6
+            ORDER BY name ASC
+            LIMIT 20
         ");
     }
 
@@ -1236,7 +1241,7 @@ $pinStatusText = $hasLocationPin
         <?php endif; ?>
         <?php foreach($categories as $category): ?>
           <a class="category-card" href="index.php?title=<?php echo urlencode($category['name']); ?>#jobs">
-            <span class="category-icon"><?php echo e(category_icon($category['name'])); ?></span>
+            <span class="category-icon"><?php echo e($category['icon'] ?? category_icon($category['name'])); ?></span>
             <span>
               <h3><?php echo e($category['name']); ?></h3>
               <p><?php echo e(number_format((int)$category['jobs'])); ?> งานที่เปิดรับ</p>

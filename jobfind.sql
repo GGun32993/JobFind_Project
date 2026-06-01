@@ -29,8 +29,8 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `categories` (
   `category_id` int(11) NOT NULL,
-  `name` varchar(100) DEFAULT NULL,
-  `icon` varchar(10) DEFAULT '?',
+  `name` varchar(100) NOT NULL,
+  `icon` varchar(20) DEFAULT '📦',
   `description` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . "/config.php";
 require_once "location_schema.php";
+require_once "category_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
     header("Location: login.php");
@@ -9,6 +10,8 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
 
 $user_id = $_SESSION['user_id'];
 ensure_location_schema($conn);
+ensure_category_schema($conn);
+ensure_default_job_categories($conn);
 
 // ตรวจสอบ category จาก URL parameter
 $selected_category = isset($_GET['category']) ? trim($_GET['category']) : '';
@@ -17,16 +20,11 @@ $selected_category = isset($_GET['category']) ? trim($_GET['category']) : '';
 $browse_cats = [];
 $cat_check = mysqli_query($conn,"SHOW TABLES LIKE 'categories'");
 if($cat_check && mysqli_num_rows($cat_check) > 0){
-    $cat_res = mysqli_query($conn,"SELECT * FROM categories ORDER BY category_id ASC");
+    $cat_res = mysqli_query($conn,"SELECT * FROM categories ORDER BY " . jobfind_category_order_clause($conn));
     while($c = mysqli_fetch_assoc($cat_res)) $browse_cats[] = $c;
 }
 if(empty($browse_cats)){
-    $browse_cats = [
-        ['name'=>'IT','icon'=>'💻'],
-        ['name'=>'Design','icon'=>'🎨'],
-        ['name'=>'Marketing','icon'=>'📢'],
-        ['name'=>'Accounting','icon'=>'💰'],
-    ];
+    $browse_cats = jobfind_default_job_categories();
 }
 
 // ── ปิดงานที่ deadline ผ่านแล้วอัตโนมัติ (ทุกครั้งที่หน้าโหลด) ──

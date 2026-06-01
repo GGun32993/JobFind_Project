@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/config.php";
+require_once "category_helpers.php";
 
 $admin_unread_support = 0;
 if(isset($_SESSION['user_id'])){
@@ -24,27 +25,8 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
     exit();
 }
 
-// ── auto-create ตาราง categories ถ้ายังไม่มี ──
-mysqli_query($conn,"
-    CREATE TABLE IF NOT EXISTS categories (
-        category_id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(100) NOT NULL UNIQUE,
-        icon VARCHAR(10) DEFAULT '📦',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-");
-
-// ── seed default ถ้าตารางยังว่าง ──
-$count = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) AS c FROM categories"))['c'];
-if($count == 0){
-    $defaults = [
-        ['IT & Software','💻'], ['Design','🎨'], ['Marketing','📢'],
-        ['Writing','✍️'], ['Finance','💰'], ['Education','🎓'], ['Other','📦'],
-    ];
-    foreach($defaults as $d){
-        mysqli_query($conn,"INSERT IGNORE INTO categories (name,icon) VALUES ('{$d[0]}','{$d[1]}')");
-    }
-}
+ensure_category_schema($conn);
+ensure_default_job_categories($conn);
 
 $toast = '';
 
@@ -53,8 +35,13 @@ if(isset($_POST['add'])){
     $name = mysqli_real_escape_string($conn, trim($_POST['name']));
     $icon = mysqli_real_escape_string($conn, trim($_POST['icon']));
     if($name !== ''){
-        $r = mysqli_query($conn,"INSERT INTO categories (name,icon) VALUES ('$name','$icon')");
-        $toast = $r ? 'added' : 'dup';
+        $exists = mysqli_fetch_assoc(mysqli_query($conn,"SELECT category_id FROM categories WHERE name='$name' LIMIT 1"));
+        if($exists){
+            $toast = 'dup';
+        } else {
+            $r = mysqli_query($conn,"INSERT INTO categories (name,icon) VALUES ('$name','$icon')");
+            $toast = $r ? 'added' : 'dup';
+        }
     }
     header("Location: admin_manage_categories.php?toast=$toast"); exit();
 }
@@ -64,7 +51,20 @@ if(isset($_POST['edit'])){
     $id   = intval($_POST['category_id']);
     $name = mysqli_real_escape_string($conn, trim($_POST['name']));
     $icon = mysqli_real_escape_string($conn, trim($_POST['icon']));
+    $old_cat = mysqli_fetch_assoc(mysqli_query($conn,"SELECT name FROM categories WHERE category_id='$id' LIMIT 1"));
+    $dup = $name !== ''
+        ? mysqli_fetch_assoc(mysqli_query($conn,"SELECT category_id FROM categories WHERE name='$name' AND category_id!='$id' LIMIT 1"))
+        : true;
+
+    if($dup){
+        header("Location: admin_manage_categories.php?toast=dup"); exit();
+    }
+
     mysqli_query($conn,"UPDATE categories SET name='$name', icon='$icon' WHERE category_id='$id'");
+    if($old_cat && ($old_cat['name'] ?? '') !== trim($_POST['name'])){
+        $old_name = mysqli_real_escape_string($conn, $old_cat['name']);
+        mysqli_query($conn,"UPDATE job SET category='$name' WHERE category='$old_name'");
+    }
     header("Location: admin_manage_categories.php?toast=edited"); exit();
 }
 
@@ -77,7 +77,7 @@ if(isset($_GET['delete'])){
 
 // ── GET ALL ──
 $cats = [];
-$res  = mysqli_query($conn,"SELECT * FROM categories ORDER BY category_id ASC");
+$res  = mysqli_query($conn,"SELECT * FROM categories ORDER BY " . jobfind_category_order_clause($conn));
 while($r = mysqli_fetch_assoc($res)) $cats[] = $r;
 
 // edit mode

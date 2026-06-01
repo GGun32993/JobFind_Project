@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . "/config.php";
 require_once "job_image_helpers.php";
 require_once "location_schema.php";
+require_once "category_helpers.php";
 require_once "employer_sidebar_helpers.php";
 
 if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
@@ -14,6 +15,8 @@ $employer_id = $_SESSION['user_id'];
 $error = '';
 ensure_job_image_schema($conn);
 ensure_location_schema($conn);
+ensure_category_schema($conn);
+ensure_default_job_categories($conn);
 $sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 $employer_location = mysqli_fetch_assoc(mysqli_query($conn, "
@@ -115,17 +118,12 @@ if(isset($_POST['submit'])){
 $cats = [];
 $cat_check = mysqli_query($conn,"SHOW TABLES LIKE 'categories'");
 if($cat_check && mysqli_num_rows($cat_check) > 0){
-    $cat_res = mysqli_query($conn,"SELECT * FROM categories ORDER BY category_id ASC");
+    $cat_res = mysqli_query($conn,"SELECT * FROM categories ORDER BY " . jobfind_category_order_clause($conn));
     while($c = mysqli_fetch_assoc($cat_res)) $cats[] = $c;
 }
 // fallback ถ้ายังไม่มีตาราง
 if(empty($cats)){
-    $cats = [
-        ['name'=>'IT & Software','icon'=>'💻'],['name'=>'Design','icon'=>'🎨'],
-        ['name'=>'Marketing','icon'=>'📢'],    ['name'=>'Writing','icon'=>'✍️'],
-        ['name'=>'Finance','icon'=>'💰'],      ['name'=>'Education','icon'=>'🎓'],
-        ['name'=>'Other','icon'=>'📦'],
-    ];
+    $cats = jobfind_default_job_categories();
 }
 $selected_employment_type = jobfind_normalize_employment_type($_POST['employment_type'] ?? 'freelance_project');
 ?>
