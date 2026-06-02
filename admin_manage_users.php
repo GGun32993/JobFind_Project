@@ -371,8 +371,8 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=9" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
-      <div><div class="logo-text">Job_Find</div><div class="logo-sub">Admin Panel</div></div>
+      <div class="logo-icon" style="width:160px!important;height:240px!important;min-width:160px!important;max-width:160px!important;max-height:240px!important;flex:0 0 240px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=9" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div><div class="logo-text" style="display:none!important;">Job_Find</div><div class="logo-sub" style="display:none!important;">Admin Panel</div></div>
     </a>
   </div>
   <nav class="sidebar-nav">

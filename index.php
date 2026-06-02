@@ -1144,8 +1144,8 @@ $pinStatusText = $hasLocationPin
   <nav class="top-nav">
     <div class="container nav-inner">
       <a class="brand" href="index.php" aria-label="Job_Find home">
-        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=9" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
-        <span class="brand-name">Job_Find</span>
+        <span class="brand-icon" style="width:76px!important;height:114px!important;min-width:76px!important;max-width:76px!important;max-height:114px!important;flex:0 0 114px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=9" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
+        <span class="brand-name" style="display:none!important;">Job_Find</span>
       </a>
 
       <div class="nav-links" aria-label="Primary navigation">
