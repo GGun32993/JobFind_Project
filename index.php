@@ -377,10 +377,7 @@ if($titleSearch !== ''){
     }
 }
 
-$heroStyle = "--hero-bg:
-    radial-gradient(circle at 78% 18%, rgba(14,165,233,.20) 0%, rgba(14,165,233,0) 32%),
-    radial-gradient(circle at 16% 78%, rgba(20,184,122,.16) 0%, rgba(20,184,122,0) 34%),
-    linear-gradient(180deg, #f8fbff 0%, #eef7ff 58%, #f7fbff 100%);";
+$heroStyle = "--hero-bg: #f1f5f9;";
 $pinStatusText = $hasLocationPin
     ? 'ปักหมุดแล้ว รัศมี ' . number_format($searchRadiusKm, 0) . ' กม.'
     : ($locationSearch !== '' ? $locationSearch : 'ยังไม่ได้ปักหมุดพื้นที่หางาน');
@@ -415,8 +412,8 @@ $pinStatusText = $hasLocationPin
     --shadow-md: 0 18px 42px rgba(15, 23, 42, .10);
   }
 
-  html { scroll-behavior: smooth; background: var(--navy); }
-  body { min-height: 100vh; margin: 0; color: var(--text); background: #f8fbff; }
+  html { scroll-behavior: smooth; background: var(--light); }
+  body { min-height: 100vh; margin: 0; color: var(--text); background: var(--light); }
   a { color: inherit; text-decoration: none; }
   button, input { font: inherit; }
 
@@ -427,15 +424,16 @@ $pinStatusText = $hasLocationPin
     box-sizing: border-box;
   }
 
-  .shell { overflow-x: hidden; background: #f7fbff; }
+  .shell { overflow-x: hidden; background: var(--light); }
   .shell .container { width: min(1160px, calc(100% - 36px)); margin: 0 auto; }
 
   .top-nav {
     position: sticky;
     top: 0;
     z-index: 20;
-    background: rgba(255, 255, 255, .96) !important;
-    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+    background: rgba(241, 245, 249, .92) !important;
+    border-bottom: 0;
     backdrop-filter: blur(16px);
   }
 
@@ -445,6 +443,11 @@ $pinStatusText = $hasLocationPin
     align-items: center;
     justify-content: space-between;
     gap: 24px;
+    padding: 0 24px;
+    border: 1px solid rgba(219, 228, 239, .96);
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 16px 38px rgba(15, 23, 42, .08);
   }
 
   .shell .brand {
@@ -521,27 +524,77 @@ $pinStatusText = $hasLocationPin
   .btn-ghost { background: #ffffff; color: #24364f; border-color: var(--border); }
   .btn-ghost:hover { background: #eef2ff; color: var(--accent); border-color: #c7d2fe; }
 
+  .hero .btn-ghost {
+    background: rgba(255, 255, 255, .06);
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, .14);
+  }
+
+  .hero .btn-ghost:hover {
+    background: rgba(255, 255, 255, .10);
+    color: #ffffff;
+    border-color: rgba(226, 232, 240, .24);
+  }
+
   .shell .hero {
-    min-height: clamp(620px, 82vh, 740px);
+    min-height: auto;
     display: flex;
     align-items: center;
     background: var(--hero-bg) !important;
     background-size: cover !important;
     background-position: center !important;
     color: #0f172a !important;
-    border-bottom: 1px solid #dbeafe;
+    border-bottom: 0;
+    padding: 18px 0 34px;
   }
 
   .hero-layout {
+    min-height: 620px;
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(360px, 430px);
-    align-items: center;
-    gap: 42px;
+    grid-template-columns: minmax(0, .95fr) minmax(380px, 1fr);
+    align-items: stretch;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid rgba(219, 228, 239, .96);
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .12);
   }
 
   .hero-content {
+    position: relative;
     width: 100%;
-    padding: 70px 0 84px;
+    overflow: hidden;
+    padding: 64px 48px;
+    background: var(--navy);
+    color: #ffffff;
+  }
+
+  .hero-content::before {
+    content: "";
+    position: absolute;
+    top: -92px;
+    right: -88px;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, .15);
+  }
+
+  .hero-content::after {
+    content: "";
+    position: absolute;
+    bottom: -70px;
+    left: -70px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, .10);
+  }
+
+  .hero-content > * {
+    position: relative;
+    z-index: 1;
   }
 
   .eyebrow {
@@ -550,18 +603,18 @@ $pinStatusText = $hasLocationPin
     gap: 8px;
     min-height: 34px;
     padding: 0 12px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid rgba(255, 255, 255, .14);
     border-radius: 999px;
-    background: #ffffff;
-    color: #2563eb;
+    background: rgba(255, 255, 255, .06);
+    color: #c7d2fe;
     font-size: 13px;
     font-weight: 800;
-    box-shadow: 0 10px 26px rgba(15, 23, 42, .06);
+    box-shadow: none;
   }
 
   .shell .hero h1 {
     margin: 22px 0 16px;
-    color: #0b1220 !important;
+    color: #ffffff !important;
     font-size: clamp(42px, 5.4vw, 66px);
     line-height: 1.05;
     font-weight: 900;
@@ -574,16 +627,16 @@ $pinStatusText = $hasLocationPin
   .shell .hero-copy {
     max-width: 660px;
     margin: 0 0 30px;
-    color: #52657e !important;
+    color: #94a3b8 !important;
     font-size: 17px;
     line-height: 1.75;
   }
 
   .search-strip {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr;
     gap: 10px;
-    max-width: 860px;
+    max-width: 520px;
     margin-bottom: 24px;
   }
 
@@ -603,7 +656,7 @@ $pinStatusText = $hasLocationPin
   .search-field i { color: var(--accent); font-size: 18px; }
   .search-field input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 14px; }
   .search-field input::placeholder { color: #7a8ba2; }
-  .search-strip .btn { min-height: 54px; }
+  .search-strip .btn { width: 100%; min-height: 54px; }
 
   .location-pin-field {
     min-height: 54px;
@@ -816,19 +869,19 @@ $pinStatusText = $hasLocationPin
     gap: 18px;
     flex-wrap: wrap;
     margin-top: 32px;
-    color: #52657e;
+    color: #94a3b8;
   }
 
   .metric {
     min-width: 132px;
     padding: 12px 0;
-    border-top: 1px solid #cbd5e1;
+    border-top: 1px solid rgba(255, 255, 255, .16);
   }
 
   .metric strong {
     display: block;
     margin-bottom: 2px;
-    color: #0b1220;
+    color: #ffffff;
     font-size: 24px;
     line-height: 1;
   }
@@ -840,6 +893,8 @@ $pinStatusText = $hasLocationPin
     gap: 16px;
     align-self: stretch;
     align-content: center;
+    padding: 44px;
+    background: #ffffff;
   }
 
   .hero-logo-showcase {
@@ -848,10 +903,10 @@ $pinStatusText = $hasLocationPin
     align-items: center;
     justify-content: center;
     padding: 18px;
-    border: 1px solid #dbeafe;
-    border-radius: 8px;
-    background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(239,246,255,.88));
-    box-shadow: 0 18px 42px rgba(15, 23, 42, .08);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .hero-logo-showcase img {
@@ -863,12 +918,12 @@ $pinStatusText = $hasLocationPin
   }
 
   .role-choice-panel {
-    border: 1px solid #dbeafe;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, .92);
-    box-shadow: 0 18px 42px rgba(15, 23, 42, .08);
-    backdrop-filter: blur(12px);
-    padding: 20px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 0;
   }
 
   .role-choice-kicker {
@@ -976,27 +1031,19 @@ $pinStatusText = $hasLocationPin
 
   section {
     padding: 64px 0;
-    border-top: 1px solid rgba(219, 228, 239, .74);
+    border-top: 0;
   }
 
   .categories-band {
-    background:
-      radial-gradient(circle at 8% 14%, rgba(91, 95, 244, .09) 0%, rgba(91, 95, 244, 0) 34%),
-      radial-gradient(circle at 86% 18%, rgba(6, 182, 212, .10) 0%, rgba(6, 182, 212, 0) 32%),
-      linear-gradient(180deg, #f8fbff 0%, #f4f8fd 100%);
+    background: var(--light);
   }
 
   .jobs-band {
-    background:
-      linear-gradient(120deg, rgba(91, 95, 244, .06), transparent 38%),
-      linear-gradient(240deg, rgba(20, 184, 166, .08), transparent 34%),
-      #eef5fb;
+    background: var(--light);
   }
 
   .companies-band {
-    background:
-      linear-gradient(120deg, rgba(6, 182, 212, .07), transparent 42%),
-      #f7fbff;
+    background: var(--light);
   }
 
   .section-head {
@@ -1036,9 +1083,9 @@ $pinStatusText = $hasLocationPin
   .category-showcase {
     padding: 28px 32px 30px;
     border: 1px solid #e5edf7;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, .96);
-    box-shadow: 0 22px 55px rgba(15, 23, 42, .08);
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .08);
   }
 
   .category-tabs-shell {
@@ -1239,8 +1286,8 @@ $pinStatusText = $hasLocationPin
   .empty-state,
   .db-alert {
     border: 1px solid var(--border);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, .96);
+    border-radius: 14px;
+    background: #ffffff;
     box-shadow: var(--shadow-sm);
   }
 
@@ -1425,10 +1472,10 @@ $pinStatusText = $hasLocationPin
 
   @media (max-width: 1024px) {
     .nav-links { display: none; }
-    .hero-layout { grid-template-columns: 1fr; gap: 0; padding-bottom: 54px; }
-    .hero-content { padding-bottom: 32px; }
-    .hero-side { width: min(100%, 720px); }
-    .role-choice-panel { width: min(100%, 720px); }
+    .hero-layout { min-height: auto; grid-template-columns: 1fr; gap: 0; }
+    .hero-content { padding: 48px; }
+    .hero-side { width: 100%; padding: 42px 48px 48px; }
+    .role-choice-panel { width: 100%; }
     .category-showcase { padding: 22px; }
     .category-tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .job-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1437,17 +1484,18 @@ $pinStatusText = $hasLocationPin
 
   @media (max-width: 720px) {
     .shell .container { width: 100%; max-width: 1160px; padding: 0 14px; }
-    .nav-inner { min-height: auto; padding: 14px 0; flex-wrap: wrap; }
+    .nav-inner { min-height: auto; padding: 14px; flex-wrap: wrap; border-radius: 18px; }
     .brand { flex: 1 1 100%; }
     .nav-actions { width: 100%; }
     .nav-actions .btn { flex: 1 1 0; min-width: 0; padding: 0 10px; }
     .hero { min-height: auto; }
-    .hero-layout { padding-bottom: 42px; }
-    .hero-content { padding: 54px 0 24px; }
+    .hero-layout { border-radius: 18px; }
+    .hero-content { padding: 38px 24px 30px; }
     .shell .hero h1 { font-size: clamp(31px, 9.2vw, 38px); }
     .hero-title-part { display: block; }
     .shell .hero-copy { max-width: 100%; font-size: 15.5px; overflow-wrap: anywhere; }
-    .hero-logo-showcase { min-height: 160px; padding: 12px; }
+    .hero-side { padding: 28px 22px 30px; }
+    .hero-logo-showcase { min-height: 140px; padding: 0; }
     .hero-logo-showcase img { max-height: 170px; }
     .search-strip { width: 100%; max-width: 100%; grid-template-columns: 1fr; }
     .search-field,
@@ -1457,7 +1505,7 @@ $pinStatusText = $hasLocationPin
     .btn-pin i { font-size: 16px; }
     .hero-actions { width: 100%; }
     .hero-actions .btn { width: 100%; }
-    .role-choice-panel { padding: 18px; }
+    .role-choice-panel { padding: 0; }
     .role-choice-card { grid-template-columns: 44px 1fr; align-items: flex-start; }
     .role-choice-icon { width: 44px; height: 44px; }
     .role-choice-action { grid-column: 1 / -1; }
