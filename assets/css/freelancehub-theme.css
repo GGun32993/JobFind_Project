@@ -65,6 +65,7 @@ a:hover {
 .sidebar-brand {
   padding: 0 20px 24px !important;
   border-bottom: 1px solid rgba(148, 163, 184, .18) !important;
+  text-align: center !important;
 }
 
 .logo,
@@ -75,10 +76,13 @@ a:hover {
 }
 
 .sidebar-brand .logo {
+  width: 100% !important;
   flex-direction: column !important;
+  align-items: center !important;
   justify-content: center !important;
   min-height: 0;
   gap: 8px !important;
+  text-align: center !important;
 }
 
 .logo-icon,
@@ -125,6 +129,8 @@ a:hover {
   flex: 0 0 120px !important;
   border-radius: 0 !important;
   padding: 0 !important;
+  margin: 0 auto !important;
+  align-self: center !important;
   box-shadow: 0 18px 36px rgba(15, 23, 42, .22);
 }
 
