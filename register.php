@@ -102,7 +102,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=11">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=13">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register — Job_Find</title>
@@ -283,7 +283,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
   <!-- ── Left Panel ── -->
   <div class="left-panel">
     <a class="brand" href="index.php" aria-label="Job_Find home">
-      <div class="brand-icon" style="width:180px!important;height:180px!important;min-width:180px!important;max-width:180px!important;max-height:180px!important;flex:0 0 180px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=11" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-icon" style="width:132px!important;height:120px!important;min-width:132px!important;max-width:132px!important;max-height:120px!important;flex:0 0 120px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
         <div class="brand-name" style="display:none!important;">Job_Find</div>
         <div class="brand-sub" style="display:none!important;">แพลตฟอร์มหางาน Freelance</div>

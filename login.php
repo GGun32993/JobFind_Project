@@ -88,7 +88,7 @@ if(isset($_POST['login'])){
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=11">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=13">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - Job_Find</title>
@@ -195,12 +195,12 @@ if(isset($_POST['login'])){
   }
 
   .brand-mark {
-    width: 180px;
-    height: 180px;
-    min-width: 180px;
-    max-width: 180px;
-    max-height: 180px;
-    flex: 0 0 180px;
+    width: 132px;
+    height: 120px;
+    min-width: 132px;
+    max-width: 132px;
+    max-height: 120px;
+    flex: 0 0 120px;
     border-radius: 0;
     display: inline-flex;
     align-items: center;
@@ -574,12 +574,12 @@ if(isset($_POST['login'])){
     }
 
     .mobile-brand .brand-mark {
-      width: 128px;
-      height: 128px;
-      min-width: 128px;
-      max-width: 128px;
-      max-height: 128px;
-      flex: 0 0 128px;
+      width: 112px;
+      height: 102px;
+      min-width: 112px;
+      max-width: 112px;
+      max-height: 102px;
+      flex: 0 0 102px;
     }
 
     .mobile-brand .brand-name {
@@ -631,7 +631,7 @@ if(isset($_POST['login'])){
 <main class="auth-shell">
   <section class="brand-panel" aria-label="Job_Find">
     <a class="brand-lockup" href="index.php" aria-label="Job_Find home">
-      <div class="brand-mark" style="width:180px!important;height:180px!important;min-width:180px!important;max-width:180px!important;max-height:180px!important;flex:0 0 180px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=11" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-mark" style="width:132px!important;height:120px!important;min-width:132px!important;max-width:132px!important;max-height:120px!important;flex:0 0 120px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
         <div class="brand-name" style="display:none!important;">Job_Find</div>
         <div class="brand-sub" style="display:none!important;">แพลตฟอร์มหางาน Freelance</div>
@@ -664,7 +664,7 @@ if(isset($_POST['login'])){
   <section class="form-panel">
     <div class="form-inner">
       <a class="mobile-brand" href="index.php" aria-label="Job_Find home">
-        <div class="brand-mark" style="width:180px!important;height:180px!important;min-width:180px!important;max-width:180px!important;max-height:180px!important;flex:0 0 180px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=11" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+        <div class="brand-mark" style="width:132px!important;height:120px!important;min-width:132px!important;max-width:132px!important;max-height:120px!important;flex:0 0 120px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
         <div>
           <div class="brand-name" style="display:none!important;">Job_Find</div>
           <div class="brand-sub" style="display:none!important;">แพลตฟอร์มหางาน Freelance</div>
