@@ -16,7 +16,7 @@ if (is_file($local_config)) {
     require $local_config;
 }
 
-$conn = mysqli_connect($host, $user, $pass, $db);
+$conn = @mysqli_connect($host, $user, $pass, $db);
 $db_error = "";
 
 if (!$conn) {

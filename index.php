@@ -277,9 +277,9 @@ if($conn){
 }
 
 $heroStyle = "--hero-bg:
-    radial-gradient(circle at 76% 24%, rgba(20,184,166,.30) 0%, rgba(20,184,166,0) 30%),
-    radial-gradient(circle at 18% 72%, rgba(91,95,244,.34) 0%, rgba(91,95,244,0) 34%),
-    linear-gradient(135deg, #0b1220 0%, #12203a 54%, #0f172a 100%);";
+    radial-gradient(circle at 78% 18%, rgba(14,165,233,.20) 0%, rgba(14,165,233,0) 32%),
+    radial-gradient(circle at 16% 78%, rgba(20,184,122,.16) 0%, rgba(20,184,122,0) 34%),
+    linear-gradient(180deg, #f8fbff 0%, #eef7ff 58%, #f7fbff 100%);";
 $pinStatusText = $hasLocationPin
     ? 'ปักหมุดแล้ว รัศมี ' . number_format($searchRadiusKm, 0) . ' กม.'
     : ($locationSearch !== '' ? $locationSearch : 'ยังไม่ได้ปักหมุดพื้นที่หางาน');
@@ -319,6 +319,13 @@ $pinStatusText = $hasLocationPin
   a { color: inherit; text-decoration: none; }
   button, input { font: inherit; }
 
+  .shell,
+  .shell *,
+  .shell *::before,
+  .shell *::after {
+    box-sizing: border-box;
+  }
+
   .shell { overflow-x: hidden; background: #f7fbff; }
   .shell .container { width: min(1160px, calc(100% - 36px)); margin: 0 auto; }
 
@@ -326,7 +333,7 @@ $pinStatusText = $hasLocationPin
     position: sticky;
     top: 0;
     z-index: 20;
-    background: rgba(255, 255, 255, .92) !important;
+    background: rgba(255, 255, 255, .96) !important;
     border-bottom: 1px solid var(--border);
     backdrop-filter: blur(16px);
   }
@@ -410,24 +417,25 @@ $pinStatusText = $hasLocationPin
   .btn-primary { background: linear-gradient(135deg, var(--accent), var(--green)); color: #fff; box-shadow: 0 12px 22px rgba(91, 95, 244, .22); }
   .btn-secondary { background: #fff; color: #24364f; border-color: var(--border); }
   .btn-secondary:hover { border-color: #aeb9ff; color: var(--accent); background: #f8faff; }
-  .btn-ghost { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .22); }
-  .btn-ghost:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+  .btn-ghost { background: #ffffff; color: #24364f; border-color: var(--border); }
+  .btn-ghost:hover { background: #eef2ff; color: var(--accent); border-color: #c7d2fe; }
 
   .shell .hero {
-    min-height: clamp(640px, 86vh, 780px);
+    min-height: clamp(620px, 82vh, 740px);
     display: flex;
     align-items: center;
     background: var(--hero-bg) !important;
     background-size: cover !important;
     background-position: center !important;
-    color: #fff !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #dbeafe;
   }
 
   .hero-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(340px, 430px);
+    grid-template-columns: minmax(0, 1.05fr) minmax(360px, 430px);
     align-items: center;
-    gap: 34px;
+    gap: 42px;
   }
 
   .hero-content {
@@ -441,26 +449,31 @@ $pinStatusText = $hasLocationPin
     gap: 8px;
     min-height: 34px;
     padding: 0 12px;
-    border: 1px solid rgba(219, 228, 255, .24);
+    border: 1px solid #bfdbfe;
     border-radius: 999px;
-    background: rgba(255, 255, 255, .10);
-    color: #dce7ff;
+    background: #ffffff;
+    color: #2563eb;
     font-size: 13px;
     font-weight: 800;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, .06);
   }
 
   .shell .hero h1 {
     margin: 22px 0 16px;
-    color: #fff !important;
-    font-size: clamp(40px, 6vw, 68px);
+    color: #0b1220 !important;
+    font-size: clamp(42px, 5.4vw, 66px);
     line-height: 1.05;
     font-weight: 900;
+  }
+
+  .hero-title-part {
+    display: inline;
   }
 
   .shell .hero-copy {
     max-width: 660px;
     margin: 0 0 30px;
-    color: #d8e3f3 !important;
+    color: #52657e !important;
     font-size: 17px;
     line-height: 1.75;
   }
@@ -475,29 +488,31 @@ $pinStatusText = $hasLocationPin
 
   .search-field {
     min-height: 54px;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 0 16px;
-    border: 1px solid rgba(219, 228, 255, .24);
+    border: 1px solid #dbeafe;
     border-radius: 10px;
     background: rgba(255, 255, 255, .94);
     color: #1f314a;
   }
 
   .search-field i { color: var(--accent); font-size: 18px; }
-  .search-field input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 14px; }
+  .search-field input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 14px; }
   .search-field input::placeholder { color: #7a8ba2; }
   .search-strip .btn { min-height: 54px; }
 
   .location-pin-field {
     min-height: 54px;
+    min-width: 0;
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 10px;
     padding: 8px 12px 8px 16px;
-    border: 1px solid rgba(219, 228, 255, .24);
+    border: 1px solid #dbeafe;
     border-radius: 10px;
     background: rgba(255, 255, 255, .94);
     color: #1f314a;
@@ -543,6 +558,7 @@ $pinStatusText = $hasLocationPin
     padding: 0 12px;
     font-size: 12px;
     font-weight: 900;
+    white-space: nowrap;
     cursor: pointer;
   }
 
@@ -699,32 +715,59 @@ $pinStatusText = $hasLocationPin
     gap: 18px;
     flex-wrap: wrap;
     margin-top: 32px;
-    color: #dce7ff;
+    color: #52657e;
   }
 
   .metric {
     min-width: 132px;
     padding: 12px 0;
-    border-top: 1px solid rgba(255, 255, 255, .22);
+    border-top: 1px solid #cbd5e1;
   }
 
   .metric strong {
     display: block;
     margin-bottom: 2px;
-    color: #fff;
+    color: #0b1220;
     font-size: 24px;
     line-height: 1;
   }
 
-  .metric span { font-size: 12px; font-weight: 800; color: #b9c8dd; }
+  .metric span { font-size: 12px; font-weight: 800; color: #64748b; }
+
+  .hero-side {
+    display: grid;
+    gap: 16px;
+    align-self: stretch;
+    align-content: center;
+  }
+
+  .hero-logo-showcase {
+    min-height: 230px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(239,246,255,.88));
+    box-shadow: 0 18px 42px rgba(15, 23, 42, .08);
+  }
+
+  .hero-logo-showcase img {
+    width: min(100%, 285px);
+    height: auto;
+    max-height: 245px;
+    object-fit: contain;
+    display: block;
+  }
 
   .role-choice-panel {
-    border: 1px solid rgba(219, 228, 255, .24);
+    border: 1px solid #dbeafe;
     border-radius: 8px;
-    background: rgba(8, 16, 31, .76);
-    box-shadow: 0 24px 70px rgba(0, 0, 0, .24);
-    backdrop-filter: blur(14px);
-    padding: 24px;
+    background: rgba(255, 255, 255, .92);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, .08);
+    backdrop-filter: blur(12px);
+    padding: 20px;
   }
 
   .role-choice-kicker {
@@ -734,15 +777,15 @@ $pinStatusText = $hasLocationPin
     min-height: 30px;
     padding: 0 10px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, .10);
-    color: #a7f3d0;
+    background: #ecfdf5;
+    color: #047857;
     font-size: 12px;
     font-weight: 900;
   }
 
   .role-choice-panel h2 {
     margin: 16px 0 8px;
-    color: #fff !important;
+    color: #0b1220 !important;
     font-size: clamp(24px, 3vw, 34px);
     line-height: 1.16;
     font-weight: 900;
@@ -750,7 +793,7 @@ $pinStatusText = $hasLocationPin
 
   .role-choice-panel p {
     margin: 0;
-    color: #cbd5e1;
+    color: #64748b;
     font-size: 14px;
     line-height: 1.65;
   }
@@ -768,19 +811,19 @@ $pinStatusText = $hasLocationPin
     align-items: center;
     gap: 14px;
     padding: 16px;
-    border: 1px solid rgba(219, 228, 255, .18);
+    border: 1px solid #dbeafe;
     border-radius: 8px;
-    background: rgba(255, 255, 255, .08);
-    color: #fff;
+    background: #ffffff;
+    color: #0f172a;
     text-decoration: none;
     transition: transform .15s, border-color .15s, background .15s;
   }
 
   .role-choice-card:hover {
     transform: translateY(-1px);
-    border-color: rgba(167, 243, 208, .62);
-    background: rgba(255, 255, 255, .12);
-    color: #fff;
+    border-color: #93c5fd;
+    background: #f8fbff;
+    color: #0f172a;
   }
 
   .role-choice-icon {
@@ -802,7 +845,7 @@ $pinStatusText = $hasLocationPin
 
   .role-choice-card h3 {
     margin: 0;
-    color: #fff;
+    color: #0b1220;
     font-size: 16px;
     line-height: 1.25;
     font-weight: 900;
@@ -810,7 +853,7 @@ $pinStatusText = $hasLocationPin
 
   .role-choice-card p {
     margin-top: 5px;
-    color: #b9c7d9;
+    color: #64748b;
     font-size: 12.5px;
     line-height: 1.5;
   }
@@ -823,8 +866,8 @@ $pinStatusText = $hasLocationPin
     gap: 6px;
     padding: 0 12px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, .14);
-    color: #fff;
+    background: #eef2ff;
+    color: #2563eb;
     font-size: 12px;
     font-weight: 900;
     white-space: nowrap;
@@ -1109,6 +1152,7 @@ $pinStatusText = $hasLocationPin
     .nav-links { display: none; }
     .hero-layout { grid-template-columns: 1fr; gap: 0; padding-bottom: 54px; }
     .hero-content { padding-bottom: 32px; }
+    .hero-side { width: min(100%, 720px); }
     .role-choice-panel { width: min(100%, 720px); }
     .category-grid { grid-template-columns: repeat(3, 1fr); }
     .job-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1116,16 +1160,26 @@ $pinStatusText = $hasLocationPin
   }
 
   @media (max-width: 720px) {
-    .container { width: min(100% - 28px, 1160px); }
+    .shell .container { width: 100%; max-width: 1160px; padding: 0 14px; }
     .nav-inner { min-height: auto; padding: 14px 0; flex-wrap: wrap; }
     .brand { flex: 1 1 100%; }
     .nav-actions { width: 100%; }
-    .nav-actions .btn { flex: 1; padding: 0 10px; }
+    .nav-actions .btn { flex: 1 1 0; min-width: 0; padding: 0 10px; }
     .hero { min-height: auto; }
     .hero-layout { padding-bottom: 42px; }
     .hero-content { padding: 54px 0 24px; }
-    .hero h1 { font-size: clamp(34px, 12vw, 48px); }
-    .search-strip { grid-template-columns: 1fr; }
+    .shell .hero h1 { font-size: clamp(31px, 9.2vw, 38px); }
+    .hero-title-part { display: block; }
+    .shell .hero-copy { max-width: 100%; font-size: 15.5px; overflow-wrap: anywhere; }
+    .hero-logo-showcase { min-height: 160px; padding: 12px; }
+    .hero-logo-showcase img { max-height: 170px; }
+    .search-strip { width: 100%; max-width: 100%; grid-template-columns: 1fr; }
+    .search-field,
+    .location-pin-field { width: 100%; max-width: 100%; }
+    .location-pin-field { grid-template-columns: auto minmax(0, 1fr) 40px; }
+    .btn-pin { width: 40px; padding: 0; font-size: 0; }
+    .btn-pin i { font-size: 16px; }
+    .hero-actions { width: 100%; }
     .hero-actions .btn { width: 100%; }
     .role-choice-panel { padding: 18px; }
     .role-choice-card { grid-template-columns: 44px 1fr; align-items: flex-start; }
@@ -1168,9 +1222,9 @@ $pinStatusText = $hasLocationPin
     <div class="container">
       <div class="hero-layout">
         <div class="hero-content">
-          <span class="eyebrow"><i class="bi bi-stars"></i> แพลตฟอร์มจ้างงานและหางานฟรีแลนซ์</span>
-          <h1>Job_Find</h1>
-          <p class="hero-copy">ค้นหางานที่ตรงทักษะ สมัครงาน ติดตามสถานะ และรีวิวผู้ว่าจ้างได้ในระบบเดียว ผู้ว่าจ้างก็สามารถโพสต์งาน จัดการผู้สมัคร และเก็บประวัติการทำงานได้ครบถ้วน</p>
+          <span class="eyebrow"><i class="bi bi-stars"></i> Job_Find สำหรับฟรีแลนซ์และผู้ว่าจ้าง</span>
+          <h1><span class="hero-title-part">หางานที่ใช่</span> <span class="hero-title-part">จ้างคนที่ชอบ</span></h1>
+          <p class="hero-copy">เริ่มจากเลือกบทบาทของคุณ ค้นหางานที่ตรงทักษะ หรือโพสต์งานเพื่อหาคนที่เหมาะกับโปรเจกต์ พร้อมระบบสมัครงาน โปรไฟล์ รีวิว และติดตามสถานะในที่เดียว</p>
 
           <form class="search-strip" method="GET" action="index.php#jobs">
             <label class="search-field">
@@ -1206,31 +1260,37 @@ $pinStatusText = $hasLocationPin
           </div>
         </div>
 
-        <aside class="role-choice-panel" id="start" aria-label="เลือกเส้นทางเริ่มใช้งาน">
-          <span class="role-choice-kicker"><i class="bi bi-arrow-up-right-circle"></i> เริ่มใช้งาน</span>
-          <h2>คุณกำลังหางานหรือต้องการลูกจ้าง</h2>
-          <p>เลือกบทบาทที่ตรงกับคุณ แล้วไปยังขั้นตอนที่เหมาะกับงานของคุณทันที</p>
-
-          <div class="role-choice-list">
-            <a class="role-choice-card" href="<?php echo e($freelancerStartUrl); ?>">
-              <span class="role-choice-icon"><i class="bi bi-person-workspace"></i></span>
-              <span>
-                <h3>Freelancer</h3>
-                <p>ค้นหางาน สมัครงาน และจัดการโปรไฟล์สำหรับรับงาน</p>
-              </span>
-              <span class="role-choice-action">เริ่มหางาน <i class="bi bi-arrow-right"></i></span>
-            </a>
-
-            <a class="role-choice-card" href="<?php echo e($employerStartUrl); ?>">
-              <span class="role-choice-icon"><i class="bi bi-building-add"></i></span>
-              <span>
-                <h3>Employer</h3>
-                <p>โพสต์งาน คัดเลือกผู้สมัคร และจัดการการจ้างงาน</p>
-              </span>
-              <span class="role-choice-action">เริ่มจ้างงาน <i class="bi bi-arrow-right"></i></span>
-            </a>
+        <div class="hero-side">
+          <div class="hero-logo-showcase" aria-hidden="true">
+            <img src="assets/images/jobfind-logo.png?v=13" alt="">
           </div>
-        </aside>
+
+          <aside class="role-choice-panel" id="start" aria-label="เลือกเส้นทางเริ่มใช้งาน">
+            <span class="role-choice-kicker"><i class="bi bi-arrow-up-right-circle"></i> เริ่มใช้งาน</span>
+            <h2>เลือกบทบาทของคุณ</h2>
+            <p>เริ่มจากฝั่งที่ใช่ แล้วระบบจะพาไปยังขั้นตอนที่เหมาะกับงานของคุณทันที</p>
+
+            <div class="role-choice-list">
+              <a class="role-choice-card" href="<?php echo e($freelancerStartUrl); ?>">
+                <span class="role-choice-icon"><i class="bi bi-person-workspace"></i></span>
+                <span>
+                  <h3>Freelancer</h3>
+                  <p>ค้นหางาน สมัครงาน และจัดการโปรไฟล์สำหรับรับงาน</p>
+                </span>
+                <span class="role-choice-action">เริ่มหางาน <i class="bi bi-arrow-right"></i></span>
+              </a>
+
+              <a class="role-choice-card" href="<?php echo e($employerStartUrl); ?>">
+                <span class="role-choice-icon"><i class="bi bi-building-add"></i></span>
+                <span>
+                  <h3>Employer</h3>
+                  <p>โพสต์งาน คัดเลือกผู้สมัคร และจัดการการจ้างงาน</p>
+                </span>
+                <span class="role-choice-action">เริ่มจ้างงาน <i class="bi bi-arrow-right"></i></span>
+              </a>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   </header>
