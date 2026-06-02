@@ -130,10 +130,7 @@ if(isset($_POST['login'])){
     min-height: 100vh;
     font-family: "Noto Sans Thai", "Sora", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: var(--text);
-    background:
-      linear-gradient(120deg, rgba(20, 184, 166, .10) 0%, rgba(20, 184, 166, 0) 34%),
-      linear-gradient(240deg, rgba(249, 115, 22, .10) 0%, rgba(249, 115, 22, 0) 32%),
-      linear-gradient(180deg, #f8fbff 0%, #edf4fa 360px, #f5f7fb 100%);
+    background: var(--light);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -153,15 +150,15 @@ if(isset($_POST['login'])){
   }
 
   .auth-shell {
-    width: min(1080px, 100%);
-    min-height: 640px;
+    width: min(920px, 95vw);
+    min-height: 620px;
     display: grid;
-    grid-template-columns: minmax(360px, .95fr) minmax(380px, 1fr);
+    grid-template-columns: 340px minmax(0, 1fr);
     overflow: hidden;
     border: 1px solid rgba(219, 228, 239, .96);
-    border-radius: var(--radius);
-    background: rgba(255, 255, 255, .96);
-    box-shadow: var(--shadow);
+    border-radius: 24px;
+    background: var(--white);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .12);
   }
 
   .brand-panel {
@@ -169,61 +166,58 @@ if(isset($_POST['login'])){
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 32px;
-    padding: 34px 32px;
+    gap: 28px;
+    padding: 44px 34px;
     overflow: hidden;
-    background:
-      linear-gradient(135deg, rgba(37, 99, 235, .12) 0%, rgba(37, 99, 235, 0) 38%),
-      linear-gradient(225deg, rgba(20, 184, 122, .13) 0%, rgba(20, 184, 122, 0) 34%),
-      linear-gradient(180deg, #f8fbff 0%, #eef7ff 100%);
-    color: #0f172a;
-    border-right: 1px solid #dbeafe;
+    background: var(--navy);
+    color: #ffffff;
+    border-right: 0;
   }
 
   .brand-panel::before {
     content: "";
     position: absolute;
-    inset: 0 0 auto;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--cyan), var(--green), #f59e0b);
+    top: -80px;
+    right: -80px;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, .15);
   }
 
   .brand-panel::after {
     content: "";
     position: absolute;
-    right: -80px;
-    bottom: -80px;
-    width: 280px;
-    height: 280px;
-    border: 1px solid rgba(37, 99, 235, .12);
-    border-radius: 8px;
-    transform: rotate(10deg);
-    background:
-      linear-gradient(135deg, rgba(255, 255, 255, .54), rgba(255, 255, 255, 0));
-    pointer-events: none;
+    bottom: -60px;
+    left: -60px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, .10);
   }
 
   .brand-lockup {
     position: relative;
     z-index: 1;
-    display: grid;
-    justify-items: center;
-    gap: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     text-decoration: none;
   }
 
   .brand-mark {
-    width: min(100%, 260px);
-    height: 190px;
+    width: 132px;
+    height: 120px;
+    flex: 0 0 120px;
     border-radius: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: transparent;
-    color: var(--accent);
+    color: #ffffff;
     font-size: 22px;
     overflow: hidden;
-    padding: 8px;
+    padding: 0;
     box-shadow: none;
   }
 
@@ -237,7 +231,7 @@ if(isset($_POST['login'])){
   }
 
   .brand-name {
-    color: #0b1220;
+    color: #ffffff;
     font-size: 18px;
     line-height: 1.1;
     font-weight: 800;
@@ -245,44 +239,48 @@ if(isset($_POST['login'])){
 
   .brand-sub {
     margin-top: 3px;
-    color: #64748b;
+    color: #94a3b8;
     font-size: 12px;
     line-height: 1.3;
+  }
+
+  .brand-lockup > div:not(.brand-mark) {
+    display: none;
   }
 
   .brand-copy {
     position: relative;
     z-index: 1;
-    max-width: 380px;
+    max-width: 100%;
   }
 
   .brand-copy h1 {
-    color: #071327;
-    font-size: clamp(30px, 4vw, 44px);
-    line-height: 1.16;
-    font-weight: 900;
+    color: #ffffff;
+    font-size: 26px;
+    line-height: 1.3;
+    font-weight: 800;
   }
 
   .brand-kicker {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-height: 34px;
-    margin-bottom: 16px;
-    padding: 0 12px;
-    border: 1px solid #bfdbfe;
+    min-height: 32px;
+    margin-bottom: 18px;
+    padding: 0 11px;
+    border: 1px solid rgba(255, 255, 255, .14);
     border-radius: 999px;
-    background: rgba(255, 255, 255, .88);
-    color: #2563eb;
+    background: rgba(255, 255, 255, .06);
+    color: #c7d2fe;
     font-size: 12px;
-    font-weight: 900;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+    font-weight: 800;
+    box-shadow: none;
   }
 
   .brand-copy p {
-    margin-top: 18px;
-    color: #52657e;
-    font-size: 15px;
+    margin-top: 14px;
+    color: #94a3b8;
+    font-size: 14px;
     line-height: 1.8;
   }
 
@@ -290,46 +288,45 @@ if(isset($_POST['login'])){
     position: relative;
     z-index: 1;
     display: grid;
-    gap: 10px;
+    gap: 12px;
   }
 
   .signal-item {
     display: grid;
-    grid-template-columns: 42px 1fr;
+    grid-template-columns: 38px 1fr;
     align-items: center;
     gap: 12px;
-    min-height: 66px;
-    padding: 12px;
-    border: 1px solid #dbeafe;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, .82);
-    color: #172033;
-    font-size: 14px;
-    font-weight: 800;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, .05);
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .06);
+    color: #e2e8f0;
+    font-size: 13.5px;
+    font-weight: 700;
+    box-shadow: none;
   }
 
   .signal-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #c7d2fe;
-    background: #eef2ff;
-    color: #2563eb;
-    font-size: 18px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(255, 255, 255, .07);
+    color: #a5b4fc;
+    font-size: 16px;
     font-weight: 800;
   }
 
   .signal-item small {
     display: block;
-    margin-top: 3px;
+    margin-top: 4px;
     color: #64748b;
     font-size: 12px;
-    font-weight: 700;
-    line-height: 1.45;
+    font-weight: 500;
+    line-height: 1.6;
   }
 
   .brand-footer {
@@ -339,9 +336,9 @@ if(isset($_POST['login'])){
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    color: #64748b;
+    color: #475569;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 600;
   }
 
   .brand-footer span {
@@ -366,6 +363,10 @@ if(isset($_POST['login'])){
   .mobile-brand {
     display: none;
     margin-bottom: 28px;
+  }
+
+  .mobile-brand > div:not(.brand-mark) {
+    display: none;
   }
 
   .form-kicker {
