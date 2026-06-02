@@ -143,7 +143,7 @@ $selected_employment_type = jobfind_normalize_employment_type($_POST['employment
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=9">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=11">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Post Job</title>
@@ -264,7 +264,7 @@ $selected_employment_type = jobfind_normalize_employment_type($_POST['employment
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="index.php" class="logo">
-      <div class="logo-icon" style="width:160px!important;height:240px!important;min-width:160px!important;max-width:160px!important;max-height:240px!important;flex:0 0 240px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=9" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="logo-icon" style="width:180px!important;height:180px!important;min-width:180px!important;max-width:180px!important;max-height:180px!important;flex:0 0 180px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=11" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
         <div class="logo-text" style="display:none!important;">Job_Find</div>
         <div class="logo-sub" style="display:none!important;">Employer</div>

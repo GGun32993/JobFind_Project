@@ -30,7 +30,7 @@ echo "<script>alert('Review submitted successfully');</script>";
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=9">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=11">
 
 <title>Review Employer</title>
 

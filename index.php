@@ -287,7 +287,7 @@ $pinStatusText = $hasLocationPin
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=9">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=11">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Job_Find แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
@@ -349,7 +349,7 @@ $pinStatusText = $hasLocationPin
 
   .shell .brand-icon {
     width: 76px;
-    height: 114px;
+    height: 76px;
     border-radius: 0;
     display: inline-flex;
     align-items: center;
@@ -1144,7 +1144,7 @@ $pinStatusText = $hasLocationPin
   <nav class="top-nav">
     <div class="container nav-inner">
       <a class="brand" href="index.php" aria-label="Job_Find home">
-        <span class="brand-icon" style="width:76px!important;height:114px!important;min-width:76px!important;max-width:76px!important;max-height:114px!important;flex:0 0 114px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=9" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
+        <span class="brand-icon" style="width:76px!important;height:76px!important;min-width:76px!important;max-width:76px!important;max-height:76px!important;flex:0 0 76px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=11" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
         <span class="brand-name" style="display:none!important;">Job_Find</span>
       </a>
 
