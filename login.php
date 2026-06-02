@@ -140,6 +140,7 @@ if(isset($_POST['login'])){
     padding: 32px 18px;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   a {
@@ -152,10 +153,10 @@ if(isset($_POST['login'])){
   }
 
   .auth-shell {
-    width: min(1040px, 100%);
-    min-height: 620px;
+    width: min(1080px, 100%);
+    min-height: 640px;
     display: grid;
-    grid-template-columns: minmax(320px, .9fr) minmax(360px, 1fr);
+    grid-template-columns: minmax(360px, .95fr) minmax(380px, 1fr);
     overflow: hidden;
     border: 1px solid rgba(219, 228, 239, .96);
     border-radius: var(--radius);
@@ -172,9 +173,11 @@ if(isset($_POST['login'])){
     padding: 34px 32px;
     overflow: hidden;
     background:
-      linear-gradient(145deg, rgba(20, 184, 166, .18) 0%, rgba(91, 95, 244, .12) 42%, transparent 42%),
-      linear-gradient(180deg, #0b1220 0%, #101b31 100%);
-    color: #ffffff;
+      linear-gradient(135deg, rgba(37, 99, 235, .12) 0%, rgba(37, 99, 235, 0) 38%),
+      linear-gradient(225deg, rgba(20, 184, 122, .13) 0%, rgba(20, 184, 122, 0) 34%),
+      linear-gradient(180deg, #f8fbff 0%, #eef7ff 100%);
+    color: #0f172a;
+    border-right: 1px solid #dbeafe;
   }
 
   .brand-panel::before {
@@ -185,32 +188,43 @@ if(isset($_POST['login'])){
     background: linear-gradient(90deg, var(--accent), var(--cyan), var(--green), #f59e0b);
   }
 
+  .brand-panel::after {
+    content: "";
+    position: absolute;
+    right: -80px;
+    bottom: -80px;
+    width: 280px;
+    height: 280px;
+    border: 1px solid rgba(37, 99, 235, .12);
+    border-radius: 8px;
+    transform: rotate(10deg);
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, .54), rgba(255, 255, 255, 0));
+    pointer-events: none;
+  }
+
   .brand-lockup {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    z-index: 1;
+    display: grid;
+    justify-items: center;
+    gap: 12px;
     text-decoration: none;
   }
 
   .brand-mark {
-    width: 132px;
-    height: 120px;
-    min-width: 132px;
-    max-width: 132px;
-    max-height: 120px;
-    flex: 0 0 120px;
+    width: min(100%, 260px);
+    height: 190px;
     border-radius: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #ffffff;
-    color: #ffffff;
+    background: transparent;
+    color: var(--accent);
     font-size: 22px;
     overflow: hidden;
-    padding: 0;
-    box-shadow: 0 12px 24px rgba(91, 95, 244, .18);
+    padding: 8px;
+    box-shadow: none;
   }
 
   .brand-mark img {
@@ -223,7 +237,7 @@ if(isset($_POST['login'])){
   }
 
   .brand-name {
-    color: #ffffff;
+    color: #0b1220;
     font-size: 18px;
     line-height: 1.1;
     font-weight: 800;
@@ -231,68 +245,109 @@ if(isset($_POST['login'])){
 
   .brand-sub {
     margin-top: 3px;
-    color: #9fb1c7;
+    color: #64748b;
     font-size: 12px;
     line-height: 1.3;
   }
 
-  .brand-lockup > div:not(.brand-mark) {
-    display: none;
-  }
-
   .brand-copy {
     position: relative;
-    max-width: 360px;
+    z-index: 1;
+    max-width: 380px;
   }
 
   .brand-copy h1 {
-    color: #ffffff;
-    font-size: clamp(30px, 4vw, 42px);
+    color: #071327;
+    font-size: clamp(30px, 4vw, 44px);
     line-height: 1.16;
-    font-weight: 800;
+    font-weight: 900;
+  }
+
+  .brand-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    margin-bottom: 16px;
+    padding: 0 12px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .88);
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 900;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
   }
 
   .brand-copy p {
     margin-top: 18px;
-    color: #cbd5e1;
+    color: #52657e;
     font-size: 15px;
     line-height: 1.8;
   }
 
   .signal-list {
     position: relative;
+    z-index: 1;
     display: grid;
-    gap: 12px;
+    gap: 10px;
   }
 
   .signal-item {
     display: grid;
-    grid-template-columns: 34px 1fr;
+    grid-template-columns: 42px 1fr;
     align-items: center;
     gap: 12px;
-    color: #dbe4ff;
+    min-height: 66px;
+    padding: 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .82);
+    color: #172033;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 800;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .05);
   }
 
   .signal-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: var(--radius);
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(219, 228, 255, .18);
-    background: rgba(255, 255, 255, .08);
-    color: #93c5fd;
-    font-size: 13px;
+    border: 1px solid #c7d2fe;
+    background: #eef2ff;
+    color: #2563eb;
+    font-size: 18px;
     font-weight: 800;
+  }
+
+  .signal-item small {
+    display: block;
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.45;
   }
 
   .brand-footer {
     position: relative;
-    color: #71839d;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #64748b;
     font-size: 12px;
+    font-weight: 800;
+  }
+
+  .brand-footer span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
   }
 
   .form-panel {
@@ -304,7 +359,8 @@ if(isset($_POST['login'])){
   }
 
   .form-inner {
-    width: min(420px, 100%);
+    width: 100%;
+    max-width: 420px;
   }
 
   .mobile-brand {
@@ -566,20 +622,20 @@ if(isset($_POST['login'])){
     }
 
     .mobile-brand {
-      display: flex;
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 10px;
+      display: grid;
+      justify-items: center;
+      gap: 8px;
       text-decoration: none;
+      text-align: center;
     }
 
     .mobile-brand .brand-mark {
-      width: 112px;
-      height: 102px;
-      min-width: 112px;
-      max-width: 112px;
-      max-height: 102px;
-      flex: 0 0 102px;
+      width: 128px;
+      height: 108px;
+      min-width: 0;
+      max-width: 128px;
+      max-height: 108px;
+      padding: 0;
     }
 
     .mobile-brand .brand-name {
@@ -590,13 +646,25 @@ if(isset($_POST['login'])){
       color: #64748b;
     }
 
-    .mobile-brand > div:not(.brand-mark) {
-      display: none;
-    }
-
     .form-panel {
       align-items: center;
+      width: 100vw;
+      max-width: 100vw;
       padding: 28px 22px;
+      overflow-x: hidden;
+    }
+
+    .form-inner {
+      width: calc(100vw - 44px);
+      max-width: 420px;
+    }
+
+    .form-inner form,
+    .field-group,
+    .input-wrap,
+    .form-input,
+    .btn-login {
+      max-width: 100%;
     }
   }
 
@@ -631,43 +699,47 @@ if(isset($_POST['login'])){
 <main class="auth-shell">
   <section class="brand-panel" aria-label="Job_Find">
     <a class="brand-lockup" href="index.php" aria-label="Job_Find home">
-      <div class="brand-mark" style="width:132px!important;height:120px!important;min-width:132px!important;max-width:132px!important;max-height:120px!important;flex:0 0 120px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;margin:0 auto!important;align-self:center!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo"></div>
       <div>
-        <div class="brand-name" style="display:none!important;">Job_Find</div>
-        <div class="brand-sub" style="display:none!important;">แพลตฟอร์มหางาน Freelance</div>
+        <div class="brand-name">Job_Find</div>
+        <div class="brand-sub">หางานที่ใช่ ได้งานที่ชอบ</div>
       </div>
     </a>
 
     <div class="brand-copy">
+      <div class="brand-kicker"><i class="bi bi-shield-check"></i> Account Workspace</div>
       <h1>กลับเข้าสู่พื้นที่ทำงานของคุณ</h1>
-      <p>ติดตามงาน โปรไฟล์ การสมัคร และรีวิวได้จากบัญชีเดียว</p>
+      <p>เข้าสู่ระบบเพื่อจัดการโปรไฟล์ ติดตามงาน สมัครงาน หรือดูผู้สมัครในพื้นที่เดียวของ Job_Find</p>
     </div>
 
     <div class="signal-list" aria-label="Account areas">
       <div class="signal-item">
-        <span class="signal-icon">J</span>
-        <span>งานล่าสุดและสถานะการสมัคร</span>
+        <span class="signal-icon"><i class="bi bi-briefcase"></i></span>
+        <span>งานและการสมัคร<small>ดูงานล่าสุด ติดตามสถานะ และกลับไปสมัครต่อได้เร็ว</small></span>
       </div>
       <div class="signal-item">
-        <span class="signal-icon">P</span>
-        <span>โปรไฟล์ Freelancer และ Employer</span>
+        <span class="signal-icon"><i class="bi bi-person-badge"></i></span>
+        <span>โปรไฟล์ของคุณ<small>แก้ไขข้อมูล Freelancer หรือ Employer ได้จากบัญชีเดียว</small></span>
       </div>
       <div class="signal-item">
-        <span class="signal-icon">R</span>
-        <span>รีวิว เรตติ้ง และข้อความสนับสนุน</span>
+        <span class="signal-icon"><i class="bi bi-star"></i></span>
+        <span>รีวิวและเรตติ้ง<small>ดูคะแนน ประวัติการทำงาน และความน่าเชื่อถือ</small></span>
       </div>
     </div>
 
-    <div class="brand-footer">© 2026 Job_Find</div>
+    <div class="brand-footer">
+      <span><i class="bi bi-house-door"></i> กดโลโก้เพื่อกลับหน้าแรก</span>
+      <span>© 2026</span>
+    </div>
   </section>
 
   <section class="form-panel">
     <div class="form-inner">
       <a class="mobile-brand" href="index.php" aria-label="Job_Find home">
-        <div class="brand-mark" style="width:132px!important;height:120px!important;min-width:132px!important;max-width:132px!important;max-height:120px!important;flex:0 0 120px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;margin:0 auto!important;align-self:center!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+        <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo"></div>
         <div>
-          <div class="brand-name" style="display:none!important;">Job_Find</div>
-          <div class="brand-sub" style="display:none!important;">แพลตฟอร์มหางาน Freelance</div>
+          <div class="brand-name">Job_Find</div>
+          <div class="brand-sub">หางานที่ใช่ ได้งานที่ชอบ</div>
         </div>
       </a>
 
