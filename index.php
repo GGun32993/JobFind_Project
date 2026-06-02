@@ -128,6 +128,12 @@ function format_salary($salary){
     return $amount > 0 ? '฿' . number_format($amount, 0) : 'ไม่ระบุงบประมาณ';
 }
 
+function text_lower($value){
+    return function_exists('mb_strtolower')
+        ? mb_strtolower((string)$value, 'UTF-8')
+        : strtolower((string)$value);
+}
+
 function category_icon($name){
     $name = strtolower((string)$name);
     if(str_contains($name, 'design')) return '🎨';
@@ -155,6 +161,7 @@ $employerStartUrl = $role === 'employer'
     : ($isLoggedIn ? $dashboardUrl : 'register.php?role=employer');
 
 $categories = [];
+$categoryShowcaseGroups = [];
 $featuredJobs = [];
 $companies = [];
 $stats = ['jobs' => 0, 'employers' => 0, 'freelancers' => 0];
@@ -217,9 +224,9 @@ if($conn){
 
     if($titleSearch !== ''){
         $likeTitle = '%' . $titleSearch . '%';
-        $jobWhere[] = "(j.title LIKE ? OR j.category LIKE ? OR u.username LIKE ? OR u.fullname LIKE ? OR ep.employer_name LIKE ?)";
-        $jobTypes .= 'sssss';
-        array_push($jobParams, $likeTitle, $likeTitle, $likeTitle, $likeTitle, $likeTitle);
+        $jobWhere[] = "(j.title LIKE ? OR j.category LIKE ? OR j.job_subcategory LIKE ? OR u.username LIKE ? OR u.fullname LIKE ? OR ep.employer_name LIKE ?)";
+        $jobTypes .= 'ssssss';
+        array_push($jobParams, $likeTitle, $likeTitle, $likeTitle, $likeTitle, $likeTitle, $likeTitle);
     }
 
     if($locationSearch !== ''){
@@ -274,6 +281,100 @@ if($conn){
         'employers' => db_count($conn, "SELECT COUNT(*) AS c FROM users WHERE role = 'employer'"),
         'freelancers' => db_count($conn, "SELECT COUNT(*) AS c FROM users WHERE role = 'freelancer'"),
     ];
+}
+
+$categoryJobsByName = [];
+foreach($categories as $category){
+    $categoryJobsByName[(string)($category['name'] ?? '')] = (int)($category['jobs'] ?? 0);
+}
+
+$rawCategoryGroups = jobfind_get_categories_with_subcategories($conn);
+foreach($rawCategoryGroups as $category){
+    $categoryName = trim((string)($category['name'] ?? ''));
+    if($categoryName === ''){
+        continue;
+    }
+
+    $subcategories = [];
+    foreach(($category['subcategories'] ?? []) as $subcategory){
+        $subcategoryName = trim((string)(is_array($subcategory) ? ($subcategory['name'] ?? '') : $subcategory));
+        if($subcategoryName !== ''){
+            $subcategories[] = $subcategoryName;
+        }
+    }
+
+    if(empty($subcategories)){
+        $subcategories[] = $categoryName;
+    }
+
+    $categoryShowcaseGroups[] = [
+        'name' => $categoryName,
+        'icon' => trim((string)($category['icon'] ?? '')) !== '' ? $category['icon'] : category_icon($categoryName),
+        'jobs' => $categoryJobsByName[$categoryName] ?? 0,
+        'subcategories' => array_values(array_unique($subcategories)),
+    ];
+}
+
+$allShowcaseSubcategories = [];
+foreach($categoryShowcaseGroups as $categoryGroup){
+    foreach(($categoryGroup['subcategories'] ?? []) as $subcategoryName){
+        $allShowcaseSubcategories[$subcategoryName] = true;
+    }
+}
+
+$preferredPopularSubcategories = [
+    'Website Development',
+    'Mobile Application',
+    'UX/UI Design',
+    'SEO',
+    'ยิงแอด Facebook',
+    'Data & AI',
+    'ออกแบบโลโก้',
+    'ตัดต่อวิดีโอ',
+];
+$popularSubcategories = [];
+foreach($preferredPopularSubcategories as $subcategoryName){
+    if(isset($allShowcaseSubcategories[$subcategoryName])){
+        $popularSubcategories[] = $subcategoryName;
+    }
+}
+if(count($popularSubcategories) < 8){
+    foreach(array_keys($allShowcaseSubcategories) as $subcategoryName){
+        if(!in_array($subcategoryName, $popularSubcategories, true)){
+            $popularSubcategories[] = $subcategoryName;
+        }
+        if(count($popularSubcategories) >= 8){
+            break;
+        }
+    }
+}
+
+if(!empty($popularSubcategories)){
+    array_unshift($categoryShowcaseGroups, [
+        'name' => 'งานยอดนิยม',
+        'icon' => '🚀',
+        'jobs' => $stats['jobs'] ?? 0,
+        'subcategories' => $popularSubcategories,
+    ]);
+}
+
+$activeCategoryIndex = 0;
+if($titleSearch !== ''){
+    foreach($categoryShowcaseGroups as $index => $categoryGroup){
+        $categoryName = (string)$categoryGroup['name'];
+        $subcategories = $categoryGroup['subcategories'] ?? [];
+        if(text_lower($categoryName) === text_lower($titleSearch)){
+            $activeCategoryIndex = $index;
+            break;
+        }
+
+        foreach($subcategories as $subcategoryName){
+            if(text_lower((string)$subcategoryName) === text_lower($titleSearch)){
+                $activeCategoryIndex = $index;
+                break 2;
+            }
+        }
+    }
 }
 
 $heroStyle = "--hero-bg:
@@ -880,6 +981,8 @@ $pinStatusText = $hasLocationPin
 
   .categories-band {
     background:
+      radial-gradient(circle at 8% 14%, rgba(91, 95, 244, .09) 0%, rgba(91, 95, 244, 0) 34%),
+      radial-gradient(circle at 86% 18%, rgba(6, 182, 212, .10) 0%, rgba(6, 182, 212, 0) 32%),
       linear-gradient(180deg, #f8fbff 0%, #f4f8fd 100%);
   }
 
@@ -930,13 +1033,207 @@ $pinStatusText = $hasLocationPin
     line-height: 1.7;
   }
 
-  .category-grid {
+  .category-showcase {
+    padding: 28px 32px 30px;
+    border: 1px solid #e5edf7;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 22px 55px rgba(15, 23, 42, .08);
+  }
+
+  .category-tabs-shell {
+    position: relative;
+  }
+
+  .category-tabs {
+    display: flex;
+    gap: 22px;
+    overflow-x: auto;
+    padding: 4px 54px 18px 4px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-tab {
+    position: relative;
+    flex: 0 0 132px;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    justify-items: center;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    color: #5d6f86;
+    padding: 0 8px 14px;
+    cursor: pointer;
+    scroll-snap-align: start;
+  }
+
+  .category-tab::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 4px;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .category-tab.active {
+    color: #0f172a;
+  }
+
+  .category-tab.active::after {
+    background: #2563eb;
+  }
+
+  .category-tab-icon {
+    width: 58px;
+    height: 58px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #f8fafc, #eef2ff);
+    color: #2563eb;
+    font-size: 30px;
+    filter: grayscale(.45);
+    box-shadow: inset 0 -10px 18px rgba(148, 163, 184, .16);
+    transition: filter .15s, transform .15s, box-shadow .15s;
+  }
+
+  .category-tab.active .category-tab-icon,
+  .category-tab:hover .category-tab-icon {
+    filter: none;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, .14);
+  }
+
+  .category-tab-label {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.35;
+  }
+
+  .category-scroll-next {
+    position: absolute;
+    right: 0;
+    top: 22px;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .96);
+    color: #2563eb;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .10);
+    cursor: pointer;
+  }
+
+  .category-panels {
+    margin-top: 16px;
+  }
+
+  .category-panel {
+    display: none;
+  }
+
+  .category-panel.active {
+    display: block;
+  }
+
+  .category-tile-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
   }
 
-  .category-card,
+  .category-tile {
+    min-height: 100px;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    border-radius: 8px;
+    padding: 18px;
+    color: #fff;
+    background: #0f172a;
+    text-decoration: none;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, .10);
+  }
+
+  .category-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--tile-bg);
+    background-size: cover;
+    background-position: center;
+    transform: scale(1);
+    transition: transform .2s;
+  }
+
+  .category-tile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgba(7, 19, 39, .76), rgba(7, 19, 39, .32)),
+      linear-gradient(0deg, rgba(7, 19, 39, .32), rgba(7, 19, 39, .08));
+  }
+
+  .category-tile:hover::before {
+    transform: scale(1.05);
+  }
+
+  .category-tile-title {
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1.28;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, .32);
+  }
+
+  .category-visual-1 { --tile-bg: radial-gradient(circle at 18% 26%, rgba(34, 211, 238, .70), transparent 30%), linear-gradient(135deg, #0f172a, #155e75 52%, #2563eb); }
+  .category-visual-2 { --tile-bg: radial-gradient(circle at 72% 18%, rgba(250, 204, 21, .70), transparent 28%), linear-gradient(135deg, #1e1b4b, #7c3aed 50%, #db2777); }
+  .category-visual-3 { --tile-bg: radial-gradient(circle at 22% 72%, rgba(16, 185, 129, .70), transparent 28%), linear-gradient(135deg, #052e16, #0f766e 48%, #0284c7); }
+  .category-visual-4 { --tile-bg: radial-gradient(circle at 80% 34%, rgba(248, 113, 113, .72), transparent 28%), linear-gradient(135deg, #111827, #7f1d1d 48%, #ea580c); }
+  .category-visual-5 { --tile-bg: radial-gradient(circle at 24% 30%, rgba(147, 197, 253, .78), transparent 30%), linear-gradient(135deg, #172554, #1d4ed8 52%, #06b6d4); }
+  .category-visual-6 { --tile-bg: radial-gradient(circle at 78% 22%, rgba(216, 180, 254, .70), transparent 28%), linear-gradient(135deg, #312e81, #6d28d9 52%, #0f172a); }
+  .category-visual-7 { --tile-bg: radial-gradient(circle at 28% 76%, rgba(251, 146, 60, .70), transparent 26%), linear-gradient(135deg, #431407, #92400e 50%, #0f172a); }
+  .category-visual-8 { --tile-bg: radial-gradient(circle at 72% 72%, rgba(45, 212, 191, .72), transparent 28%), linear-gradient(135deg, #082f49, #0f766e 48%, #1e293b); }
+
+  .category-more-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 22px;
+  }
+
+  .category-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #2563eb;
+    font-size: 15px;
+    font-weight: 900;
+  }
+
+  .category-more:hover {
+    color: #1d4ed8;
+  }
+
   .job-card,
   .company-card,
   .empty-state,
@@ -947,15 +1244,7 @@ $pinStatusText = $hasLocationPin
     box-shadow: var(--shadow-sm);
   }
 
-  .category-card {
-    min-height: 142px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 18px;
-  }
-
-  .category-card:hover,
+  .category-tile:hover,
   .job-card:hover,
   .company-card:hover {
     border-color: #bcc8ff;
@@ -963,19 +1252,6 @@ $pinStatusText = $hasLocationPin
     transform: translateY(-1px);
   }
 
-  .category-icon {
-    width: 42px;
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: #eef2ff;
-    color: var(--accent);
-    font-size: 20px;
-  }
-
-  .category-card h3,
   .job-title,
   .company-card h3 {
     margin: 0;
@@ -985,7 +1261,6 @@ $pinStatusText = $hasLocationPin
     line-height: 1.3;
   }
 
-  .category-card p,
   .company-card p {
     margin: 6px 0 0;
     color: var(--muted);
@@ -1154,7 +1429,8 @@ $pinStatusText = $hasLocationPin
     .hero-content { padding-bottom: 32px; }
     .hero-side { width: min(100%, 720px); }
     .role-choice-panel { width: min(100%, 720px); }
-    .category-grid { grid-template-columns: repeat(3, 1fr); }
+    .category-showcase { padding: 22px; }
+    .category-tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .job-grid { grid-template-columns: repeat(2, 1fr); }
     .company-grid { grid-template-columns: repeat(2, 1fr); }
   }
@@ -1187,9 +1463,17 @@ $pinStatusText = $hasLocationPin
     .role-choice-action { grid-column: 1 / -1; }
     .section-head { align-items: flex-start; flex-direction: column; }
     section { padding: 46px 0; }
-    .category-grid,
+    .category-showcase { padding: 16px; }
+    .category-tabs { gap: 12px; padding-right: 44px; }
+    .category-tab { flex-basis: 104px; padding-inline: 4px; }
+    .category-tab-icon { width: 48px; height: 48px; font-size: 24px; }
+    .category-tab-label { min-height: 38px; font-size: 12.5px; }
+    .category-scroll-next { top: 16px; }
+    .category-tile-grid,
     .job-grid,
     .company-grid { grid-template-columns: 1fr; }
+    .category-tile { min-height: 92px; padding: 16px; }
+    .category-tile-title { font-size: 16px; }
   }
 </style>
 </head>
@@ -1302,23 +1586,66 @@ $pinStatusText = $hasLocationPin
           <div class="section-kicker"><i class="bi bi-grid"></i> หมวดงาน</div>
           <h2 class="section-title">เริ่มจากสายงานที่สนใจ</h2>
         </div>
-        <p class="section-desc">เลือกหมวดเพื่อกรองงานจากข้อมูลจริงในระบบ หรือค้นหาต่อจากช่องด้านบน</p>
+        <p class="section-desc">เลือกหมวดหลักเพื่อดูงานย่อย แล้วกดการ์ดเพื่อกรองงานที่ตรงกับความสนใจ</p>
       </div>
 
-      <div class="category-grid">
-        <?php if(count($categories) === 0): ?>
+      <?php if(count($categoryShowcaseGroups) === 0): ?>
+        <div class="category-showcase">
           <div class="empty-state">ยังไม่มีหมวดงานในระบบ</div>
-        <?php endif; ?>
-        <?php foreach($categories as $category): ?>
-          <a class="category-card" href="index.php?title=<?php echo urlencode($category['name']); ?>#jobs">
-            <span class="category-icon"><?php echo e($category['icon'] ?? category_icon($category['name'])); ?></span>
-            <span>
-              <h3><?php echo e($category['name']); ?></h3>
-              <p><?php echo e(number_format((int)$category['jobs'])); ?> งานที่เปิดรับ</p>
-            </span>
-          </a>
-        <?php endforeach; ?>
-      </div>
+        </div>
+      <?php else: ?>
+        <div class="category-showcase" data-category-showcase>
+          <div class="category-tabs-shell">
+            <div class="category-tabs" role="tablist" aria-label="หมวดงาน">
+              <?php foreach($categoryShowcaseGroups as $index => $category): ?>
+                <?php $isActiveCategory = $index === $activeCategoryIndex; ?>
+                <button class="category-tab<?php echo $isActiveCategory ? ' active' : ''; ?>"
+                        type="button"
+                        role="tab"
+                        id="category-tab-<?php echo e($index); ?>"
+                        aria-controls="category-panel-<?php echo e($index); ?>"
+                        aria-selected="<?php echo $isActiveCategory ? 'true' : 'false'; ?>"
+                        tabindex="<?php echo $isActiveCategory ? '0' : '-1'; ?>"
+                        data-category-tab="<?php echo e($index); ?>">
+                  <span class="category-tab-icon" aria-hidden="true"><?php echo e($category['icon']); ?></span>
+                  <span class="category-tab-label"><?php echo e($category['name']); ?></span>
+                </button>
+              <?php endforeach; ?>
+            </div>
+            <button class="category-scroll-next" type="button" aria-label="เลื่อนหมวดงาน" data-category-scroll-next>
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+
+          <div class="category-panels">
+            <?php foreach($categoryShowcaseGroups as $index => $category): ?>
+              <?php
+                $isActiveCategory = $index === $activeCategoryIndex;
+                $subcategoryCards = array_slice($category['subcategories'] ?? [], 0, 8);
+              ?>
+              <div class="category-panel<?php echo $isActiveCategory ? ' active' : ''; ?>"
+                   id="category-panel-<?php echo e($index); ?>"
+                   role="tabpanel"
+                   aria-labelledby="category-tab-<?php echo e($index); ?>"
+                   data-category-panel="<?php echo e($index); ?>">
+                <div class="category-tile-grid">
+                  <?php foreach($subcategoryCards as $cardIndex => $subcategoryName): ?>
+                    <?php $visualClass = 'category-visual-' . (($cardIndex % 8) + 1); ?>
+                    <a class="category-tile <?php echo e($visualClass); ?>" href="index.php?title=<?php echo urlencode($subcategoryName); ?>#jobs">
+                      <span class="category-tile-title"><?php echo e($subcategoryName); ?></span>
+                    </a>
+                  <?php endforeach; ?>
+                </div>
+                <div class="category-more-row">
+                  <a class="category-more" href="index.php?title=<?php echo urlencode($category['name']); ?>#jobs">
+                    ดูเพิ่มเติม <i class="bi bi-arrow-right"></i>
+                  </a>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endif; ?>
     </div>
   </section>
 
@@ -1447,6 +1774,49 @@ $pinStatusText = $hasLocationPin
 <script src="assets/vendor/leaflet/leaflet.min.js"></script>
 <script src="assets/js/location-map-picker.js"></script>
 <script>
+document.querySelectorAll('[data-category-showcase]').forEach((showcase) => {
+  const tabsWrap = showcase.querySelector('.category-tabs');
+  const tabs = Array.from(showcase.querySelectorAll('[data-category-tab]'));
+  const panels = Array.from(showcase.querySelectorAll('[data-category-panel]'));
+  const scrollNext = showcase.querySelector('[data-category-scroll-next]');
+
+  function activateCategory(index) {
+    tabs.forEach((tab) => {
+      const isActive = tab.dataset.categoryTab === String(index);
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tab.tabIndex = isActive ? 0 : -1;
+      if (isActive) {
+        tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    });
+
+    panels.forEach((panel) => {
+      panel.classList.toggle('active', panel.dataset.categoryPanel === String(index));
+    });
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => activateCategory(tab.dataset.categoryTab));
+    tab.addEventListener('keydown', (event) => {
+      const currentIndex = tabs.indexOf(tab);
+      const nextIndex = event.key === 'ArrowRight'
+        ? Math.min(currentIndex + 1, tabs.length - 1)
+        : (event.key === 'ArrowLeft' ? Math.max(currentIndex - 1, 0) : currentIndex);
+
+      if (nextIndex !== currentIndex) {
+        event.preventDefault();
+        activateCategory(tabs[nextIndex].dataset.categoryTab);
+        tabs[nextIndex].focus();
+      }
+    });
+  });
+
+  scrollNext?.addEventListener('click', () => {
+    tabsWrap?.scrollBy({ left: 360, behavior: 'smooth' });
+  });
+});
+
 let indexMapInstance = null;
 let indexSelectedLat = <?php echo $hasLocationPin ? json_encode($searchLat) : '13.7563'; ?>;
 let indexSelectedLng = <?php echo $hasLocationPin ? json_encode($searchLng) : '100.5018'; ?>;
