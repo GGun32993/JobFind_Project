@@ -1,9 +1,12 @@
 <?php
 session_start();
+define('JOBFIND_ALLOW_DB_FAILURE', true);
 require_once __DIR__ . "/config.php";
 require_once "location_schema.php";
 
-ensure_location_schema($conn);
+if($conn){
+    ensure_location_schema($conn);
+}
 
 if(isset($_SESSION['role'])){
     if($_SESSION['role']=="admin")      { header("Location: admin_dashboard.php");      exit(); }
@@ -15,6 +18,9 @@ $error   = '';
 $success = false;
 
 if(isset($_POST['register'])){
+    if(!$conn){
+        $error = $db_error ?: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
+    } else {
     $username = mysqli_real_escape_string($conn, trim($_POST['username']));
     $email    = mysqli_real_escape_string($conn, trim($_POST['email']));
     $password = mysqli_real_escape_string($conn, $_POST['password']);
@@ -92,6 +98,7 @@ if(isset($_POST['register'])){
         error_log('Register failed: ' . mysqli_error($conn));
         $error = "สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
     }
+    }
 }
 
 $selected_role = $_POST['role'] ?? ($_GET['role'] ?? 'freelancer');
@@ -155,24 +162,80 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
     bottom:-60px; left:-60px;
   }
 
-  .brand { display:flex; align-items:center; gap:12px; z-index:1; text-decoration:none; }
-  .brand-icon { width:44px; height:44px; border-radius:12px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; }
+  .brand { display:flex; align-items:center; justify-content:center; gap:12px; z-index:1; text-decoration:none; }
+  .brand-icon {
+    width:132px;
+    height:120px;
+    flex:0 0 120px;
+    border-radius:0;
+    background:transparent;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+    color:#fff;
+    overflow:hidden;
+    padding:0;
+    box-shadow:none;
+  }
+  .brand-icon img { width:100%; height:100%; object-fit:contain; display:block; }
   .brand-name { font-size:20px; font-weight:700; color:#fff; }
   .brand-sub  { font-size:12px; color:#94a3b8; }
+  .brand > div:not(.brand-icon) { display:none; }
 
   .left-content { z-index:1; }
   .left-content h2 { font-size:26px; font-weight:700; color:#fff; line-height:1.3; margin-bottom:14px; }
   .left-content p  { font-size:14px; color:#94a3b8; line-height:1.8; }
+  .left-kicker {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    min-height:32px;
+    margin-bottom:18px;
+    padding:0 11px;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:999px;
+    background:rgba(255,255,255,.06);
+    color:#c7d2fe;
+    font-size:12px;
+    font-weight:800;
+  }
 
   /* Role cards */
   .role-cards { margin-top:28px; display:flex; flex-direction:column; gap:12px; }
-  .role-card { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:14px 16px; }
-  .role-card .rc-title { font-size:13.5px; font-weight:600; color:#e2e8f0; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
-  .role-card .rc-title span { font-size:18px; }
+  .role-card {
+    display:grid;
+    grid-template-columns:38px 1fr;
+    align-items:center;
+    gap:12px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;
+    padding:14px 16px;
+  }
+  .role-card .rc-icon {
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.07);
+    color:#a5b4fc;
+    font-size:16px;
+  }
+  .role-card .rc-title { font-size:13.5px; font-weight:700; color:#e2e8f0; margin-bottom:4px; display:block; }
   .role-card .rc-desc  { font-size:12px; color:#64748b; line-height:1.6; }
 
   .left-footer { z-index:1; }
-  .left-footer p { font-size:12px; color:#475569; }
+  .left-footer {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .left-footer p { font-size:12px; color:#475569; margin:0; font-weight:600; }
 
   /* ── Right panel ── */
   .right-panel { flex:1; padding:34px 38px; display:flex; flex-direction:column; justify-content:flex-start; overflow-y:auto; }
@@ -268,10 +331,81 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 </style>
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
 <style>
+  .register-wrap > .left-panel {
+    background:var(--navy) !important;
+  }
+  .register-wrap > .left-panel::before,
+  .register-wrap > .left-panel::after {
+    display:block !important;
+  }
+  .register-wrap > .left-panel::before {
+    content:'' !important;
+    position:absolute !important;
+    width:300px !important;
+    height:300px !important;
+    border-radius:50% !important;
+    background:rgba(99,102,241,.15) !important;
+    top:-80px !important;
+    right:-80px !important;
+  }
+  .register-wrap > .left-panel::after {
+    content:'' !important;
+    position:absolute !important;
+    width:200px !important;
+    height:200px !important;
+    border-radius:50% !important;
+    background:rgba(99,102,241,.10) !important;
+    bottom:-60px !important;
+    left:-60px !important;
+  }
+  .register-wrap > .left-panel > .brand {
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:12px !important;
+  }
+  .register-wrap > .left-panel > .brand .brand-icon {
+    width:132px !important;
+    height:120px !important;
+    min-width:132px !important;
+    max-width:132px !important;
+    max-height:120px !important;
+    flex:0 0 120px !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    box-shadow:none !important;
+    margin:0 auto !important;
+    align-self:center !important;
+  }
+  .register-wrap > .left-panel .left-kicker {
+    color:#c7d2fe !important;
+    background:rgba(255,255,255,.06) !important;
+    border-color:rgba(255,255,255,.14) !important;
+  }
   .register-wrap > .left-panel .left-content h2 {
     color:#ffffff !important;
     -webkit-text-fill-color:#ffffff !important;
     text-shadow:0 2px 16px rgba(0,0,0,.45);
+  }
+  .register-wrap > .left-panel .left-content p,
+  .register-wrap > .left-panel .role-card .rc-desc {
+    color:#94a3b8 !important;
+  }
+  .register-wrap > .left-panel .role-card {
+    grid-template-columns:38px 1fr !important;
+    background:rgba(255,255,255,.06) !important;
+    border-color:rgba(255,255,255,.10) !important;
+    border-radius:12px !important;
+    padding:14px 16px !important;
+  }
+  .register-wrap > .left-panel .role-card .rc-title {
+    color:#e2e8f0 !important;
+    font-weight:700 !important;
+  }
+  .register-wrap > .left-panel .left-footer p {
+    color:#475569 !important;
   }
 </style>
 
@@ -283,31 +417,39 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
   <!-- ── Left Panel ── -->
   <div class="left-panel">
     <a class="brand" href="index.php" aria-label="Job_Find home">
-      <div class="brand-icon" style="width:132px!important;height:120px!important;min-width:132px!important;max-width:132px!important;max-height:120px!important;flex:0 0 120px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;margin:0 auto!important;align-self:center!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo"></div>
       <div>
-        <div class="brand-name" style="display:none!important;">Job_Find</div>
-        <div class="brand-sub" style="display:none!important;">แพลตฟอร์มหางาน Freelance</div>
+        <div class="brand-name">Job_Find</div>
+        <div class="brand-sub">หางานที่ใช่ ได้งานที่ชอบ</div>
       </div>
     </a>
 
     <div class="left-content">
-      <h2>เริ่มต้นกับเรา วันนี้ 🚀</h2>
-      <p>สมัครฟรี เริ่มหางานหรือโพสต์งานได้ทันที ไม่มีค่าใช้จ่ายแอบแฝง</p>
+      <div class="left-kicker"><i class="bi bi-person-plus"></i> New Account</div>
+      <h2>เริ่มต้นกับเรา วันนี้</h2>
+      <p>สร้างบัญชีเพื่อเริ่มหางานหรือโพสต์งาน พร้อมจัดการโปรไฟล์และพื้นที่ทำงานของคุณ</p>
 
       <div class="role-cards">
         <div class="role-card">
-          <div class="rc-title"><span>💼</span> Freelancer</div>
-          <div class="rc-desc">หางานที่ใช่ อัปโหลด Resume รับรีวิวจาก Employer</div>
+          <span class="rc-icon"><i class="bi bi-briefcase"></i></span>
+          <div>
+            <div class="rc-title">Freelancer</div>
+            <div class="rc-desc">หางานที่ใช่ อัปโหลด Resume และรับรีวิวจาก Employer</div>
+          </div>
         </div>
         <div class="role-card">
-          <div class="rc-title"><span>🏢</span> Employer</div>
-          <div class="rc-desc">โพสต์งาน คัดเลือก Freelancer รีวิวคนที่ทำงานด้วย</div>
+          <span class="rc-icon"><i class="bi bi-building"></i></span>
+          <div>
+            <div class="rc-title">Employer</div>
+            <div class="rc-desc">โพสต์งาน คัดเลือก Freelancer และรีวิวคนที่ทำงานด้วย</div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="left-footer">
-      <p>© 2026 Job_Find. All rights reserved.</p>
+      <p><i class="bi bi-house-door"></i> กดโลโก้เพื่อกลับหน้าแรก</p>
+      <p>© 2026</p>
     </div>
   </div>
 
