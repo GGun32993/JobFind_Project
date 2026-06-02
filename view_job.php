@@ -117,7 +117,7 @@ $employer_js_data = [
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=7">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=9">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($job['title']); ?> - Job_Find</title>
@@ -1083,7 +1083,7 @@ $employer_js_data = [
 <aside class="sidebar">
     <div class="sidebar-brand">
         <a href="index.php" class="logo">
-            <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=7" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+            <div class="logo-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=9" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
             <div>
                 <div class="logo-text">Job_Find</div>
                 <div class="logo-sub">Freelancer</div>

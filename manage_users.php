@@ -31,7 +31,7 @@ ORDER BY user_id DESC
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=7">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=9">
 
 <title>Manage Users</title>
 

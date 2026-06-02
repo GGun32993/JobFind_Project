@@ -117,13 +117,13 @@ a:hover {
 }
 
 .sidebar-brand .logo-icon {
-  width: 180px !important;
-  height: 180px !important;
-  min-width: 180px !important;
-  max-width: 180px !important;
-  max-height: 180px !important;
-  flex: 0 0 180px !important;
-  border-radius: 16px !important;
+  width: 160px !important;
+  height: 240px !important;
+  min-width: 160px !important;
+  max-width: 160px !important;
+  max-height: 240px !important;
+  flex: 0 0 240px !important;
+  border-radius: 0 !important;
   padding: 0 !important;
   box-shadow: 0 18px 36px rgba(15, 23, 42, .22);
 }
@@ -140,12 +140,12 @@ a:hover {
 
 .left-panel > .brand .brand-icon {
   width: 180px !important;
-  height: 180px !important;
+  height: 270px !important;
   min-width: 180px !important;
   max-width: 180px !important;
-  max-height: 180px !important;
-  flex: 0 0 180px !important;
-  border-radius: 16px !important;
+  max-height: 270px !important;
+  flex: 0 0 270px !important;
+  border-radius: 0 !important;
   background: #ffffff !important;
   padding: 0 !important;
   overflow: hidden !important;

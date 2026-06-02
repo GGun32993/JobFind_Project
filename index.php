@@ -287,7 +287,7 @@ $pinStatusText = $hasLocationPin
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=7">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=9">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Job_Find แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
@@ -348,9 +348,9 @@ $pinStatusText = $hasLocationPin
   }
 
   .shell .brand-icon {
-    width: 96px;
-    height: 96px;
-    border-radius: 16px;
+    width: 76px;
+    height: 114px;
+    border-radius: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1144,7 +1144,7 @@ $pinStatusText = $hasLocationPin
   <nav class="top-nav">
     <div class="container nav-inner">
       <a class="brand" href="index.php" aria-label="Job_Find home">
-        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=7" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
+        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=9" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
         <span class="brand-name">Job_Find</span>
       </a>
 
