@@ -1,9 +1,9 @@
 <?php
 define('JOBFIND_ALLOW_DB_FAILURE', true);
-require_once __DIR__ . "/config.php";
-require_once __DIR__ . "/job_image_helpers.php";
-require_once __DIR__ . "/location_schema.php";
-require_once __DIR__ . "/category_helpers.php";
+require_once __DIR__ . "/config/config.php";
+require_once __DIR__ . "/helpers/job_image_helpers.php";
+require_once __DIR__ . "/helpers/location_schema.php";
+require_once __DIR__ . "/helpers/category_helpers.php";
 
 $titleSearch = trim($_GET['title'] ?? '');
 $locationSearch = trim($_GET['location'] ?? '');
@@ -92,9 +92,9 @@ function initials($name){
 
 function dashboard_for_role($role){
     $targets = [
-        'admin' => 'admin_dashboard.php',
-        'employer' => 'employer_dashboard.php',
-        'freelancer' => 'freelancer_dashboard.php',
+        'admin' => 'admin/dashboard.php',
+        'employer' => 'employer/dashboard.php',
+        'freelancer' => 'freelancer/dashboard.php',
     ];
 
     return $targets[$role] ?? 'login.php';
@@ -102,9 +102,9 @@ function dashboard_for_role($role){
 
 function account_profile_for_role($role){
     $targets = [
-        'admin' => 'admin_dashboard.php',
-        'employer' => 'employer_profile.php',
-        'freelancer' => 'my_profile.php',
+        'admin' => 'admin/dashboard.php',
+        'employer' => 'employer/profile.php',
+        'freelancer' => 'freelancer/profile.php',
     ];
 
     return $targets[$role] ?? 'login.php';
@@ -154,10 +154,10 @@ $primaryCtaText = $isLoggedIn ? 'ไปที่แดชบอร์ด' : 'เ
 $secondaryCtaUrl = $isLoggedIn ? $accountProfileUrl : 'login.php';
 $secondaryCtaText = $isLoggedIn ? 'จัดการบัญชีของฉัน' : 'เข้าสู่ระบบ';
 $freelancerStartUrl = $role === 'freelancer'
-    ? 'browse_jobs.php'
+    ? 'freelancer/browse_jobs.php'
     : ($isLoggedIn ? $dashboardUrl : 'register.php?role=freelancer');
 $employerStartUrl = $role === 'employer'
-    ? 'post_job.php'
+    ? 'employer/post_job.php'
     : ($isLoggedIn ? $dashboardUrl : 'register.php?role=employer');
 
 $categories = [];
@@ -1720,13 +1720,13 @@ $pinStatusText = $hasLocationPin
           <?php
             $jobImage = trim($job['job_image'] ?? '');
             $jobHref = $role === 'freelancer'
-              ? 'view_job.php?job_id=' . urlencode($job['job_id']) . '&return_url=' . urlencode('index.php')
+              ? 'freelancer/view_job.php?job_id=' . urlencode($job['job_id']) . '&return_url=' . urlencode('index.php')
               : 'login.php';
           ?>
           <article class="job-card">
             <div class="job-media">
               <?php if($jobImage !== ''): ?>
-                <img src="<?php echo e($jobImage); ?>" alt="<?php echo e($job['title']); ?>">
+                <img src="<?php echo e(jobfind_url($jobImage)); ?>" alt="<?php echo e($job['title']); ?>">
               <?php else: ?>
                 <div class="job-media-fallback"><?php echo e(category_icon($job['category'])); ?></div>
               <?php endif; ?>
@@ -1774,7 +1774,7 @@ $pinStatusText = $hasLocationPin
           <article class="company-card">
             <div class="company-avatar">
               <?php if(trim($company['profile_image'] ?? '') !== ''): ?>
-                <img src="<?php echo e($company['profile_image']); ?>" alt="<?php echo e($company['name']); ?>">
+                <img src="<?php echo e(jobfind_url($company['profile_image'])); ?>" alt="<?php echo e($company['name']); ?>">
               <?php else: ?>
                 <?php echo e(initials($company['name'])); ?>
               <?php endif; ?>

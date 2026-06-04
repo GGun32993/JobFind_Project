@@ -1,17 +1,17 @@
 <?php
 session_start();
 define('JOBFIND_ALLOW_DB_FAILURE', true);
-require_once __DIR__ . "/config.php";
-require_once "location_schema.php";
+require_once __DIR__ . "/config/config.php";
+require_once __DIR__ . "/helpers/location_schema.php";
 
 if($conn){
     ensure_location_schema($conn);
 }
 
 if(isset($_SESSION['role'])){
-    if($_SESSION['role']=="admin")      { header("Location: admin_dashboard.php");      exit(); }
-    if($_SESSION['role']=="employer")   { header("Location: employer_dashboard.php");   exit(); }
-    if($_SESSION['role']=="freelancer") { header("Location: freelancer_dashboard.php"); exit(); }
+    if($_SESSION['role']=="admin")      { header("Location: admin/dashboard.php");      exit(); }
+    if($_SESSION['role']=="employer")   { header("Location: employer/dashboard.php");   exit(); }
+    if($_SESSION['role']=="freelancer") { header("Location: freelancer/dashboard.php"); exit(); }
 }
 
 $error   = '';
@@ -23,7 +23,8 @@ if(isset($_POST['register'])){
     } else {
     $username = mysqli_real_escape_string($conn, trim($_POST['username']));
     $email    = mysqli_real_escape_string($conn, trim($_POST['email']));
-    $password = mysqli_real_escape_string($conn, $_POST['password']);
+    $password_plain = $_POST['password'] ?? '';
+    $password = mysqli_real_escape_string($conn, password_hash($password_plain, PASSWORD_DEFAULT));
     $fullname = mysqli_real_escape_string($conn, trim($_POST['fullname']));
     $phone    = mysqli_real_escape_string($conn, trim($_POST['phone']));
     $role_raw = $_POST['role'] ?? 'freelancer';
@@ -58,8 +59,11 @@ if(isset($_POST['register'])){
     $radius_sql = sprintf('%.2F', $preferred_radius_km);
 
     // check duplicate username / email
+    if(strlen($password_plain) < 6){
+        $error = "Password must be at least 6 characters.";
+    } else {
     $dup = mysqli_query($conn,"SELECT user_id FROM users WHERE username='$username' OR email='$email'");
-    if(mysqli_num_rows($dup) > 0){
+    if($dup && mysqli_num_rows($dup) > 0){
         $error = "Username หรือ Email นี้ถูกใช้งานแล้ว";
     } else {
         mysqli_begin_transaction($conn);
@@ -97,6 +101,7 @@ if(isset($_POST['register'])){
         mysqli_rollback($conn);
         error_log('Register failed: ' . mysqli_error($conn));
         $error = "สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+    }
     }
     }
 }

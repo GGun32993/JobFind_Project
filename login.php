@@ -5,9 +5,9 @@ if(session_status() === PHP_SESSION_NONE){
 
 function login_target_for_role($role){
     $targets = [
-        "admin" => "admin_dashboard.php",
-        "employer" => "employer_dashboard.php",
-        "freelancer" => "freelancer_dashboard.php"
+        "admin" => "admin/dashboard.php",
+        "employer" => "employer/dashboard.php",
+        "freelancer" => "freelancer/dashboard.php"
     ];
 
     return $targets[$role] ?? null;
@@ -32,7 +32,7 @@ $error = '';
 
 if(isset($_POST['login'])){
     define('JOBFIND_ALLOW_DB_FAILURE', true);
-    require_once __DIR__ . "/config.php";
+    require_once __DIR__ . "/config/config.php";
 
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
