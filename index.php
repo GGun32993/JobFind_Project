@@ -1524,13 +1524,14 @@ $pinStatusText = $hasLocationPin
     .category-tile-title { font-size: 16px; }
   }
 </style>
+<link rel="stylesheet" href="assets/css/index-modern.css?v=20260608">
 </head>
 <body>
 <div class="shell">
   <nav class="top-nav">
     <div class="container nav-inner">
       <a class="brand" href="index.php" aria-label="Job_Find home">
-        <span class="brand-icon" style="width:56px!important;height:52px!important;min-width:56px!important;max-width:56px!important;max-height:52px!important;flex:0 0 52px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;margin:0 auto!important;align-self:center!important;"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></span>
+        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo"></span>
         <span class="brand-name" style="display:none!important;">Job_Find</span>
       </a>
 
