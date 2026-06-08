@@ -3,11 +3,12 @@ session_start();
 require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/location_helpers.php";
-require_once __DIR__ . "/../helpers/job_image_helpers.php";
+require_once __DIR__ . "/../helpers/category_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/review_schema.php";
 
-ensure_job_image_schema($conn);
+ensure_category_schema($conn);
+ensure_default_job_categories($conn);
 ensure_profile_image_schema($conn);
 ensure_freelancer_review_schema($conn);
 
@@ -159,54 +160,54 @@ $popular_jobs = mysqli_query($conn,"
 ");
 
 $most_applied_jobs = mysqli_query($conn,"
-    SELECT summary.category,
-           summary.total_jobs,
-           summary.applicant_count,
-           summary.freelancer_count,
-           summary.latest_job_at,
-           top_job.job_id AS top_job_id,
-           top_job.title AS top_job_title,
+    SELECT j.job_id,
+           j.title,
+           COALESCE(NULLIF(j.category,''), 'ไม่ระบุ') AS category,
+           COALESCE(NULLIF(j.job_subcategory,''), 'ไม่ระบุ') AS job_subcategory,
+           COUNT(ja.application_id) AS applicant_count,
+           COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
            COALESCE(
-               (
-                   SELECT ji.image_path
-                   FROM Job_Images ji
-                   WHERE ji.job_id = top_job.job_id
-                   ORDER BY ji.sort_order ASC, ji.image_id ASC
+               NULLIF((
+                   SELECT c.icon
+                   FROM Job_Subcategories js
+                   JOIN Categories c ON c.category_id = js.category_id
+                   WHERE js.name = j.job_subcategory
+                   ORDER BY CASE WHEN c.name = j.category THEN 0 ELSE 1 END, js.subcategory_id ASC
                    LIMIT 1
-               ),
-               top_job.image_path,
-               ''
-           ) AS job_image
-    FROM (
-        SELECT COALESCE(NULLIF(j.category,''), 'ไม่ระบุ') AS category,
-               COUNT(DISTINCT j.job_id) AS total_jobs,
-               COUNT(ja.application_id) AS applicant_count,
-               COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
-               MAX(j.created_at) AS latest_job_at
-        FROM Job j
-        JOIN Job_Application ja ON ja.job_id = j.job_id
-        WHERE j.admin_status='approved'
-        GROUP BY COALESCE(NULLIF(j.category,''), 'ไม่ระบุ')
-    ) summary
-    LEFT JOIN Job top_job ON top_job.job_id = (
-        SELECT j2.job_id
-        FROM Job j2
-        JOIN Job_Application ja2 ON ja2.job_id = j2.job_id
-        WHERE j2.admin_status='approved'
-          AND COALESCE(NULLIF(j2.category,''), 'ไม่ระบุ') = summary.category
-        GROUP BY j2.job_id, j2.created_at
-        ORDER BY COUNT(ja2.application_id) DESC, j2.created_at DESC, j2.job_id DESC
-        LIMIT 1
-    )
-    ORDER BY summary.applicant_count DESC, summary.total_jobs DESC, summary.latest_job_at DESC
+               ), ''),
+               NULLIF((
+                   SELECT c.icon
+                   FROM Categories c
+                   WHERE c.name = j.category
+                   LIMIT 1
+               ), ''),
+               '💼'
+           ) AS category_icon,
+           COALESCE(
+               NULLIF((
+                   SELECT c.name
+                   FROM Job_Subcategories js
+                   JOIN Categories c ON c.category_id = js.category_id
+                   WHERE js.name = j.job_subcategory
+                   ORDER BY CASE WHEN c.name = j.category THEN 0 ELSE 1 END, js.subcategory_id ASC
+                   LIMIT 1
+               ), ''),
+               NULLIF(j.category, ''),
+               'ไม่ระบุ'
+           ) AS category_name
+    FROM Job j
+    JOIN Job_Application ja ON ja.job_id = j.job_id
+    WHERE j.admin_status='approved'
+    GROUP BY j.job_id, j.title, j.category, j.job_subcategory, j.created_at
+    ORDER BY applicant_count DESC, freelancer_count DESC, j.created_at DESC, j.job_id DESC
     LIMIT 5
 ");
 
 $most_applied_jobs_list = [];
 if($most_applied_jobs){
     while($row = mysqli_fetch_assoc($most_applied_jobs)){
+        $row['job_id'] = (int)$row['job_id'];
         $row['applicant_count'] = (int)$row['applicant_count'];
-        $row['total_jobs'] = (int)$row['total_jobs'];
         $row['freelancer_count'] = (int)$row['freelancer_count'];
         $most_applied_jobs_list[] = $row;
     }
@@ -606,7 +607,6 @@ $most_applied_count = count($most_applied_jobs_list);
     display: flex; align-items: center; justify-content: center;
     font-size: 17px; flex-shrink: 0; overflow:hidden;
   }
-  .popular-avatar.has-image { background:#fff; color:transparent; }
   .popular-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .popular-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .popular-stats { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1010,33 +1010,26 @@ $most_applied_count = count($most_applied_jobs_list);
     <div class="popular-list">
       <?php
         $rank = 1;
-        $categoryIcons = ['IT' => '💻', 'Design' => '🎨', 'Marketing' => '📢', 'Accounting' => '💰', 'Programmer' => '💻', 'Data Analyst' => '📊', 'Cyber Security' => '🛡️', 'AI Engineer' => '🤖'];
-        foreach($most_applied_jobs_list as $category_rank):
-          $category = $category_rank['category'] ?? 'ไม่ระบุ';
-          $categoryUrl = ($category !== 'ไม่ระบุ')
-              ? 'browse_jobs.php?category=' . urlencode($category)
-              : 'browse_jobs.php';
-          $category_icon = $categoryIcons[$category] ?? '📁';
-          $job_image = trim($category_rank['job_image'] ?? '');
-          $top_job_title = trim($category_rank['top_job_title'] ?? '');
-          $image_alt = $top_job_title !== '' ? $top_job_title : $category;
+        foreach($most_applied_jobs_list as $job_rank):
+          $job_id = (int)($job_rank['job_id'] ?? 0);
+          $job_title = trim($job_rank['title'] ?? '');
+          $job_title = $job_title !== '' ? $job_title : 'Untitled Job';
+          $job_url = $job_id > 0 ? 'view_job.php?id=' . $job_id : 'browse_jobs.php';
+          $category_icon = trim($job_rank['category_icon'] ?? '');
+          $category_icon = $category_icon !== '' ? $category_icon : '💼';
+          $category_name = trim($job_rank['category_name'] ?? ($job_rank['category'] ?? ''));
+          $job_subcategory = trim($job_rank['job_subcategory'] ?? '');
       ?>
-      <a href="<?php echo htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8'); ?>" class="popular-item">
+      <a href="<?php echo htmlspecialchars($job_url, ENT_QUOTES, 'UTF-8'); ?>" class="popular-item">
         <div class="popular-top">
           <div class="popular-rank"><?php echo $rank; ?></div>
-          <div class="popular-avatar<?php echo $job_image !== '' ? ' has-image' : ''; ?>"<?php echo $job_image === '' ? ' style="font-size: 24px;"' : ''; ?>>
-            <?php if($job_image !== ''): ?>
-              <img src="<?php echo job_image_src($job_image); ?>" alt="<?php echo htmlspecialchars($image_alt, ENT_QUOTES, 'UTF-8'); ?>">
-            <?php else: ?>
-              <?php echo $category_icon; ?>
-            <?php endif; ?>
-          </div>
-          <div class="popular-name"><?php echo htmlspecialchars($category); ?></div>
+          <div class="popular-avatar" style="font-size: 24px;"><?php echo htmlspecialchars($category_icon, ENT_QUOTES, 'UTF-8'); ?></div>
+          <div class="popular-name"><?php echo htmlspecialchars($job_title); ?></div>
         </div>
         <div class="popular-stats">
-          <span class="popular-pill"><i class="bi bi-people-fill"></i><?php echo (int)$category_rank['applicant_count']; ?> ผู้สมัคร</span>
-          <span class="popular-pill"><i class="bi bi-briefcase"></i><?php echo (int)$category_rank['total_jobs']; ?> งาน</span>
-          <span class="popular-pill"><i class="bi bi-person-check-fill"></i><?php echo (int)$category_rank['freelancer_count']; ?> คน</span>
+          <span class="popular-pill"><i class="bi bi-people-fill"></i><?php echo (int)$job_rank['applicant_count']; ?> ผู้สมัคร</span>
+          <span class="popular-pill"><i class="bi bi-person-check-fill"></i><?php echo (int)$job_rank['freelancer_count']; ?> คน</span>
+          <span class="popular-pill"><i class="bi bi-diagram-3"></i><?php echo htmlspecialchars($job_subcategory !== '' ? $job_subcategory : $category_name); ?></span>
         </div>
       </a>
       <?php $rank++; endforeach; ?>
