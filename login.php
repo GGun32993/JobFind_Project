@@ -33,6 +33,7 @@ $error = '';
 if(isset($_POST['login'])){
     define('JOBFIND_ALLOW_DB_FAILURE', true);
     require_once __DIR__ . "/config/config.php";
+    require_once __DIR__ . "/helpers/password_helpers.php";
 
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -62,23 +63,12 @@ if(isset($_POST['login'])){
                 mysqli_stmt_store_result($stmt);
                 mysqli_stmt_bind_result($stmt, $user_id, $username, $role, $stored_password);
                 $found = mysqli_stmt_fetch($stmt);
-                $stored_password = (string)$stored_password;
-                $password_ok = false;
                 $should_rehash_password = false;
-
-                if($found){
-                    if(password_verify($password, $stored_password)){
-                        $password_ok = true;
-                        $should_rehash_password = password_needs_rehash($stored_password, PASSWORD_DEFAULT);
-                    } elseif(hash_equals($stored_password, (string)$password)){
-                        $password_ok = true;
-                        $should_rehash_password = true;
-                    }
-                }
+                $password_ok = $found && jobfind_verify_password($password, $stored_password, $should_rehash_password);
 
                 if($password_ok && login_target_for_role($role)){
                     if($should_rehash_password){
-                        $new_hash = password_hash($password, PASSWORD_DEFAULT);
+                        $new_hash = jobfind_hash_password($password);
                         $update_stmt = mysqli_prepare($conn, "UPDATE Users SET password=? WHERE user_id=?");
                         if($update_stmt){
                             mysqli_stmt_bind_param($update_stmt, "si", $new_hash, $user_id);

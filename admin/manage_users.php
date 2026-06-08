@@ -4,6 +4,7 @@ require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/support_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
+require_once __DIR__ . "/../helpers/password_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
 require_once __DIR__ . "/../helpers/review_schema.php";
@@ -207,10 +208,11 @@ if(isset($_POST['add_user'])){
     $un   = mysqli_real_escape_string($conn, trim($_POST['username']));
     $em   = mysqli_real_escape_string($conn, trim($_POST['email']));
     $password_plain = $_POST['password'] ?? '';
-    $pw   = mysqli_real_escape_string($conn, password_hash($password_plain, PASSWORD_DEFAULT));
     $fn   = mysqli_real_escape_string($conn, trim($_POST['fullname']));
     $ph   = mysqli_real_escape_string($conn, trim($_POST['phone']));
-    $role = mysqli_real_escape_string($conn, $_POST['role']);
+    $role_raw = $_POST['role'] ?? 'freelancer';
+    $role = in_array($role_raw, ['admin', 'employer', 'freelancer'], true) ? $role_raw : 'freelancer';
+    $role = mysqli_real_escape_string($conn, $role);
 
     $dup = mysqli_fetch_assoc(mysqli_query($conn,"SELECT user_id FROM Users WHERE username='$un' OR email='$em'"));
     if(strlen($password_plain) < 6){
@@ -218,6 +220,7 @@ if(isset($_POST['add_user'])){
     } elseif($dup){
         $toast = 'dup';
     } else {
+        $pw = mysqli_real_escape_string($conn, jobfind_hash_password($password_plain));
         mysqli_query($conn,"
             INSERT INTO Users (username,email,password,fullname,phone,role)
             VALUES ('$un','$em','$pw','$fn','$ph','$role')
