@@ -13,7 +13,7 @@ $searchRadiusKm = isset($_GET['preferred_radius_km']) && is_numeric($_GET['prefe
     ? max(1, min(300, (float)$_GET['preferred_radius_km']))
     : 30;
 $hasLocationPin = $searchLat !== null && $searchLng !== null;
-$dbError = $conn ? '' : ($db_error ?: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ในขณะนี้');
+$dbError = $conn ? '' : 'ไม่สามารถโหลดข้อมูลงานได้ในขณะนี้ กรุณาลองใหม่อีกครั้งภายหลัง';
 
 function e($value){
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
