@@ -1,31 +1,27 @@
 <?php
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/review_schema.php";
 
 ensure_profile_image_schema($conn);
 ensure_freelancer_review_schema($conn);
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$freelancer_id = $_SESSION['user_id'];
+$freelancer_id = jobfind_require_role('freelancer');
 
 $query = mysqli_query($conn,"
     SELECT
-        freelancer_review.*,
+        Freelancer_Review.*,
         COALESCE(ep.employer_name, u.username) AS employer_name,
         u.username AS employer_username,
         u.profile_image AS employer_profile_image,
-        job.title
-    FROM freelancer_review
-    JOIN users u ON u.user_id = freelancer_review.employer_id
-    LEFT JOIN employer_profile ep ON ep.user_id = freelancer_review.employer_id
-    LEFT JOIN job ON job.job_id = freelancer_review.job_id
-    WHERE freelancer_review.freelancer_id='$freelancer_id'
-    ORDER BY freelancer_review.created_at DESC
+        Job.title
+    FROM Freelancer_Review
+    JOIN Users u ON u.user_id = Freelancer_Review.employer_id
+    LEFT JOIN Employer_Profile ep ON ep.user_id = Freelancer_Review.employer_id
+    LEFT JOIN Job ON Job.job_id = Freelancer_Review.job_id
+    WHERE Freelancer_Review.freelancer_id='$freelancer_id'
+    ORDER BY Freelancer_Review.created_at DESC
 ");
 
 // pre-fetch for stats

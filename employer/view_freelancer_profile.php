@@ -1,20 +1,19 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 
 ensure_profile_image_schema($conn);
 
-if(!isset($_SESSION['user_id']) || ($_SESSION['role']!="employer" && $_SESSION['role']!="admin")){
-    exit("Access denied");
-}
+jobfind_require_any_role(['employer', 'admin']);
 
 $freelancer_id = intval($_GET['id'] ?? 0);
 
 // ดึงข้อมูล User
 $user = mysqli_fetch_assoc(mysqli_query($conn, "
     SELECT fullname, email, phone, username, profile_image
-    FROM users 
+    FROM Users
     WHERE user_id='$freelancer_id' AND role='freelancer'
 "));
 
@@ -25,14 +24,14 @@ if(!$user){
 
 // ดึงข้อมูล Freelancer Profile
 $profile = mysqli_fetch_assoc(mysqli_query($conn, "
-    SELECT * FROM freelancer_profile 
+    SELECT * FROM Freelancer_Profile
     WHERE user_id='$freelancer_id'
 "));
 
 // ดึง Rating - แก้เป็น score
 $rating_data = mysqli_fetch_assoc(mysqli_query($conn, "
-    SELECT AVG(score) as avg_rating, COUNT(*) as count 
-    FROM freelancer_rating 
+    SELECT AVG(score) as avg_rating, COUNT(*) as count
+    FROM Freelancer_Rating
     WHERE freelancer_id='$freelancer_id'
 "));
 

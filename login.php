@@ -44,7 +44,7 @@ if(isset($_POST['login'])){
     } else {
         $stmt = mysqli_prepare($conn, "
             SELECT user_id, username, role, password
-            FROM users
+            FROM Users
             WHERE email=?
             LIMIT 1
         ");

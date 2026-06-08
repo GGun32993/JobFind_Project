@@ -172,14 +172,14 @@ if($conn){
     ensure_category_schema($conn);
     ensure_default_job_categories($conn);
 
-    if(table_exists($conn, 'categories')){
+    if(table_exists($conn, 'Categories')){
         $categoryOrder = jobfind_category_order_clause($conn, 'c.name', 'c.category_id');
         $categories = db_fetch_all($conn, "
             SELECT c.name,
                    c.icon,
                    COUNT(j.job_id) AS jobs
-            FROM categories c
-            LEFT JOIN job j ON j.category = c.name
+            FROM Categories c
+            LEFT JOIN Job j ON j.category = c.name
                 AND j.admin_status = 'approved'
                 AND COALESCE(NULLIF(j.status,''), 'open') != 'closed'
             GROUP BY c.category_id, c.name, c.icon
@@ -192,7 +192,7 @@ if($conn){
         $categories = db_fetch_all($conn, "
             SELECT COALESCE(NULLIF(category,''), 'Other') AS name,
                    COUNT(*) AS jobs
-            FROM job
+            FROM Job
             WHERE admin_status = 'approved'
               AND COALESCE(NULLIF(status,''), 'open') != 'closed'
             GROUP BY COALESCE(NULLIF(category,''), 'Other')
@@ -246,14 +246,14 @@ if($conn){
                j.category,
                j.created_at,
                COALESCE(
-                   (SELECT ji.image_path FROM job_images ji WHERE ji.job_id = j.job_id ORDER BY ji.sort_order ASC, ji.image_id ASC LIMIT 1),
+                   (SELECT ji.image_path FROM Job_Images ji WHERE ji.job_id = j.job_id ORDER BY ji.sort_order ASC, ji.image_id ASC LIMIT 1),
                    j.image_path
                ) AS job_image
                $distanceSelect,
                COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS company
-        FROM job j
-        JOIN users u ON u.user_id = j.employer_id
-        LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
+        FROM Job j
+        JOIN Users u ON u.user_id = j.employer_id
+        LEFT JOIN Employer_Profile ep ON ep.user_id = u.user_id
         WHERE " . implode(' AND ', $jobWhere) . "
         ORDER BY $jobOrder
         LIMIT 6
@@ -265,9 +265,9 @@ if($conn){
                COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS name,
                COALESCE(NULLIF(ep.employer_description,''), 'ผู้ว่าจ้างในระบบ Job_Find') AS description,
                COUNT(j.job_id) AS jobs
-        FROM users u
-        LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
-        LEFT JOIN job j ON j.employer_id = u.user_id
+        FROM Users u
+        LEFT JOIN Employer_Profile ep ON ep.user_id = u.user_id
+        LEFT JOIN Job j ON j.employer_id = u.user_id
             AND j.admin_status = 'approved'
             AND COALESCE(NULLIF(j.status,''), 'open') != 'closed'
         WHERE u.role = 'employer'
@@ -277,9 +277,9 @@ if($conn){
     ");
 
     $stats = [
-        'jobs' => db_count($conn, "SELECT COUNT(*) AS c FROM job WHERE admin_status = 'approved'"),
-        'employers' => db_count($conn, "SELECT COUNT(*) AS c FROM users WHERE role = 'employer'"),
-        'freelancers' => db_count($conn, "SELECT COUNT(*) AS c FROM users WHERE role = 'freelancer'"),
+        'jobs' => db_count($conn, "SELECT COUNT(*) AS c FROM Job WHERE admin_status = 'approved'"),
+        'employers' => db_count($conn, "SELECT COUNT(*) AS c FROM Users WHERE role = 'employer'"),
+        'freelancers' => db_count($conn, "SELECT COUNT(*) AS c FROM Users WHERE role = 'freelancer'"),
     ];
 }
 

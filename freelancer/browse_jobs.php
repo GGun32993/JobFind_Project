@@ -1,14 +1,10 @@
 <?php
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
 require_once __DIR__ . "/../helpers/category_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$user_id = $_SESSION['user_id'];
+$user_id = jobfind_require_role('freelancer');
 ensure_location_schema($conn);
 ensure_category_schema($conn);
 ensure_default_job_categories($conn);
@@ -18,9 +14,8 @@ $selected_category = isset($_GET['category']) ? trim($_GET['category']) : '';
 
 // ดึง categories จาก DB
 $browse_cats = [];
-$cat_check = mysqli_query($conn,"SHOW TABLES LIKE 'categories'");
-if($cat_check && mysqli_num_rows($cat_check) > 0){
-    $cat_res = mysqli_query($conn,"SELECT * FROM categories ORDER BY " . jobfind_category_order_clause($conn));
+if(jobfind_category_table_exists($conn, 'Categories')){
+    $cat_res = mysqli_query($conn,"SELECT * FROM Categories ORDER BY " . jobfind_category_order_clause($conn));
     while($c = mysqli_fetch_assoc($cat_res)) $browse_cats[] = $c;
 }
 if(empty($browse_cats)){
@@ -29,7 +24,7 @@ if(empty($browse_cats)){
 
 // ── ปิดงานที่ deadline ผ่านแล้วอัตโนมัติ (ทุกครั้งที่หน้าโหลด) ──
 mysqli_query($conn,"
-    UPDATE job SET status='closed'
+    UPDATE Job SET status='closed'
     WHERE deadline IS NOT NULL
     AND deadline != ''
     AND deadline < CURDATE()
@@ -38,7 +33,7 @@ mysqli_query($conn,"
 
 $query = "
     SELECT *
-    FROM job
+    FROM Job
     WHERE admin_status='approved'
     AND status!='closed'
     ORDER BY created_at DESC
@@ -416,7 +411,7 @@ $result = mysqli_query($conn, $query);
       $employer_id  = $row['employer_id'];
       $rating_query = mysqli_query($conn,"
           SELECT AVG(rating) AS avg_rating, COUNT(*) AS total_reviews
-          FROM employer_review
+          FROM Employer_Review
           WHERE employer_id='$employer_id'
       ");
       $rating_data  = mysqli_fetch_assoc($rating_query);

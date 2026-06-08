@@ -11,7 +11,7 @@ $id = $_GET['id'];
 
 $user = mysqli_query($conn,"
 SELECT *
-FROM users
+FROM Users
 WHERE user_id='$id'
 ");
 
@@ -26,7 +26,7 @@ $phone = $_POST['phone'];
 $role = $_POST['role'];
 
 mysqli_query($conn,"
-UPDATE users
+UPDATE Users
 SET username='$username',
 email='$email',
 fullname='$fullname',

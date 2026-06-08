@@ -13,7 +13,7 @@ if(isset($_GET['delete'])){
 $id = $_GET['delete'];
 
 mysqli_query($conn,"
-DELETE FROM users
+DELETE FROM Users
 WHERE user_id='$id'
 ");
 
@@ -23,7 +23,7 @@ header("Location: manage_users.php");
 
 $users = mysqli_query($conn,"
 SELECT *
-FROM users
+FROM Users
 ORDER BY user_id DESC
 ");
 ?>

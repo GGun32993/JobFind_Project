@@ -1,18 +1,19 @@
 <?php
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-header("Location: ../login.php");
-exit();
+$freelancer_id = jobfind_require_role('freelancer');
+$job_id = intval($_GET['job_id'] ?? 0);
+
+if($job_id <= 0){
+    header("Location: ../freelancer/browse_jobs.php");
+    exit();
 }
-
-$freelancer_id = $_SESSION['user_id'];
-$job_id = $_GET['job_id'];
 
 // check duplicate
 $check = mysqli_query($conn,"
 SELECT *
-FROM job_application
+FROM Job_Application
 WHERE job_id='$job_id'
 AND freelancer_id='$freelancer_id'
 ");
@@ -26,7 +27,7 @@ exit();
 
 // insert application
 mysqli_query($conn,"
-INSERT INTO job_application
+INSERT INTO Job_Application
 (job_id,freelancer_id,status)
 VALUES
 ('$job_id','$freelancer_id','pending')

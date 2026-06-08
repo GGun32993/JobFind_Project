@@ -1,21 +1,17 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 
-if(!isset($_SESSION['user_id'])){
-    header("Location: ../login.php");
-    exit();
-}
-
-$user_id  = $_SESSION['user_id'];
+$user_id  = jobfind_require_login();
 $role     = $_SESSION['role'];
 $username = $_SESSION['username'];
 $sidebar_pending_apps = $role === 'employer' ? get_employer_pending_application_count($conn, $user_id) : 0;
 
 // ── ดึง admin_id จริงจาก DB (แทนการ hardcode = 1) ──
-$admin_query = mysqli_query($conn, "SELECT user_id FROM users WHERE role='admin' LIMIT 1");
+$admin_query = mysqli_query($conn, "SELECT user_id FROM Users WHERE role='admin' LIMIT 1");
 $admin_row   = mysqli_fetch_assoc($admin_query);
 $admin_id    = $admin_row['user_id'] ?? 1;
 
@@ -23,7 +19,7 @@ $admin_id    = $admin_row['user_id'] ?? 1;
 if(isset($_POST['send'])){
     $msg = mysqli_real_escape_string($conn, $_POST['message']);
     mysqli_query($conn,"
-        INSERT INTO chat_messages (sender_id, receiver_id, message)
+        INSERT INTO Chat_Messages (sender_id, receiver_id, message)
         VALUES ('$user_id','$admin_id','$msg')
     ");
     header("Location: messages.php");
@@ -32,7 +28,7 @@ if(isset($_POST['send'])){
 
 // ── get messages ──
 $messages = mysqli_query($conn,"
-    SELECT * FROM chat_messages
+    SELECT * FROM Chat_Messages
     WHERE (sender_id='$user_id' AND receiver_id='$admin_id')
        OR (sender_id='$admin_id' AND receiver_id='$user_id')
     ORDER BY sent_at ASC

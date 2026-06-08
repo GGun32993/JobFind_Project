@@ -1,14 +1,10 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$freelancer_id = $_SESSION['user_id'];
+$freelancer_id = jobfind_require_role('freelancer');
 $job_id        = intval($_GET['job_id'] ?? 0);
 
 if(!$job_id){ header("Location: my_applications.php"); exit(); }
@@ -18,9 +14,9 @@ $job = mysqli_fetch_assoc(mysqli_query($conn,"
     SELECT j.employer_id, j.title,
            COALESCE(ep.employer_name, u.username) AS company_name,
            u.profile_image AS employer_profile_image
-    FROM job j
-    JOIN users u ON u.user_id = j.employer_id
-    LEFT JOIN employer_profile ep ON ep.user_id = j.employer_id
+    FROM Job j
+    JOIN Users u ON u.user_id = j.employer_id
+    LEFT JOIN Employer_Profile ep ON ep.user_id = j.employer_id
     WHERE j.job_id='$job_id'
 "));
 
@@ -30,7 +26,7 @@ $employer_id = $job['employer_id'];
 
 // เช็คว่ารีวิวไปแล้วหรือยัง
 $already = mysqli_fetch_assoc(mysqli_query($conn,"
-    SELECT review_id FROM employer_review
+    SELECT review_id FROM Employer_Review
     WHERE employer_id='$employer_id' AND freelancer_id='$freelancer_id' AND job_id='$job_id'
 "));
 
@@ -44,7 +40,7 @@ if(isset($_POST['submit']) && !$already){
         $error = 'กรุณาเลือกคะแนน 1-5 ดาว';
     } else {
         mysqli_query($conn,"
-            INSERT INTO employer_review (employer_id, freelancer_id, job_id, rating, comment)
+            INSERT INTO Employer_Review (employer_id, freelancer_id, job_id, rating, comment)
             VALUES ('$employer_id','$freelancer_id','$job_id','$rating','$comment')
         ");
         header("Location: my_applications.php?reviewed=1");

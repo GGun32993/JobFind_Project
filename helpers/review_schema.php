@@ -26,12 +26,12 @@ function ensure_freelancer_review_schema($conn)
         return $done;
     }
 
-    if (!jobfind_table_readable($conn, 'freelancer_review')) {
-        mysqli_query($conn, "DROP TABLE IF EXISTS `freelancer_review`");
+    if (!jobfind_table_readable($conn, 'Freelancer_Review')) {
+        mysqli_query($conn, "DROP TABLE IF EXISTS `Freelancer_Review`");
     }
 
     $ok = mysqli_query($conn, "
-        CREATE TABLE IF NOT EXISTS `freelancer_review` (
+        CREATE TABLE IF NOT EXISTS `Freelancer_Review` (
             `review_id` int(11) NOT NULL AUTO_INCREMENT,
             `freelancer_id` int(11) DEFAULT NULL,
             `job_id` int(11) NOT NULL DEFAULT 0,
@@ -48,19 +48,19 @@ function ensure_freelancer_review_schema($conn)
     ");
 
     if (!$ok) {
-        error_log("Job_Find review schema: failed creating freelancer_review - " . mysqli_error($conn));
+        error_log("Job_Find review schema: failed creating Freelancer_Review - " . mysqli_error($conn));
         return false;
     }
 
-    jobfind_add_column_if_missing($conn, 'freelancer_review', 'comment', 'TEXT DEFAULT NULL AFTER `employer_id`');
-    jobfind_add_column_if_missing($conn, 'freelancer_review', 'created_at', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `comment`');
-    jobfind_add_column_if_missing($conn, 'freelancer_review', 'rating', 'INT DEFAULT NULL AFTER `created_at`');
-    jobfind_add_column_if_missing($conn, 'freelancer_review', 'review', 'TEXT DEFAULT NULL AFTER `rating`');
-    jobfind_add_index_if_missing($conn, 'freelancer_review', 'idx_freelancer_review_freelancer', '(`freelancer_id`)');
-    jobfind_add_index_if_missing($conn, 'freelancer_review', 'idx_freelancer_review_employer', '(`employer_id`)');
-    jobfind_add_index_if_missing($conn, 'freelancer_review', 'idx_freelancer_review_job', '(`job_id`)');
+    jobfind_add_column_if_missing($conn, 'Freelancer_Review', 'comment', 'TEXT DEFAULT NULL AFTER `employer_id`');
+    jobfind_add_column_if_missing($conn, 'Freelancer_Review', 'created_at', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `comment`');
+    jobfind_add_column_if_missing($conn, 'Freelancer_Review', 'rating', 'INT DEFAULT NULL AFTER `created_at`');
+    jobfind_add_column_if_missing($conn, 'Freelancer_Review', 'review', 'TEXT DEFAULT NULL AFTER `rating`');
+    jobfind_add_index_if_missing($conn, 'Freelancer_Review', 'idx_freelancer_review_freelancer', '(`freelancer_id`)');
+    jobfind_add_index_if_missing($conn, 'Freelancer_Review', 'idx_freelancer_review_employer', '(`employer_id`)');
+    jobfind_add_index_if_missing($conn, 'Freelancer_Review', 'idx_freelancer_review_job', '(`job_id`)');
 
-    $done = jobfind_table_readable($conn, 'freelancer_review');
+    $done = jobfind_table_readable($conn, 'Freelancer_Review');
     return $done;
 }
 

@@ -17,9 +17,9 @@ if(isset($_POST['submit'])){
     $rating = $_POST['rating'];
     $review = $_POST['review'];
 
-    $sql = "INSERT INTO freelancer_review 
+    $sql = "INSERT INTO Freelancer_Review
     (freelancer_id, employer_id, rating, review)
-    VALUES 
+    VALUES
     ('$freelancer_id','$employer_id','$rating','$review')";
 
     mysqli_query($conn,$sql);

@@ -2,9 +2,9 @@
 require_once __DIR__ . "/../config/config.php";
 
 $query = mysqli_query($conn,"
-SELECT users.fullname, COUNT(like_employer.like_id) as total_likes
-FROM like_employer
-JOIN users ON like_employer.employer_id = users.user_id
+SELECT Users.fullname, COUNT(Like_Employer.like_id) as total_likes
+FROM Like_Employer
+JOIN Users ON Like_Employer.employer_id = Users.user_id
 GROUP BY employer_id
 ORDER BY total_likes DESC
 LIMIT 5

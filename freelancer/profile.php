@@ -1,27 +1,23 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 
 ensure_location_schema($conn);
 ensure_profile_image_schema($conn);
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$user_id  = $_SESSION['user_id'];
+$user_id  = jobfind_require_role('freelancer');
 $username = $_SESSION['username'];
 
-$user         = mysqli_query($conn,"SELECT * FROM users WHERE user_id='$user_id'");
+$user         = mysqli_query($conn,"SELECT * FROM Users WHERE user_id='$user_id'");
 $user_data    = mysqli_fetch_assoc($user);
 $profile_image = trim($user_data['profile_image'] ?? '');
 $selected_gender = jobfind_normalize_gender($user_data['gender'] ?? '');
 $gender_label = jobfind_gender_label($selected_gender);
 
-$profile      = mysqli_query($conn,"SELECT * FROM freelancer_profile WHERE user_id='$user_id'");
+$profile      = mysqli_query($conn,"SELECT * FROM Freelancer_Profile WHERE user_id='$user_id'");
 $profile_data = mysqli_fetch_assoc($profile);
 $has_profile  = (bool)$profile_data;
 
@@ -61,7 +57,7 @@ $dup_err = false;
 $image_err = '';
 
 if(isset($_POST['delete_profile_image'])){
-    if($profile_image !== '' && mysqli_query($conn,"UPDATE users SET profile_image=NULL WHERE user_id='$user_id'")){
+    if($profile_image !== '' && mysqli_query($conn,"UPDATE Users SET profile_image=NULL WHERE user_id='$user_id'")){
         delete_profile_image_file($profile_image);
         header("Location: profile.php?toast=profile_image_deleted");
         exit();
@@ -107,7 +103,7 @@ if(isset($_POST['update'])){
 
     // เช็ค duplicate username และ email (ยกเว้นตัวเอง)
     $dup = mysqli_fetch_assoc(mysqli_query($conn,"
-        SELECT user_id FROM users
+        SELECT user_id FROM Users
         WHERE (username='$new_username' OR email='$email')
         AND user_id != '$user_id'
     "));
@@ -132,17 +128,17 @@ if(isset($_POST['update'])){
             }
 
         mysqli_query($conn,"
-            UPDATE users SET username='$new_username', email='$email', fullname='$fullname', phone='$phone',
+            UPDATE Users SET username='$new_username', email='$email', fullname='$fullname', phone='$phone',
                 gender=$gender_sql,
                 latitude=$latitude_sql, longitude=$longitude_sql
                 $profile_image_set
             WHERE user_id='$user_id'
         ");
 
-        $profile_exists = mysqli_fetch_assoc(mysqli_query($conn,"SELECT freelancer_id FROM freelancer_profile WHERE user_id='$user_id' LIMIT 1"));
+        $profile_exists = mysqli_fetch_assoc(mysqli_query($conn,"SELECT freelancer_id FROM Freelancer_Profile WHERE user_id='$user_id' LIMIT 1"));
         if($profile_exists){
             mysqli_query($conn,"
-                UPDATE freelancer_profile
+                UPDATE Freelancer_Profile
                 SET skill='$skill', experience='$experience', age=$age_sql, location='$location',
                     address='$address', province='$province', district='$district', postal_code='$postal_code',
                     latitude=$latitude_sql, longitude=$longitude_sql, preferred_radius_km=$radius_sql
@@ -150,7 +146,7 @@ if(isset($_POST['update'])){
             ");
         } else {
             mysqli_query($conn,"
-                INSERT INTO freelancer_profile
+                INSERT INTO Freelancer_Profile
                     (user_id, skill, experience, age, location, address, province, district, postal_code, latitude, longitude, preferred_radius_km)
                 VALUES
                     ('$user_id', '$skill', '$experience', $age_sql, '$location', '$address', '$province', '$district', '$postal_code', $latitude_sql, $longitude_sql, $radius_sql)

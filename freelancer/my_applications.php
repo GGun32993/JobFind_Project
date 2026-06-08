@@ -1,30 +1,26 @@
 <?php
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$freelancer_id = $_SESSION['user_id'];
+$freelancer_id = jobfind_require_role('freelancer');
 ensure_job_image_schema($conn);
 
 $result = mysqli_query($conn,"
-    SELECT job_application.*,
-           job.job_id,
-           job.title,
-           job.description,
-           job.category,
-           job.image_path,
-           job.location,
-           job.salary,
-           job.status AS job_status,
-           job.employer_id
-    FROM job_application
-    JOIN job ON job.job_id = job_application.job_id
-    WHERE job_application.freelancer_id='$freelancer_id'
-    ORDER BY job_application.application_id DESC
+    SELECT Job_Application.*,
+           Job.job_id,
+           Job.title,
+           Job.description,
+           Job.category,
+           Job.image_path,
+           Job.location,
+           Job.salary,
+           Job.status AS job_status,
+           Job.employer_id
+    FROM Job_Application
+    JOIN Job ON Job.job_id = Job_Application.job_id
+    WHERE Job_Application.freelancer_id='$freelancer_id'
+    ORDER BY Job_Application.application_id DESC
 ");
 
 $total      = mysqli_num_rows($result);
@@ -334,7 +330,7 @@ while($r = mysqli_fetch_assoc($result)) {
       $employer_id = $row['employer_id'];
 
       $check_review = mysqli_query($conn,"
-          SELECT * FROM employer_review
+          SELECT * FROM Employer_Review
           WHERE job_id='$job_id'
           AND freelancer_id='$freelancer_id'
       ");

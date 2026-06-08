@@ -1,37 +1,23 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
+require_once __DIR__ . "/../helpers/support_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
+require_once __DIR__ . "/../services/admin_job_service.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$admin_unread_support = 0;
-$admin_id_for_badge = (int)$_SESSION['user_id'];
-$col_check = mysqli_query($conn,"SHOW COLUMNS FROM chat_messages LIKE 'is_read'");
-if($col_check && mysqli_num_rows($col_check) === 0){
-    mysqli_query($conn,"ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) DEFAULT 0");
-}
-$unread_support = mysqli_fetch_assoc(mysqli_query($conn,"
-    SELECT COUNT(*) AS c
-    FROM chat_messages cm
-    JOIN users u ON u.user_id=cm.sender_id
-    WHERE cm.receiver_id='$admin_id_for_badge'
-    AND cm.is_read=0
-"));
-$admin_unread_support = (int)($unread_support['c'] ?? 0);
+$admin_id_for_badge = jobfind_require_role('admin');
+$admin_unread_support = admin_unread_support_count($conn, $admin_id_for_badge);
 
 $job_id = intval($_GET['id'] ?? 0);
 ensure_job_image_schema($conn);
 
 // ดึงข้อมูลงาน + ข้อมูล employer
 $result = mysqli_query($conn,"
-    SELECT job.*, users.username, users.email, users.phone, users.fullname
-    FROM job
-    JOIN users ON users.user_id = job.employer_id
-    WHERE job.job_id = '$job_id'
+    SELECT Job.*, Users.username, Users.email, Users.phone, Users.fullname
+    FROM Job
+    JOIN Users ON Users.user_id = Job.employer_id
+    WHERE Job.job_id = '$job_id'
 ");
 $job = mysqli_fetch_assoc($result);
 
@@ -44,12 +30,12 @@ $job_images = get_job_images($conn, $job_id);
 
 // approve / reject action
 if(isset($_GET['approve'])){
-    mysqli_query($conn,"UPDATE job SET admin_status='approved', status='approved' WHERE job_id='$job_id'");
+    admin_approve_job($conn, $job_id);
     header("Location: job_detail.php?id=$job_id&done=approved");
     exit();
 }
 if(isset($_GET['reject'])){
-    mysqli_query($conn,"UPDATE job SET admin_status='rejected' WHERE job_id='$job_id'");
+    admin_reject_job($conn, $job_id);
     header("Location: job_detail.php?id=$job_id&done=rejected");
     exit();
 }

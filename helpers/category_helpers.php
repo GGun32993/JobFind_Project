@@ -151,7 +151,7 @@ function ensure_category_schema($conn)
     }
 
     mysqli_query($conn, "
-        CREATE TABLE IF NOT EXISTS categories (
+        CREATE TABLE IF NOT EXISTS Categories (
             category_id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             icon VARCHAR(20) DEFAULT '📦',
@@ -161,7 +161,7 @@ function ensure_category_schema($conn)
     ");
 
     mysqli_query($conn, "
-        CREATE TABLE IF NOT EXISTS job_subcategories (
+        CREATE TABLE IF NOT EXISTS Job_Subcategories (
             subcategory_id INT AUTO_INCREMENT PRIMARY KEY,
             category_id INT NOT NULL,
             name VARCHAR(120) NOT NULL,
@@ -172,13 +172,13 @@ function ensure_category_schema($conn)
     ");
 
     mysqli_query($conn, "
-        CREATE TABLE IF NOT EXISTS category_seed_runs (
+        CREATE TABLE IF NOT EXISTS Category_Seed_Runs (
             seed_key VARCHAR(100) NOT NULL PRIMARY KEY,
             applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
     ");
 
-    jobfind_category_add_column_if_missing($conn, 'job', 'job_subcategory', 'VARCHAR(120) DEFAULT NULL AFTER `category`');
+    jobfind_category_add_column_if_missing($conn, 'Job', 'job_subcategory', 'VARCHAR(120) DEFAULT NULL AFTER `category`');
 
     return true;
 }
@@ -195,26 +195,26 @@ function ensure_default_job_categories($conn)
     foreach (jobfind_default_job_category_groups() as $category) {
         $name_sql = mysqli_real_escape_string($conn, $category['name']);
         $icon_sql = mysqli_real_escape_string($conn, $category['icon']);
-        $category_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT category_id FROM categories WHERE name='$name_sql' LIMIT 1"));
+        $category_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT category_id FROM Categories WHERE name='$name_sql' LIMIT 1"));
 
         if ($category_row) {
             $category_id = (int)$category_row['category_id'];
         } else {
-            mysqli_query($conn, "INSERT INTO categories (name, icon) VALUES ('$name_sql', '$icon_sql')");
+            mysqli_query($conn, "INSERT INTO Categories (name, icon) VALUES ('$name_sql', '$icon_sql')");
             $category_id = (int)mysqli_insert_id($conn);
         }
 
         foreach ($category['subcategories'] as $subcategory) {
             $subcategory_sql = mysqli_real_escape_string($conn, $subcategory);
             mysqli_query($conn, "
-                INSERT IGNORE INTO job_subcategories (category_id, name)
+                INSERT IGNORE INTO Job_Subcategories (category_id, name)
                 VALUES ('$category_id', '$subcategory_sql')
             ");
         }
     }
 
     $seed_key_sql = mysqli_real_escape_string($conn, 'job_categories_subcategories_thai_v1');
-    mysqli_query($conn, "INSERT IGNORE INTO category_seed_runs (seed_key) VALUES ('$seed_key_sql')");
+    mysqli_query($conn, "INSERT IGNORE INTO Category_Seed_Runs (seed_key) VALUES ('$seed_key_sql')");
     return true;
 }
 
@@ -237,19 +237,19 @@ function jobfind_migrate_legacy_categories($conn)
         $new_sql = mysqli_real_escape_string($conn, $new_category['name']);
         $icon_sql = mysqli_real_escape_string($conn, $new_category['icon']);
 
-        $old_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT category_id FROM categories WHERE name='$old_sql' LIMIT 1"));
+        $old_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT category_id FROM Categories WHERE name='$old_sql' LIMIT 1"));
         if (!$old_row) {
             continue;
         }
 
-        $new_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT category_id FROM categories WHERE name='$new_sql' LIMIT 1"));
-        mysqli_query($conn, "UPDATE job SET category='$new_sql' WHERE category='$old_sql'");
+        $new_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT category_id FROM Categories WHERE name='$new_sql' LIMIT 1"));
+        mysqli_query($conn, "UPDATE Job SET category='$new_sql' WHERE category='$old_sql'");
 
         if ($new_row) {
-            mysqli_query($conn, "DELETE FROM categories WHERE category_id='" . intval($old_row['category_id']) . "'");
+            mysqli_query($conn, "DELETE FROM Categories WHERE category_id='" . intval($old_row['category_id']) . "'");
         } else {
             mysqli_query($conn, "
-                UPDATE categories
+                UPDATE Categories
                 SET name='$new_sql', icon='$icon_sql'
                 WHERE category_id='" . intval($old_row['category_id']) . "'
             ");
@@ -293,7 +293,7 @@ function jobfind_get_categories_with_subcategories($conn)
     $categories = [];
     $by_id = [];
     $category_order = jobfind_category_order_clause($conn);
-    $category_result = mysqli_query($conn, "SELECT * FROM categories ORDER BY $category_order");
+    $category_result = mysqli_query($conn, "SELECT * FROM Categories ORDER BY $category_order");
 
     if ($category_result) {
         while ($category = mysqli_fetch_assoc($category_result)) {
@@ -309,7 +309,7 @@ function jobfind_get_categories_with_subcategories($conn)
     }
 
     $subcategory_order = jobfind_category_sort_expression($conn, 'name') . " ASC, subcategory_id ASC";
-    $subcategory_result = mysqli_query($conn, "SELECT * FROM job_subcategories ORDER BY category_id ASC, $subcategory_order");
+    $subcategory_result = mysqli_query($conn, "SELECT * FROM Job_Subcategories ORDER BY category_id ASC, $subcategory_order");
     if ($subcategory_result) {
         while ($subcategory = mysqli_fetch_assoc($subcategory_result)) {
             $category_id = (int)$subcategory['category_id'];

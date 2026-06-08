@@ -1,27 +1,22 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
+require_once __DIR__ . "/../helpers/support_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin'){
-    header("Location: ../login.php");
-    exit();
-}
+$admin_id = jobfind_require_role('admin');
 
-$admin_id      = $_SESSION['user_id'];
 $selected_user = isset($_GET['user']) ? intval($_GET['user']) : 0;
 
 // ── auto-add is_read column ถ้ายังไม่มี ──
-$col_check = mysqli_query($conn,"SHOW COLUMNS FROM chat_messages LIKE 'is_read'");
-if(mysqli_num_rows($col_check) === 0){
-    mysqli_query($conn,"ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) DEFAULT 0");
-}
+ensure_chat_message_read_schema($conn);
 
 if(!$selected_user){
     $latest_conversation = mysqli_fetch_assoc(mysqli_query($conn,"
         SELECT u.user_id
-        FROM chat_messages cm
-        JOIN users u ON (
+        FROM Chat_Messages cm
+        JOIN Users u ON (
             (cm.sender_id='$admin_id' AND u.user_id=cm.receiver_id)
             OR (cm.receiver_id='$admin_id' AND u.user_id=cm.sender_id)
         )
@@ -41,7 +36,7 @@ if(!$selected_user){
 if(isset($_POST['message']) && $selected_user){
     $message = mysqli_real_escape_string($conn, $_POST['message']);
     mysqli_query($conn,"
-        INSERT INTO chat_messages (sender_id, receiver_id, message)
+        INSERT INTO Chat_Messages (sender_id, receiver_id, message)
         VALUES ('$admin_id','$selected_user','$message')
     ");
     header("Location: support.php?user=".$selected_user);
@@ -55,27 +50,27 @@ $users = mysqli_query($conn,"
         u.username,
         u.role,
         (
-            SELECT message FROM chat_messages
+            SELECT message FROM Chat_Messages
             WHERE (sender_id=u.user_id AND receiver_id='$admin_id')
                OR (sender_id='$admin_id' AND receiver_id=u.user_id)
             ORDER BY sent_at DESC LIMIT 1
         ) AS last_message,
         (
-            SELECT sent_at FROM chat_messages
+            SELECT sent_at FROM Chat_Messages
             WHERE (sender_id=u.user_id AND receiver_id='$admin_id')
                OR (sender_id='$admin_id' AND receiver_id=u.user_id)
             ORDER BY sent_at DESC LIMIT 1
         ) AS last_at,
         (
-            SELECT COUNT(*) FROM chat_messages
+            SELECT COUNT(*) FROM Chat_Messages
             WHERE sender_id=u.user_id
             AND receiver_id='$admin_id'
             AND is_read=0
         ) AS unread_count
-    FROM users u
+    FROM Users u
     WHERE u.user_id != '$admin_id'
       AND EXISTS (
-          SELECT 1 FROM chat_messages
+          SELECT 1 FROM Chat_Messages
           WHERE (sender_id=u.user_id AND receiver_id='$admin_id')
              OR (sender_id='$admin_id' AND receiver_id=u.user_id)
       )
@@ -85,7 +80,7 @@ $users = mysqli_query($conn,"
 // ── get selected user info ──
 $selected_info = null;
 if($selected_user){
-    $si = mysqli_query($conn,"SELECT username, role FROM users WHERE user_id='$selected_user'");
+    $si = mysqli_query($conn,"SELECT username, role FROM Users WHERE user_id='$selected_user'");
     $selected_info = mysqli_fetch_assoc($si);
 }
 
@@ -94,7 +89,7 @@ $msg_rows = [];
 if($selected_user){
     // ── mark as read ทันทีที่ admin เปิดดู ──
     mysqli_query($conn,"
-        UPDATE chat_messages
+        UPDATE Chat_Messages
         SET is_read = 1
         WHERE sender_id = '$selected_user'
         AND receiver_id = '$admin_id'
@@ -102,7 +97,7 @@ if($selected_user){
     ");
 
     $msgs = mysqli_query($conn,"
-        SELECT * FROM chat_messages
+        SELECT * FROM Chat_Messages
         WHERE (sender_id='$selected_user' AND receiver_id='$admin_id')
            OR (sender_id='$admin_id'      AND receiver_id='$selected_user')
         ORDER BY sent_at ASC
@@ -110,15 +105,7 @@ if($selected_user){
     while($m = mysqli_fetch_assoc($msgs)) $msg_rows[] = $m;
 }
 
-$admin_unread_support = 0;
-$unread_support = mysqli_fetch_assoc(mysqli_query($conn,"
-    SELECT COUNT(*) AS c
-    FROM chat_messages cm
-    JOIN users u ON u.user_id=cm.sender_id
-    WHERE cm.receiver_id='$admin_id'
-    AND cm.is_read=0
-"));
-$admin_unread_support = (int)($unread_support['c'] ?? 0);
+$admin_unread_support = admin_unread_support_count($conn, $admin_id);
 ?>
 <!DOCTYPE html>
 <html lang="th">

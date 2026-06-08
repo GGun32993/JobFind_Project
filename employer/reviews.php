@@ -1,26 +1,22 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 
 ensure_profile_image_schema($conn);
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$employer_id = $_SESSION['user_id'];
+$employer_id = jobfind_require_role('employer');
 $sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 $result = mysqli_query($conn,"
-    SELECT employer_review.*, users.username, users.profile_image, job.title
-    FROM employer_review
-    JOIN users ON users.user_id = employer_review.freelancer_id
-    JOIN job   ON job.job_id    = employer_review.job_id
-    WHERE employer_review.employer_id='$employer_id'
-    ORDER BY employer_review.created_at DESC
+    SELECT Employer_Review.*, Users.username, Users.profile_image, Job.title
+    FROM Employer_Review
+    JOIN Users ON Users.user_id = Employer_Review.freelancer_id
+    JOIN Job   ON Job.job_id    = Employer_Review.job_id
+    WHERE Employer_Review.employer_id='$employer_id'
+    ORDER BY Employer_Review.created_at DESC
 ");
 
 // pre-fetch for stats

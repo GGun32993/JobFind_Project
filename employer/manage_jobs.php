@@ -1,15 +1,12 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
-    header("Location: ../login.php");  // ✅ ระบุ path ชัดเจน
-    exit();
-}
 
-$employer_id = $_SESSION['user_id'];
+$employer_id = jobfind_require_role('employer');
 ensure_job_image_schema($conn);
 $sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
@@ -19,8 +16,8 @@ if(isset($_GET['delete'])){
     $image_paths = [];
     $img_res = mysqli_query($conn,"
         SELECT ji.image_path
-        FROM job_images ji
-        JOIN job j ON j.job_id = ji.job_id
+        FROM Job_Images ji
+        JOIN Job j ON j.job_id = ji.job_id
         WHERE ji.job_id='$del_id' AND j.employer_id='$employer_id'
     ");
     if($img_res){
@@ -28,8 +25,8 @@ if(isset($_GET['delete'])){
             $image_paths[] = $img['image_path'];
         }
     }
-    mysqli_query($conn,"DELETE ji FROM job_images ji JOIN job j ON j.job_id=ji.job_id WHERE ji.job_id='$del_id' AND j.employer_id='$employer_id'");
-    mysqli_query($conn,"DELETE FROM job WHERE job_id='$del_id' AND employer_id='$employer_id'");
+    mysqli_query($conn,"DELETE ji FROM Job_Images ji JOIN Job j ON j.job_id=ji.job_id WHERE ji.job_id='$del_id' AND j.employer_id='$employer_id'");
+    mysqli_query($conn,"DELETE FROM Job WHERE job_id='$del_id' AND employer_id='$employer_id'");
     foreach($image_paths as $path){
         delete_job_image_file($path);
     }
@@ -39,7 +36,7 @@ if(isset($_GET['delete'])){
 
 // ── 1.4.2.5 ปิดประกาศอัตโนมัติเมื่อ deadline ผ่าน ──
 mysqli_query($conn,"
-    UPDATE job
+    UPDATE Job
     SET status='closed'
     WHERE employer_id='$employer_id'
     AND deadline IS NOT NULL
@@ -52,10 +49,10 @@ mysqli_query($conn,"
 // ── ดึงงานทั้งหมด ──
 $result = mysqli_query($conn,"
     SELECT j.*,
-        (SELECT COUNT(*) FROM job_application WHERE job_id=j.job_id) AS total_apps,
-        (SELECT COUNT(*) FROM job_application WHERE job_id=j.job_id AND status='pending') AS pending_apps,
-        (SELECT freelancer_id FROM job_application WHERE job_id=j.job_id AND status='accepted' LIMIT 1) AS hired_freelancer_id
-    FROM job j
+        (SELECT COUNT(*) FROM Job_Application WHERE job_id=j.job_id) AS total_apps,
+        (SELECT COUNT(*) FROM Job_Application WHERE job_id=j.job_id AND status='pending') AS pending_apps,
+        (SELECT freelancer_id FROM Job_Application WHERE job_id=j.job_id AND status='accepted' LIMIT 1) AS hired_freelancer_id
+    FROM Job j
     WHERE employer_id='$employer_id'
     ORDER BY job_id DESC
 ");

@@ -1,16 +1,13 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$freelancer_id = $_SESSION['user_id'];
+$freelancer_id = jobfind_require_role('freelancer');
 
 $alert_type = '';
 $alert_msg  = '';
+$max_resume_bytes = 5 * 1024 * 1024;
 
 // upload
 if(isset($_POST['upload'])){
@@ -18,20 +15,45 @@ if(isset($_POST['upload'])){
         $filename = $_FILES['resume']['name'];
         $tmp      = $_FILES['resume']['tmp_name'];
         $ext      = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $size     = (int)($_FILES['resume']['size'] ?? 0);
+        $mime     = '';
+
+        if(function_exists('finfo_open') && is_uploaded_file($tmp)){
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = $finfo ? (string)finfo_file($finfo, $tmp) : '';
+            if($finfo){
+                finfo_close($finfo);
+            }
+        }
 
         if($ext != "pdf"){
             $alert_type = 'error';
             $alert_msg  = 'อัปโหลดได้เฉพาะไฟล์ PDF เท่านั้น';
+        } elseif($size <= 0 || $size > $max_resume_bytes){
+            $alert_type = 'error';
+            $alert_msg  = 'Resume file must be a PDF up to 5MB.';
+        } elseif($mime !== '' && $mime !== 'application/pdf'){
+            $alert_type = 'error';
+            $alert_msg  = 'Resume file must be a valid PDF.';
         } else {
-            $newname = time()."_".basename($filename);
+            $safe_base = preg_replace('/[^A-Za-z0-9._-]+/', '_', pathinfo($filename, PATHINFO_FILENAME));
+            $safe_base = trim($safe_base, '._-');
+            if($safe_base === ''){
+                $safe_base = 'Resume';
+            }
+            $newname = time()."_".$freelancer_id."_".$safe_base.".pdf";
             $target_path = JOBFIND_UPLOADS_PATH . DIRECTORY_SEPARATOR . $newname;
-            move_uploaded_file($tmp, $target_path);
+            if(!move_uploaded_file($tmp, $target_path)){
+                $alert_type = 'error';
+                $alert_msg  = 'Resume upload failed.';
+            } else {
             mysqli_query($conn,"
-                INSERT INTO resume (freelancer_id, file_name)
+                INSERT INTO Resume (freelancer_id, file_name)
                 VALUES ('$freelancer_id','$newname')
             ");
             $alert_type = 'success';
             $alert_msg  = 'อัปโหลด Resume สำเร็จแล้ว';
+            }
         }
     } else {
         $alert_type = 'error';
@@ -41,7 +63,7 @@ if(isset($_POST['upload'])){
 
 // get resume
 $res  = mysqli_query($conn,"
-    SELECT * FROM resume
+    SELECT * FROM Resume
     WHERE freelancer_id='$freelancer_id'
     ORDER BY resume_id DESC
     LIMIT 1
@@ -51,7 +73,7 @@ $data = mysqli_fetch_assoc($res);
 // file size display
 $file_size = '';
 if($data){
-    $path = JOBFIND_UPLOADS_PATH . DIRECTORY_SEPARATOR . $data['file_name'];
+    $path = JOBFIND_UPLOADS_PATH . DIRECTORY_SEPARATOR . basename((string)$data['file_name']);
     if(file_exists($path)){
         $bytes = filesize($path);
         $file_size = $bytes < 1048576
@@ -325,7 +347,7 @@ if($data){
     </div>
 
     <div class="resume-actions">
-      <a href="<?php echo htmlspecialchars(jobfind_url('uploads/' . $data['file_name']), ENT_QUOTES, 'UTF-8'); ?>"
+      <a href="<?php echo htmlspecialchars(jobfind_url('uploads/' . basename((string)$data['file_name'])), ENT_QUOTES, 'UTF-8'); ?>"
          target="_blank" class="btn-view">
         <i class="bi bi-eye"></i> ดู Resume
       </a>

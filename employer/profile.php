@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
@@ -8,12 +9,10 @@ require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 ensure_location_schema($conn);
 ensure_profile_image_schema($conn);
 
-if(!isset($_SESSION['user_id'])){ header("Location: ../login.php"); exit(); }
-
-$current_user_id = $_SESSION['user_id'];
+$current_user_id = jobfind_require_login();
 $current_role    = $_SESSION['role'];
 $sidebar_pending_apps = $current_role === 'employer' ? get_employer_pending_application_count($conn, $current_user_id) : 0;
-$current_user_image = mysqli_fetch_assoc(mysqli_query($conn,"SELECT profile_image FROM users WHERE user_id='$current_user_id'"));
+$current_user_image = mysqli_fetch_assoc(mysqli_query($conn,"SELECT profile_image FROM Users WHERE user_id='$current_user_id'"));
 $current_profile_image = trim($current_user_image['profile_image'] ?? '');
 
 function safe_return_url($url, $fallback = ''){
@@ -54,7 +53,7 @@ if(!$is_public && $current_role !== 'employer'){
 }
 
 if(!$is_public && isset($_POST['delete_profile_image'])){
-    if($current_profile_image !== '' && mysqli_query($conn,"UPDATE users SET profile_image=NULL WHERE user_id='$current_user_id'")){
+    if($current_profile_image !== '' && mysqli_query($conn,"UPDATE Users SET profile_image=NULL WHERE user_id='$current_user_id'")){
         delete_profile_image_file($current_profile_image);
         header("Location: profile.php?toast=profile_image_deleted");
         exit();
@@ -81,7 +80,7 @@ if(!$is_public && isset($_POST['update'])){
     $longitude_sql = $longitude !== null ? sprintf('%.8F', $longitude) : "NULL";
 
     $dup = mysqli_fetch_assoc(mysqli_query($conn,"
-        SELECT user_id FROM users
+        SELECT user_id FROM Users
         WHERE (username='$new_username' OR email='$email')
         AND user_id != '$current_user_id'
     "));
@@ -106,17 +105,17 @@ if(!$is_public && isset($_POST['update'])){
             }
 
         mysqli_query($conn,"
-            UPDATE users SET username='$new_username', fullname='$fullname', email='$email', phone='$phone',
+            UPDATE Users SET username='$new_username', fullname='$fullname', email='$email', phone='$phone',
                 latitude=$latitude_sql, longitude=$longitude_sql
                 $profile_image_set
             WHERE user_id='$current_user_id'
         ");
         $_SESSION['username'] = $new_username;
 
-        $check = mysqli_query($conn,"SELECT * FROM employer_profile WHERE user_id='$current_user_id'");
+        $check = mysqli_query($conn,"SELECT * FROM Employer_Profile WHERE user_id='$current_user_id'");
         if(mysqli_num_rows($check) > 0){
             mysqli_query($conn,"
-                UPDATE employer_profile SET
+                UPDATE Employer_Profile SET
                 employer_name='$fullname', employer_description='$description',
                 address='$address', province='$province', district='$district', postal_code='$postal_code',
                 latitude=$latitude_sql, longitude=$longitude_sql
@@ -124,7 +123,7 @@ if(!$is_public && isset($_POST['update'])){
             ");
         } else {
             mysqli_query($conn,"
-                INSERT INTO employer_profile
+                INSERT INTO Employer_Profile
                     (user_id, employer_name, employer_description, address, province, district, postal_code, latitude, longitude)
                 VALUES
                     ('$current_user_id','$fullname','$description','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql)
@@ -141,8 +140,8 @@ if(!$is_public && isset($_POST['update'])){
 
 // ── FETCH DATA ──
 $target_id = $is_public ? $view_emp_id : $current_user_id;
-$user    = mysqli_fetch_assoc(mysqli_query($conn,"SELECT * FROM users WHERE user_id='$target_id'"));
-$profile = mysqli_fetch_assoc(mysqli_query($conn,"SELECT * FROM employer_profile WHERE user_id='$target_id'"));
+$user    = mysqli_fetch_assoc(mysqli_query($conn,"SELECT * FROM Users WHERE user_id='$target_id'"));
+$profile = mysqli_fetch_assoc(mysqli_query($conn,"SELECT * FROM Employer_Profile WHERE user_id='$target_id'"));
 $has_profile = (bool)$profile;
 $profile_image = trim($user['profile_image'] ?? '');
 
@@ -163,9 +162,9 @@ $review_count = 0;
 if($is_public){
     $rev_res = mysqli_query($conn,"
         SELECT er.*, u.username as reviewer_name, j.title as job_title
-        FROM employer_review er
-        JOIN users u ON er.freelancer_id = u.user_id
-        LEFT JOIN job j ON er.job_id = j.job_id
+        FROM Employer_Review er
+        JOIN Users u ON er.freelancer_id = u.user_id
+        LEFT JOIN Job j ON er.job_id = j.job_id
         WHERE er.employer_id = '$target_id'
         ORDER BY er.review_id DESC
     ");

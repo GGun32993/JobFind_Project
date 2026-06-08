@@ -1,19 +1,15 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 require_once __DIR__ . "/../helpers/review_schema.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
-    header("Location: ../login.php");
-    exit();
-}
-
 ensure_profile_image_schema($conn);
 ensure_freelancer_review_schema($conn);
 
-$employer_id   = $_SESSION['user_id'];
+$employer_id   = jobfind_require_role('employer');
 $freelancer_id = intval($_GET['freelancer_id'] ?? 0);
 $job_id        = intval($_GET['job_id'] ?? 0);
 $sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
@@ -24,14 +20,14 @@ if(!$freelancer_id || !$job_id){
 }
 
 // ── ดึงข้อมูล freelancer และงาน ──
-$fl   = mysqli_fetch_assoc(mysqli_query($conn,"SELECT username, fullname, profile_image FROM users WHERE user_id='$freelancer_id'"));
-$job  = mysqli_fetch_assoc(mysqli_query($conn,"SELECT title FROM job WHERE job_id='$job_id'"));
+$fl   = mysqli_fetch_assoc(mysqli_query($conn,"SELECT username, fullname, profile_image FROM Users WHERE user_id='$freelancer_id'"));
+$job  = mysqli_fetch_assoc(mysqli_query($conn,"SELECT title FROM Job WHERE job_id='$job_id'"));
 $fl_profile_image = trim($fl['profile_image'] ?? '');
 $fl_display_name = trim($fl['fullname'] ?? '') !== '' ? $fl['fullname'] : ($fl['username'] ?? 'Unknown');
 
 // ── เช็คว่ารีวิวไปแล้วหรือยัง ──
 $already = mysqli_fetch_assoc(mysqli_query($conn,"
-    SELECT review_id FROM freelancer_review
+    SELECT review_id FROM Freelancer_Review
     WHERE employer_id='$employer_id' AND freelancer_id='$freelancer_id' AND job_id='$job_id'
 "));
 
@@ -46,7 +42,7 @@ if($_POST && !$already){
         $error = 'กรุณาเลือกคะแนน 1-5 ดาว';
     } else {
         mysqli_query($conn,"
-            INSERT INTO freelancer_review (employer_id,freelancer_id,job_id,rating,comment)
+            INSERT INTO Freelancer_Review (employer_id,freelancer_id,job_id,rating,comment)
             VALUES ('$employer_id','$freelancer_id','$job_id','$rating','$comment')
         ");
         header("Location: view_applicants.php?job_id=$job_id&reviewed=1");

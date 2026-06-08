@@ -1,15 +1,11 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 
 header('Content-Type: application/json');
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "freelancer"){
-    echo json_encode(['liked' => false]);
-    exit();
-}
-
-$freelancer_id = intval($_SESSION['user_id']);
+$freelancer_id = jobfind_require_json_role('freelancer', ['liked' => false]);
 $employer_id = intval($_GET['employer_id'] ?? 0);
 
 if($employer_id <= 0){
@@ -18,7 +14,7 @@ if($employer_id <= 0){
 }
 
 $check = mysqli_query($conn, "
-    SELECT * FROM like_employer
+    SELECT * FROM Like_Employer
     WHERE freelancer_id=$freelancer_id
     AND employer_id=$employer_id
 ");

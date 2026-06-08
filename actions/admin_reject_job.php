@@ -1,14 +1,12 @@
 <?php
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
+require_once __DIR__ . "/../services/admin_job_service.php";
 
-$id = $_GET['id'];
+jobfind_require_role('admin');
 
-mysqli_query($conn,"
-UPDATE job
-SET admin_status='rejected'
-WHERE job_id='$id'
-");
+$id = intval($_GET['id'] ?? 0);
+admin_reject_job($conn, $id);
 
 header("Location: ../admin/manage_jobs.php");
 exit();
-?>

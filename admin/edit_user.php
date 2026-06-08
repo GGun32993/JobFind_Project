@@ -1,31 +1,17 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
+require_once __DIR__ . "/../helpers/support_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
-    header("Location: ../login.php");
-    exit();
-}
+$admin_id_for_badge = jobfind_require_role('admin');
 
 ensure_location_schema($conn);
 ensure_profile_image_schema($conn);
 
-$admin_unread_support = 0;
-$admin_id_for_badge = (int)$_SESSION['user_id'];
-$col_check = mysqli_query($conn,"SHOW COLUMNS FROM chat_messages LIKE 'is_read'");
-if($col_check && mysqli_num_rows($col_check) === 0){
-    mysqli_query($conn,"ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) DEFAULT 0");
-}
-$unread_support = mysqli_fetch_assoc(mysqli_query($conn,"
-    SELECT COUNT(*) AS c
-    FROM chat_messages cm
-    JOIN users u ON u.user_id=cm.sender_id
-    WHERE cm.receiver_id='$admin_id_for_badge'
-    AND cm.is_read=0
-"));
-$admin_unread_support = (int)($unread_support['c'] ?? 0);
+$admin_unread_support = admin_unread_support_count($conn, $admin_id_for_badge);
 
 $toast = '';
 $edit_user_id = $_GET['id'] ?? 0;
@@ -41,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role = mysqli_real_escape_string($conn, trim($_POST['role']));
     
     // 1. อัปเดตตาราง users
-    $sql_user = "UPDATE users SET username=?, email=?, phone=?, fullname=?, role=? WHERE user_id=?";
+    $sql_user = "UPDATE Users SET username=?, email=?, phone=?, fullname=?, role=? WHERE user_id=?";
     $stmt_user = $conn->prepare($sql_user);
     $stmt_user->bind_param("sssssi", $username, $email, $phone, $fullname, $role, $edit_user_id);
     $user_updated = $stmt_user->execute();
@@ -52,19 +38,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $experience = mysqli_real_escape_string($conn, trim($_POST['experience']));
         $location = mysqli_real_escape_string($conn, trim($_POST['location']));
         
-        $check_sql = "SELECT freelancer_id FROM freelancer_profile WHERE user_id = ?";
+        $check_sql = "SELECT freelancer_id FROM Freelancer_Profile WHERE user_id = ?";
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("i", $edit_user_id);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
         
         if ($check_result->num_rows > 0) {
-            $sql_freelancer = "UPDATE freelancer_profile SET skill=?, experience=?, location=? WHERE user_id=?";
+            $sql_freelancer = "UPDATE Freelancer_Profile SET skill=?, experience=?, location=? WHERE user_id=?";
             $stmt_freelancer = $conn->prepare($sql_freelancer);
             $stmt_freelancer->bind_param("sssi", $skill, $experience, $location, $edit_user_id);
             $profile_updated = $stmt_freelancer->execute();
         } else {
-            $sql_freelancer = "INSERT INTO freelancer_profile (user_id, skill, experience, location) VALUES (?, ?, ?, ?)";
+            $sql_freelancer = "INSERT INTO Freelancer_Profile (user_id, skill, experience, location) VALUES (?, ?, ?, ?)";
             $stmt_freelancer = $conn->prepare($sql_freelancer);
             $stmt_freelancer->bind_param("isss", $edit_user_id, $skill, $experience, $location);
             $profile_updated = $stmt_freelancer->execute();
@@ -73,19 +59,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $employer_name = mysqli_real_escape_string($conn, trim($_POST['employer_name']));
         $employer_description = mysqli_real_escape_string($conn, trim($_POST['employer_description']));
         
-        $check_sql = "SELECT employer_id FROM employer_profile WHERE user_id = ?";
+        $check_sql = "SELECT employer_id FROM Employer_Profile WHERE user_id = ?";
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("i", $edit_user_id);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
         
         if ($check_result->num_rows > 0) {
-            $sql_employer = "UPDATE employer_profile SET employer_name=?, employer_description=? WHERE user_id=?";
+            $sql_employer = "UPDATE Employer_Profile SET employer_name=?, employer_description=? WHERE user_id=?";
             $stmt_employer = $conn->prepare($sql_employer);
             $stmt_employer->bind_param("ssi", $employer_name, $employer_description, $edit_user_id);
             $profile_updated = $stmt_employer->execute();
         } else {
-            $sql_employer = "INSERT INTO employer_profile (user_id, employer_name, employer_description) VALUES (?, ?, ?)";
+            $sql_employer = "INSERT INTO Employer_Profile (user_id, employer_name, employer_description) VALUES (?, ?, ?)";
             $stmt_employer = $conn->prepare($sql_employer);
             $stmt_employer->bind_param("iss", $edit_user_id, $employer_name, $employer_description);
             $profile_updated = $stmt_employer->execute();
@@ -105,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ==========================================
 // ดึงข้อมูลเดิมมาแสดงในฟอร์ม (GET)
 // ==========================================
-$sql_fetch = "SELECT * FROM users WHERE user_id = ?";
+$sql_fetch = "SELECT * FROM Users WHERE user_id = ?";
 $stmt_fetch = $conn->prepare($sql_fetch);
 $stmt_fetch->bind_param("i", $edit_user_id);
 $stmt_fetch->execute();
@@ -120,14 +106,14 @@ $user_role = $user_data['role'];
 
 $profile_data = null;
 if ($user_role === 'freelancer') {
-    $sql_profile = "SELECT * FROM freelancer_profile WHERE user_id = ?";
+    $sql_profile = "SELECT * FROM Freelancer_Profile WHERE user_id = ?";
     $stmt_profile = $conn->prepare($sql_profile);
     $stmt_profile->bind_param("i", $edit_user_id);
     $stmt_profile->execute();
     $profile_result = $stmt_profile->get_result();
     $profile_data = $profile_result->fetch_assoc();
 } elseif ($user_role === 'employer') {
-    $sql_profile = "SELECT * FROM employer_profile WHERE user_id = ?";
+    $sql_profile = "SELECT * FROM Employer_Profile WHERE user_id = ?";
     $stmt_profile = $conn->prepare($sql_profile);
     $stmt_profile->bind_param("i", $edit_user_id);
     $stmt_profile->execute();

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 require_once __DIR__ . "/../helpers/review_schema.php";
@@ -8,24 +9,19 @@ require_once __DIR__ . "/../helpers/review_schema.php";
 ensure_profile_image_schema($conn);
 ensure_freelancer_review_schema($conn);
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== "employer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$employer_id = (int)$_SESSION['user_id'];
+$employer_id = jobfind_require_role('employer');
 $sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 $query = "
     SELECT sf.id AS saved_id, sf.saved_at,
            u.user_id AS freelancer_id, u.username, u.fullname, u.email, u.phone, u.profile_image,
            fp.skill, fp.experience, fp.location, fp.rating,
-           (SELECT file_name FROM resume WHERE freelancer_id = u.user_id ORDER BY resume_id DESC LIMIT 1) AS resume_file,
-           (SELECT COUNT(*) FROM freelancer_review fr WHERE fr.freelancer_id = u.user_id) AS review_count,
-           (SELECT ROUND(AVG(fr.rating), 1) FROM freelancer_review fr WHERE fr.freelancer_id = u.user_id) AS review_rating
-    FROM saved_freelancers sf
-    JOIN users u ON sf.freelancer_id = u.user_id
-    LEFT JOIN freelancer_profile fp ON u.user_id = fp.user_id
+           (SELECT file_name FROM Resume WHERE freelancer_id = u.user_id ORDER BY resume_id DESC LIMIT 1) AS resume_file,
+           (SELECT COUNT(*) FROM Freelancer_Review fr WHERE fr.freelancer_id = u.user_id) AS review_count,
+           (SELECT ROUND(AVG(fr.rating), 1) FROM Freelancer_Review fr WHERE fr.freelancer_id = u.user_id) AS review_rating
+    FROM Saved_Freelancers sf
+    JOIN Users u ON sf.freelancer_id = u.user_id
+    LEFT JOIN Freelancer_Profile fp ON u.user_id = fp.user_id
     WHERE sf.employer_id = ?
     ORDER BY sf.saved_at DESC
 ";

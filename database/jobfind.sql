@@ -24,10 +24,10 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `categories`
+-- Table structure for table `Categories`
 --
 
-CREATE TABLE `categories` (
+CREATE TABLE `Categories` (
   `category_id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
   `icon` varchar(20) DEFAULT '📦',
@@ -36,10 +36,10 @@ CREATE TABLE `categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `categories`
+-- Dumping data for table `Categories`
 --
 
-INSERT INTO `categories` (`category_id`, `name`, `icon`, `description`, `created_at`) VALUES
+INSERT INTO `Categories` (`category_id`, `name`, `icon`, `description`, `created_at`) VALUES
 (1, 'IT', '💻', 'งานเกี่ยวกับ Computer', '2026-02-25 12:41:43'),
 (2, 'Design', '🎨', 'Graphic and UI jobs', '2026-02-25 12:42:16'),
 (3, 'Marketing', '📢', 'Marketing jobs', '2026-02-25 12:42:46'),
@@ -48,10 +48,10 @@ INSERT INTO `categories` (`category_id`, `name`, `icon`, `description`, `created
 -- --------------------------------------------------------
 
 --
--- Table structure for table `job_subcategories`
+-- Table structure for table `Job_Subcategories`
 --
 
-CREATE TABLE `job_subcategories` (
+CREATE TABLE `Job_Subcategories` (
   `subcategory_id` int(11) NOT NULL AUTO_INCREMENT,
   `category_id` int(11) NOT NULL,
   `name` varchar(120) NOT NULL,
@@ -64,10 +64,10 @@ CREATE TABLE `job_subcategories` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `category_seed_runs`
+-- Table structure for table `Category_Seed_Runs`
 --
 
-CREATE TABLE `category_seed_runs` (
+CREATE TABLE `Category_Seed_Runs` (
   `seed_key` varchar(100) NOT NULL,
   `applied_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`seed_key`)
@@ -76,10 +76,10 @@ CREATE TABLE `category_seed_runs` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `chat_messages`
+-- Table structure for table `Chat_Messages`
 --
 
-CREATE TABLE `chat_messages` (
+CREATE TABLE `Chat_Messages` (
   `message_id` int(11) NOT NULL,
   `sender_id` int(11) DEFAULT NULL,
   `receiver_id` int(11) DEFAULT NULL,
@@ -89,10 +89,10 @@ CREATE TABLE `chat_messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `chat_messages`
+-- Dumping data for table `Chat_Messages`
 --
 
-INSERT INTO `chat_messages` (`message_id`, `sender_id`, `receiver_id`, `message`, `sent_at`, `is_read`) VALUES
+INSERT INTO `Chat_Messages` (`message_id`, `sender_id`, `receiver_id`, `message`, `sent_at`, `is_read`) VALUES
 (1, 1, 1, 'แอดดดดดดดด', '2026-02-25 14:13:46', 0),
 (2, 3, 0, '', '2026-02-25 14:15:18', 0),
 (3, 3, 0, '', '2026-02-25 14:15:18', 0),
@@ -113,10 +113,10 @@ INSERT INTO `chat_messages` (`message_id`, `sender_id`, `receiver_id`, `message`
 -- --------------------------------------------------------
 
 --
--- Table structure for table `employer_profile`
+-- Table structure for table `Employer_Profile`
 --
 
-CREATE TABLE `employer_profile` (
+CREATE TABLE `Employer_Profile` (
   `employer_id` int(11) NOT NULL,
   `user_id` int(11) DEFAULT NULL,
   `employer_name` varchar(100) DEFAULT NULL,
@@ -126,19 +126,19 @@ CREATE TABLE `employer_profile` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `employer_profile`
+-- Dumping data for table `Employer_Profile`
 --
 
-INSERT INTO `employer_profile` (`employer_id`, `user_id`, `employer_name`, `employer_description`, `like_count`, `created_at`) VALUES
+INSERT INTO `Employer_Profile` (`employer_id`, `user_id`, `employer_name`, `employer_description`, `like_count`, `created_at`) VALUES
 (1, 2, 'Guntinan Company', 'บริษัทของกันต์', 0, '2026-05-16 13:39:30');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `employer_rating`
+-- Table structure for table `Employer_Rating`
 --
 
-CREATE TABLE `employer_rating` (
+CREATE TABLE `Employer_Rating` (
   `rating_id` int(11) NOT NULL,
   `employer_id` int(11) DEFAULT NULL,
   `freelancer_id` int(11) DEFAULT NULL,
@@ -149,10 +149,10 @@ CREATE TABLE `employer_rating` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `employer_review`
+-- Table structure for table `Employer_Review`
 --
 
-CREATE TABLE `employer_review` (
+CREATE TABLE `Employer_Review` (
   `review_id` int(11) NOT NULL,
   `employer_id` int(11) DEFAULT NULL,
   `freelancer_id` int(11) DEFAULT NULL,
@@ -163,20 +163,20 @@ CREATE TABLE `employer_review` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `employer_review`
+-- Dumping data for table `Employer_Review`
 --
 
-INSERT INTO `employer_review` (`review_id`, `employer_id`, `freelancer_id`, `job_id`, `rating`, `comment`, `created_at`) VALUES
+INSERT INTO `Employer_Review` (`review_id`, `employer_id`, `freelancer_id`, `job_id`, `rating`, `comment`, `created_at`) VALUES
 (2, 2, 1, NULL, 5, 'บริษัทดี', '2026-05-22 06:20:28'),
 (3, 2, 1, 8, 5, 'งานดีๆ', '2026-05-22 07:29:45');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `freelancer_profile`
+-- Table structure for table `Freelancer_Profile`
 --
 
-CREATE TABLE `freelancer_profile` (
+CREATE TABLE `Freelancer_Profile` (
   `freelancer_id` int(11) NOT NULL,
   `user_id` int(11) DEFAULT NULL,
   `skill` text DEFAULT NULL,
@@ -188,10 +188,10 @@ CREATE TABLE `freelancer_profile` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `freelancer_profile`
+-- Dumping data for table `Freelancer_Profile`
 --
 
-INSERT INTO `freelancer_profile` (`freelancer_id`, `user_id`, `skill`, `experience`, `age`, `location`, `rating`, `created_at`) VALUES
+INSERT INTO `Freelancer_Profile` (`freelancer_id`, `user_id`, `skill`, `experience`, `age`, `location`, `rating`, `created_at`) VALUES
 (1, 3, 'PHP, Web Developmen', '2 Years', NULL, 'Banhkok', 0, '2026-02-25 13:25:20'),
 (2, 1, 'ซ่อมท่อ, PHP, Java', '1 years', NULL, 'Bangkok', 0, '2026-02-25 13:41:09'),
 (3, 4, 'ไม่มี', '-', NULL, 'Chiang Mai', 0, '2026-02-25 13:53:33'),
@@ -201,10 +201,10 @@ INSERT INTO `freelancer_profile` (`freelancer_id`, `user_id`, `skill`, `experien
 -- --------------------------------------------------------
 
 --
--- Table structure for table `freelancer_rating`
+-- Table structure for table `Freelancer_Rating`
 --
 
-CREATE TABLE `freelancer_rating` (
+CREATE TABLE `Freelancer_Rating` (
   `rating_id` int(11) NOT NULL,
   `freelancer_id` int(11) DEFAULT NULL,
   `employer_id` int(11) DEFAULT NULL,
@@ -213,19 +213,19 @@ CREATE TABLE `freelancer_rating` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `freelancer_rating`
+-- Dumping data for table `Freelancer_Rating`
 --
 
-INSERT INTO `freelancer_rating` (`rating_id`, `freelancer_id`, `employer_id`, `score`, `created_at`) VALUES
+INSERT INTO `Freelancer_Rating` (`rating_id`, `freelancer_id`, `employer_id`, `score`, `created_at`) VALUES
 (1, 1, 2, 5, '2026-02-25 13:05:37');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `freelancer_review`
+-- Table structure for table `Freelancer_Review`
 --
 
-CREATE TABLE `freelancer_review` (
+CREATE TABLE `Freelancer_Review` (
   `review_id` int(11) NOT NULL,
   `freelancer_id` int(11) DEFAULT NULL,
   `job_id` int(11) NOT NULL,
@@ -237,20 +237,20 @@ CREATE TABLE `freelancer_review` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `freelancer_review`
+-- Dumping data for table `Freelancer_Review`
 --
 
-INSERT INTO `freelancer_review` (`review_id`, `freelancer_id`, `job_id`, `employer_id`, `comment`, `created_at`, `rating`, `review`) VALUES
+INSERT INTO `Freelancer_Review` (`review_id`, `freelancer_id`, `job_id`, `employer_id`, `comment`, `created_at`, `rating`, `review`) VALUES
 (2, 1, 0, 2, NULL, '2026-02-25 17:05:14', 5, 'dddddd'),
 (3, 1, 6, 2, 'เก่ง', '2026-05-17 06:45:28', 5, NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `job`
+-- Table structure for table `Job`
 --
 
-CREATE TABLE `job` (
+CREATE TABLE `Job` (
   `job_id` int(11) NOT NULL,
   `employer_id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
@@ -271,20 +271,20 @@ CREATE TABLE `job` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `job`
+-- Dumping data for table `Job`
 --
 
-INSERT INTO `job` (`job_id`, `employer_id`, `title`, `description`, `location`, `salary`, `latitude`, `longitude`, `deadline`, `status`, `admin_status`, `created_at`, `category`, `image_path`, `updated_at`) VALUES
+INSERT INTO `Job` (`job_id`, `employer_id`, `title`, `description`, `location`, `salary`, `latitude`, `longitude`, `deadline`, `status`, `admin_status`, `created_at`, `category`, `image_path`, `updated_at`) VALUES
 (8, 2, 'แก้ไขข้อมูลการรับสมัครงาน', 'เพิ่มปุ่มแก้ไขที่ตัวงาน', '', 2000.00, NULL, NULL, '2026-05-26 00:00:00', 'closed', 'approved', '2026-05-21 05:41:22', 'IT', NULL, '2026-05-21 06:39:14'),
 (9, 2, 'Graphic', 'กินเงินเดือน', '', 20000.00, NULL, NULL, '2026-05-25 00:00:00', 'closed', 'approved', '2026-05-22 05:41:27', 'Design', NULL, NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `job_images`
+-- Table structure for table `Job_Images`
 --
 
-CREATE TABLE `job_images` (
+CREATE TABLE `Job_Images` (
   `image_id` int(11) NOT NULL,
   `job_id` int(11) NOT NULL,
   `image_path` varchar(255) NOT NULL,
@@ -295,10 +295,10 @@ CREATE TABLE `job_images` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `job_application`
+-- Table structure for table `Job_Application`
 --
 
-CREATE TABLE `job_application` (
+CREATE TABLE `Job_Application` (
   `application_id` int(11) NOT NULL,
   `job_id` int(11) DEFAULT NULL,
   `freelancer_id` int(11) DEFAULT NULL,
@@ -307,10 +307,10 @@ CREATE TABLE `job_application` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `job_application`
+-- Dumping data for table `Job_Application`
 --
 
-INSERT INTO `job_application` (`application_id`, `job_id`, `freelancer_id`, `apply_date`, `status`) VALUES
+INSERT INTO `Job_Application` (`application_id`, `job_id`, `freelancer_id`, `apply_date`, `status`) VALUES
 (1, 5, 1, '2026-05-17 05:28:17', 'accepted'),
 (2, 5, 4, '2026-05-17 05:46:56', 'rejected'),
 (3, 6, 1, '2026-05-17 06:43:42', 'accepted'),
@@ -322,10 +322,10 @@ INSERT INTO `job_application` (`application_id`, `job_id`, `freelancer_id`, `app
 -- --------------------------------------------------------
 
 --
--- Table structure for table `like_employer`
+-- Table structure for table `Like_Employer`
 --
 
-CREATE TABLE `like_employer` (
+CREATE TABLE `Like_Employer` (
   `like_id` int(11) NOT NULL,
   `freelancer_id` int(11) DEFAULT NULL,
   `employer_id` int(11) DEFAULT NULL,
@@ -333,19 +333,19 @@ CREATE TABLE `like_employer` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `like_employer`
+-- Dumping data for table `Like_Employer`
 --
 
-INSERT INTO `like_employer` (`like_id`, `freelancer_id`, `employer_id`, `created_at`) VALUES
+INSERT INTO `Like_Employer` (`like_id`, `freelancer_id`, `employer_id`, `created_at`) VALUES
 (1, 1, 2, '2026-02-25 13:11:18');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `resume`
+-- Table structure for table `Resume`
 --
 
-CREATE TABLE `resume` (
+CREATE TABLE `Resume` (
   `resume_id` int(11) NOT NULL,
   `freelancer_id` int(11) DEFAULT NULL,
   `file_name` varchar(255) DEFAULT NULL,
@@ -353,20 +353,20 @@ CREATE TABLE `resume` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `resume`
+-- Dumping data for table `Resume`
 --
 
-INSERT INTO `resume` (`resume_id`, `freelancer_id`, `file_name`, `upload_date`) VALUES
+INSERT INTO `Resume` (`resume_id`, `freelancer_id`, `file_name`, `upload_date`) VALUES
 (1, 1, '1131w-xkDELtpQH94.webp', '2026-02-25 10:36:50'),
 (3, 1, '1772095318_004 กันตินันท์.pdf', '2026-02-26 08:41:58');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `saved_freelancers`
+-- Table structure for table `Saved_Freelancers`
 --
 
-CREATE TABLE `saved_freelancers` (
+CREATE TABLE `Saved_Freelancers` (
   `id` int(11) NOT NULL,
   `employer_id` int(11) NOT NULL,
   `freelancer_id` int(11) NOT NULL,
@@ -376,10 +376,10 @@ CREATE TABLE `saved_freelancers` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Table structure for table `Users`
 --
 
-CREATE TABLE `users` (
+CREATE TABLE `Users` (
   `user_id` int(11) NOT NULL,
   `username` varchar(50) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
@@ -395,10 +395,10 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `users`
+-- Dumping data for table `Users`
 --
 
-INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `fullname`, `phone`, `gender`, `role`, `created_at`, `latitude`, `longitude`, `company_details`) VALUES
+INSERT INTO `Users` (`user_id`, `username`, `email`, `password`, `fullname`, `phone`, `gender`, `role`, `created_at`, `latitude`, `longitude`, `company_details`) VALUES
 (1, 'NonFreelance', 'non@non.com', '1234', 'Non', '1234567890', NULL, 'freelancer', '2026-02-25 10:05:27', 13.7563, 100.5018, NULL),
 (2, 'GuntinanCompany', 'gun@company.com', '1234', 'Guntinan Company', '1234567890', NULL, 'employer', '2026-02-25 10:08:15', NULL, NULL, NULL),
 (3, 'Admin', 'admin@admin.com', '1234', 'tester3', '1234567890', NULL, 'admin', '2026-02-25 10:13:45', NULL, NULL, NULL),
@@ -409,98 +409,98 @@ INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `fullname`, `ph
 --
 
 --
--- Indexes for table `categories`
+-- Indexes for table `Categories`
 --
-ALTER TABLE `categories`
+ALTER TABLE `Categories`
   ADD PRIMARY KEY (`category_id`);
 
 --
--- Indexes for table `chat_messages`
+-- Indexes for table `Chat_Messages`
 --
-ALTER TABLE `chat_messages`
+ALTER TABLE `Chat_Messages`
   ADD PRIMARY KEY (`message_id`);
 
 --
--- Indexes for table `employer_profile`
+-- Indexes for table `Employer_Profile`
 --
-ALTER TABLE `employer_profile`
+ALTER TABLE `Employer_Profile`
   ADD PRIMARY KEY (`employer_id`);
 
 --
--- Indexes for table `employer_rating`
+-- Indexes for table `Employer_Rating`
 --
-ALTER TABLE `employer_rating`
+ALTER TABLE `Employer_Rating`
   ADD PRIMARY KEY (`rating_id`);
 
 --
--- Indexes for table `employer_review`
+-- Indexes for table `Employer_Review`
 --
-ALTER TABLE `employer_review`
+ALTER TABLE `Employer_Review`
   ADD PRIMARY KEY (`review_id`),
   ADD KEY `job_id` (`job_id`);
 
 --
--- Indexes for table `freelancer_profile`
+-- Indexes for table `Freelancer_Profile`
 --
-ALTER TABLE `freelancer_profile`
+ALTER TABLE `Freelancer_Profile`
   ADD PRIMARY KEY (`freelancer_id`);
 
 --
--- Indexes for table `freelancer_rating`
+-- Indexes for table `Freelancer_Rating`
 --
-ALTER TABLE `freelancer_rating`
+ALTER TABLE `Freelancer_Rating`
   ADD PRIMARY KEY (`rating_id`);
 
 --
--- Indexes for table `freelancer_review`
+-- Indexes for table `Freelancer_Review`
 --
-ALTER TABLE `freelancer_review`
+ALTER TABLE `Freelancer_Review`
   ADD PRIMARY KEY (`review_id`);
 
 --
--- Indexes for table `job`
+-- Indexes for table `Job`
 --
-ALTER TABLE `job`
+ALTER TABLE `Job`
   ADD PRIMARY KEY (`job_id`),
   ADD KEY `employer_id` (`employer_id`);
 
 --
--- Indexes for table `job_images`
+-- Indexes for table `Job_Images`
 --
-ALTER TABLE `job_images`
+ALTER TABLE `Job_Images`
   ADD PRIMARY KEY (`image_id`),
   ADD KEY `job_id` (`job_id`);
 
 --
--- Indexes for table `job_application`
+-- Indexes for table `Job_Application`
 --
-ALTER TABLE `job_application`
+ALTER TABLE `Job_Application`
   ADD PRIMARY KEY (`application_id`);
 
 --
--- Indexes for table `like_employer`
+-- Indexes for table `Like_Employer`
 --
-ALTER TABLE `like_employer`
+ALTER TABLE `Like_Employer`
   ADD PRIMARY KEY (`like_id`);
 
 --
--- Indexes for table `resume`
+-- Indexes for table `Resume`
 --
-ALTER TABLE `resume`
+ALTER TABLE `Resume`
   ADD PRIMARY KEY (`resume_id`);
 
 --
--- Indexes for table `saved_freelancers`
+-- Indexes for table `Saved_Freelancers`
 --
-ALTER TABLE `saved_freelancers`
+ALTER TABLE `Saved_Freelancers`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_save` (`employer_id`,`freelancer_id`),
   ADD KEY `freelancer_id` (`freelancer_id`);
 
 --
--- Indexes for table `users`
+-- Indexes for table `Users`
 --
-ALTER TABLE `users`
+ALTER TABLE `Users`
   ADD PRIMARY KEY (`user_id`);
 
 --
@@ -508,93 +508,93 @@ ALTER TABLE `users`
 --
 
 --
--- AUTO_INCREMENT for table `categories`
+-- AUTO_INCREMENT for table `Categories`
 --
-ALTER TABLE `categories`
+ALTER TABLE `Categories`
   MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
--- AUTO_INCREMENT for table `chat_messages`
+-- AUTO_INCREMENT for table `Chat_Messages`
 --
-ALTER TABLE `chat_messages`
+ALTER TABLE `Chat_Messages`
   MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
--- AUTO_INCREMENT for table `employer_profile`
+-- AUTO_INCREMENT for table `Employer_Profile`
 --
-ALTER TABLE `employer_profile`
+ALTER TABLE `Employer_Profile`
   MODIFY `employer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT for table `employer_rating`
+-- AUTO_INCREMENT for table `Employer_Rating`
 --
-ALTER TABLE `employer_rating`
+ALTER TABLE `Employer_Rating`
   MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `employer_review`
+-- AUTO_INCREMENT for table `Employer_Review`
 --
-ALTER TABLE `employer_review`
+ALTER TABLE `Employer_Review`
   MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT for table `freelancer_profile`
+-- AUTO_INCREMENT for table `Freelancer_Profile`
 --
-ALTER TABLE `freelancer_profile`
+ALTER TABLE `Freelancer_Profile`
   MODIFY `freelancer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
--- AUTO_INCREMENT for table `freelancer_rating`
+-- AUTO_INCREMENT for table `Freelancer_Rating`
 --
-ALTER TABLE `freelancer_rating`
+ALTER TABLE `Freelancer_Rating`
   MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT for table `freelancer_review`
+-- AUTO_INCREMENT for table `Freelancer_Review`
 --
-ALTER TABLE `freelancer_review`
+ALTER TABLE `Freelancer_Review`
   MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT for table `job`
+-- AUTO_INCREMENT for table `Job`
 --
-ALTER TABLE `job`
+ALTER TABLE `Job`
   MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
--- AUTO_INCREMENT for table `job_images`
+-- AUTO_INCREMENT for table `Job_Images`
 --
-ALTER TABLE `job_images`
+ALTER TABLE `Job_Images`
   MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `job_application`
+-- AUTO_INCREMENT for table `Job_Application`
 --
-ALTER TABLE `job_application`
+ALTER TABLE `Job_Application`
   MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT for table `like_employer`
+-- AUTO_INCREMENT for table `Like_Employer`
 --
-ALTER TABLE `like_employer`
+ALTER TABLE `Like_Employer`
   MODIFY `like_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT for table `resume`
+-- AUTO_INCREMENT for table `Resume`
 --
-ALTER TABLE `resume`
+ALTER TABLE `Resume`
   MODIFY `resume_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT for table `saved_freelancers`
+-- AUTO_INCREMENT for table `Saved_Freelancers`
 --
-ALTER TABLE `saved_freelancers`
+ALTER TABLE `Saved_Freelancers`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
--- AUTO_INCREMENT for table `users`
+-- AUTO_INCREMENT for table `Users`
 --
-ALTER TABLE `users`
+ALTER TABLE `Users`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
@@ -602,29 +602,29 @@ ALTER TABLE `users`
 --
 
 --
--- Constraints for table `employer_review`
+-- Constraints for table `Employer_Review`
 --
-ALTER TABLE `employer_review`
-  ADD CONSTRAINT `employer_review_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`job_id`) ON DELETE CASCADE;
+ALTER TABLE `Employer_Review`
+  ADD CONSTRAINT `employer_review_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `Job` (`job_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `job`
+-- Constraints for table `Job`
 --
-ALTER TABLE `job`
-  ADD CONSTRAINT `job_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `Job`
+  ADD CONSTRAINT `job_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `job_images`
+-- Constraints for table `Job_Images`
 --
-ALTER TABLE `job_images`
-  ADD CONSTRAINT `job_images_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`job_id`) ON DELETE CASCADE;
+ALTER TABLE `Job_Images`
+  ADD CONSTRAINT `job_images_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `Job` (`job_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `saved_freelancers`
+-- Constraints for table `Saved_Freelancers`
 --
-ALTER TABLE `saved_freelancers`
-  ADD CONSTRAINT `saved_freelancers_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `saved_freelancers_ibfk_2` FOREIGN KEY (`freelancer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `Saved_Freelancers`
+  ADD CONSTRAINT `saved_freelancers_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `saved_freelancers_ibfk_2` FOREIGN KEY (`freelancer_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

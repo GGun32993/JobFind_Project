@@ -1,29 +1,12 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
+require_once __DIR__ . "/../helpers/support_helpers.php";
 require_once __DIR__ . "/../helpers/category_helpers.php";
 
-$admin_unread_support = 0;
-if(isset($_SESSION['user_id'])){
-    $admin_id_for_badge = (int)$_SESSION['user_id'];
-    $col_check = mysqli_query($conn,"SHOW COLUMNS FROM chat_messages LIKE 'is_read'");
-    if($col_check && mysqli_num_rows($col_check) === 0){
-        mysqli_query($conn,"ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) DEFAULT 0");
-    }
-    $unread_support = mysqli_fetch_assoc(mysqli_query($conn,"
-        SELECT COUNT(*) AS c
-        FROM chat_messages cm
-        JOIN users u ON u.user_id=cm.sender_id
-        WHERE cm.receiver_id='$admin_id_for_badge'
-        AND cm.is_read=0
-    "));
-    $admin_unread_support = (int)($unread_support['c'] ?? 0);
-}
-
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
-    header("Location: ../login.php");
-    exit();
-}
+$admin_id_for_badge = jobfind_require_role('admin');
+$admin_unread_support = admin_unread_support_count($conn, $admin_id_for_badge);
 
 ensure_category_schema($conn);
 ensure_default_job_categories($conn);
@@ -35,11 +18,11 @@ if(isset($_POST['add'])){
     $name = mysqli_real_escape_string($conn, trim($_POST['name']));
     $icon = mysqli_real_escape_string($conn, trim($_POST['icon']));
     if($name !== ''){
-        $exists = mysqli_fetch_assoc(mysqli_query($conn,"SELECT category_id FROM categories WHERE name='$name' LIMIT 1"));
+        $exists = mysqli_fetch_assoc(mysqli_query($conn,"SELECT category_id FROM Categories WHERE name='$name' LIMIT 1"));
         if($exists){
             $toast = 'dup';
         } else {
-            $r = mysqli_query($conn,"INSERT INTO categories (name,icon) VALUES ('$name','$icon')");
+            $r = mysqli_query($conn,"INSERT INTO Categories (name,icon) VALUES ('$name','$icon')");
             $toast = $r ? 'added' : 'dup';
         }
     }
@@ -51,19 +34,19 @@ if(isset($_POST['edit'])){
     $id   = intval($_POST['category_id']);
     $name = mysqli_real_escape_string($conn, trim($_POST['name']));
     $icon = mysqli_real_escape_string($conn, trim($_POST['icon']));
-    $old_cat = mysqli_fetch_assoc(mysqli_query($conn,"SELECT name FROM categories WHERE category_id='$id' LIMIT 1"));
+    $old_cat = mysqli_fetch_assoc(mysqli_query($conn,"SELECT name FROM Categories WHERE category_id='$id' LIMIT 1"));
     $dup = $name !== ''
-        ? mysqli_fetch_assoc(mysqli_query($conn,"SELECT category_id FROM categories WHERE name='$name' AND category_id!='$id' LIMIT 1"))
+        ? mysqli_fetch_assoc(mysqli_query($conn,"SELECT category_id FROM Categories WHERE name='$name' AND category_id!='$id' LIMIT 1"))
         : true;
 
     if($dup){
         header("Location: manage_categories.php?toast=dup"); exit();
     }
 
-    mysqli_query($conn,"UPDATE categories SET name='$name', icon='$icon' WHERE category_id='$id'");
+    mysqli_query($conn,"UPDATE Categories SET name='$name', icon='$icon' WHERE category_id='$id'");
     if($old_cat && ($old_cat['name'] ?? '') !== trim($_POST['name'])){
         $old_name = mysqli_real_escape_string($conn, $old_cat['name']);
-        mysqli_query($conn,"UPDATE job SET category='$name' WHERE category='$old_name'");
+        mysqli_query($conn,"UPDATE Job SET category='$name' WHERE category='$old_name'");
     }
     header("Location: manage_categories.php?toast=edited"); exit();
 }
@@ -76,7 +59,7 @@ if(isset($_POST['add_subcategory'])){
     if($category_id > 0 && $name !== ''){
         $exists = mysqli_fetch_assoc(mysqli_query($conn,"
             SELECT subcategory_id
-            FROM job_subcategories
+            FROM Job_Subcategories
             WHERE category_id='$category_id' AND name='$name'
             LIMIT 1
         "));
@@ -84,7 +67,7 @@ if(isset($_POST['add_subcategory'])){
             $toast = 'sub_dup';
         } else {
             $r = mysqli_query($conn,"
-                INSERT INTO job_subcategories (category_id, name)
+                INSERT INTO Job_Subcategories (category_id, name)
                 VALUES ('$category_id', '$name')
             ");
             $toast = $r ? 'sub_added' : 'sub_dup';
@@ -103,8 +86,8 @@ if(isset($_POST['edit_subcategory'])){
 
     $old_sub = mysqli_fetch_assoc(mysqli_query($conn,"
         SELECT js.name, js.category_id, c.name AS category_name
-        FROM job_subcategories js
-        JOIN categories c ON c.category_id=js.category_id
+        FROM Job_Subcategories js
+        JOIN Categories c ON c.category_id=js.category_id
         WHERE js.subcategory_id='$subcategory_id'
         LIMIT 1
     "));
@@ -113,7 +96,7 @@ if(isset($_POST['edit_subcategory'])){
         ? true
         : mysqli_fetch_assoc(mysqli_query($conn,"
             SELECT subcategory_id
-            FROM job_subcategories
+            FROM Job_Subcategories
             WHERE category_id='$category_id' AND name='$name' AND subcategory_id!='$subcategory_id'
             LIMIT 1
         "));
@@ -122,9 +105,9 @@ if(isset($_POST['edit_subcategory'])){
         header("Location: manage_categories.php?toast=sub_dup"); exit();
     }
 
-    $new_cat = mysqli_fetch_assoc(mysqli_query($conn,"SELECT name FROM categories WHERE category_id='$category_id' LIMIT 1"));
+    $new_cat = mysqli_fetch_assoc(mysqli_query($conn,"SELECT name FROM Categories WHERE category_id='$category_id' LIMIT 1"));
     mysqli_query($conn,"
-        UPDATE job_subcategories
+        UPDATE Job_Subcategories
         SET category_id='$category_id', name='$name'
         WHERE subcategory_id='$subcategory_id'
     ");
@@ -134,7 +117,7 @@ if(isset($_POST['edit_subcategory'])){
         $old_sub_name = mysqli_real_escape_string($conn, $old_sub['name']);
         $new_category_name = mysqli_real_escape_string($conn, $new_cat['name']);
         mysqli_query($conn,"
-            UPDATE job
+            UPDATE Job
             SET category='$new_category_name', job_subcategory='$name'
             WHERE category='$old_category_name' AND job_subcategory='$old_sub_name'
         ");
@@ -146,8 +129,8 @@ if(isset($_POST['edit_subcategory'])){
 // ── DELETE ──
 if(isset($_GET['delete'])){
     $id = intval($_GET['delete']);
-    mysqli_query($conn,"DELETE FROM job_subcategories WHERE category_id='$id'");
-    mysqli_query($conn,"DELETE FROM categories WHERE category_id='$id'");
+    mysqli_query($conn,"DELETE FROM Job_Subcategories WHERE category_id='$id'");
+    mysqli_query($conn,"DELETE FROM Categories WHERE category_id='$id'");
     header("Location: manage_categories.php?toast=deleted"); exit();
 }
 
@@ -156,8 +139,8 @@ if(isset($_GET['delete_subcategory'])){
     $id = intval($_GET['delete_subcategory']);
     $old_sub = mysqli_fetch_assoc(mysqli_query($conn,"
         SELECT js.name, c.name AS category_name
-        FROM job_subcategories js
-        JOIN categories c ON c.category_id=js.category_id
+        FROM Job_Subcategories js
+        JOIN Categories c ON c.category_id=js.category_id
         WHERE js.subcategory_id='$id'
         LIMIT 1
     "));
@@ -165,25 +148,25 @@ if(isset($_GET['delete_subcategory'])){
         $old_category_name = mysqli_real_escape_string($conn, $old_sub['category_name']);
         $old_sub_name = mysqli_real_escape_string($conn, $old_sub['name']);
         mysqli_query($conn,"
-            UPDATE job
+            UPDATE Job
             SET job_subcategory=NULL
             WHERE category='$old_category_name' AND job_subcategory='$old_sub_name'
         ");
     }
-    mysqli_query($conn,"DELETE FROM job_subcategories WHERE subcategory_id='$id'");
+    mysqli_query($conn,"DELETE FROM Job_Subcategories WHERE subcategory_id='$id'");
     header("Location: manage_categories.php?toast=sub_deleted"); exit();
 }
 
 // ── GET ALL ──
 $cats = [];
-$res  = mysqli_query($conn,"SELECT * FROM categories ORDER BY " . jobfind_category_order_clause($conn));
+$res  = mysqli_query($conn,"SELECT * FROM Categories ORDER BY " . jobfind_category_order_clause($conn));
 while($r = mysqli_fetch_assoc($res)) $cats[] = $r;
 
 $subcats_by_category = [];
 $subcat_res = mysqli_query($conn,"
     SELECT js.*, c.name AS category_name
-    FROM job_subcategories js
-    JOIN categories c ON c.category_id=js.category_id
+    FROM Job_Subcategories js
+    JOIN Categories c ON c.category_id=js.category_id
     ORDER BY " . jobfind_category_sort_expression($conn, 'c.name') . " ASC,
              " . jobfind_category_sort_expression($conn, 'js.name') . " ASC,
              js.subcategory_id ASC

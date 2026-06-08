@@ -1,15 +1,18 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
+require_once __DIR__ . "/../helpers/support_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
+require_once __DIR__ . "/../helpers/job_image_helpers.php";
+require_once __DIR__ . "/../helpers/review_schema.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "admin"){
-    header("Location: ../login.php"); exit();
-}
+$admin_id_for_badge = jobfind_require_role('admin');
 
 ensure_location_schema($conn);
 ensure_profile_image_schema($conn);
+ensure_freelancer_review_schema($conn);
 
 function admin_profile_location_text($row, $prefix) {
     $district = trim($row[$prefix . '_district'] ?? '');
@@ -53,20 +56,140 @@ function admin_profile_preview($row) {
     ];
 }
 
-$admin_unread_support = 0;
-$admin_id_for_badge = (int)$_SESSION['user_id'];
-$col_check = mysqli_query($conn,"SHOW COLUMNS FROM chat_messages LIKE 'is_read'");
-if($col_check && mysqli_num_rows($col_check) === 0){
-    mysqli_query($conn,"ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) DEFAULT 0");
+function admin_delete_query($conn, $sql)
+{
+    if (mysqli_query($conn, $sql)) {
+        return true;
+    }
+
+    error_log('Admin delete user failed: ' . mysqli_error($conn) . ' SQL: ' . $sql);
+    return false;
 }
-$unread_support = mysqli_fetch_assoc(mysqli_query($conn,"
-    SELECT COUNT(*) AS c
-    FROM chat_messages cm
-    JOIN users u ON u.user_id=cm.sender_id
-    WHERE cm.receiver_id='$admin_id_for_badge'
-    AND cm.is_read=0
-"));
-$admin_unread_support = (int)($unread_support['c'] ?? 0);
+
+function admin_delete_if_table_exists($conn, $table, $sql)
+{
+    if (!jobfind_table_exists($conn, $table)) {
+        return true;
+    }
+
+    return admin_delete_query($conn, $sql);
+}
+
+function admin_delete_uploaded_file($path, $allowed_exts)
+{
+    $path = trim((string)$path);
+    if ($path === '') {
+        return;
+    }
+
+    $full_path = realpath(JOBFIND_ROOT_PATH . DIRECTORY_SEPARATOR . $path);
+    $uploads_dir = realpath(JOBFIND_UPLOADS_PATH);
+    if (!$full_path || !$uploads_dir || strpos($full_path, $uploads_dir) !== 0 || !is_file($full_path)) {
+        return;
+    }
+
+    $ext = strtolower(pathinfo($full_path, PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowed_exts, true)) {
+        return;
+    }
+
+    unlink($full_path);
+}
+
+function admin_delete_user_cascade($conn, $user_id)
+{
+    $user_id = (int)$user_id;
+    if ($user_id <= 0) {
+        return false;
+    }
+
+    $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT user_id, profile_image FROM Users WHERE user_id='$user_id' LIMIT 1"));
+    if (!$user) {
+        return false;
+    }
+
+    $job_ids = [];
+    $job_image_paths = [];
+    $job_result = mysqli_query($conn, "SELECT job_id, image_path FROM Job WHERE employer_id='$user_id'");
+    if ($job_result) {
+        while ($job = mysqli_fetch_assoc($job_result)) {
+            $job_ids[] = (int)$job['job_id'];
+            if (!empty($job['image_path'])) {
+                $job_image_paths[] = $job['image_path'];
+            }
+        }
+    }
+
+    if (!empty($job_ids) && jobfind_table_exists($conn, 'Job_Images')) {
+        $job_id_csv = implode(',', $job_ids);
+        $image_result = mysqli_query($conn, "SELECT image_path FROM Job_Images WHERE job_id IN ($job_id_csv)");
+        if ($image_result) {
+            while ($image = mysqli_fetch_assoc($image_result)) {
+                if (!empty($image['image_path'])) {
+                    $job_image_paths[] = $image['image_path'];
+                }
+            }
+        }
+    }
+
+    $resume_files = [];
+    $resume_result = mysqli_query($conn, "SELECT file_name FROM Resume WHERE freelancer_id='$user_id'");
+    if ($resume_result) {
+        while ($resume = mysqli_fetch_assoc($resume_result)) {
+            if (!empty($resume['file_name'])) {
+                $resume_files[] = 'uploads/' . basename((string)$resume['file_name']);
+            }
+        }
+    }
+
+    $queries = [];
+    if (!empty($job_ids)) {
+        $job_id_csv = implode(',', $job_ids);
+        $queries[] = ['Job_Images', "DELETE FROM Job_Images WHERE job_id IN ($job_id_csv)"];
+        $queries[] = "DELETE FROM Job_Application WHERE job_id IN ($job_id_csv)";
+        $queries[] = "DELETE FROM Employer_Review WHERE job_id IN ($job_id_csv)";
+        $queries[] = "DELETE FROM Freelancer_Review WHERE job_id IN ($job_id_csv)";
+        $queries[] = "DELETE FROM Job WHERE job_id IN ($job_id_csv)";
+    }
+
+    $queries = array_merge($queries, [
+        "DELETE FROM Job_Application WHERE freelancer_id='$user_id'",
+        "DELETE FROM Resume WHERE freelancer_id='$user_id'",
+        "DELETE FROM Saved_Freelancers WHERE employer_id='$user_id' OR freelancer_id='$user_id'",
+        "DELETE FROM Like_Employer WHERE employer_id='$user_id' OR freelancer_id='$user_id'",
+        "DELETE FROM Chat_Messages WHERE sender_id='$user_id' OR receiver_id='$user_id'",
+        "DELETE FROM Employer_Review WHERE employer_id='$user_id' OR freelancer_id='$user_id'",
+        "DELETE FROM Freelancer_Review WHERE employer_id='$user_id' OR freelancer_id='$user_id'",
+        "DELETE FROM Employer_Rating WHERE employer_id='$user_id' OR freelancer_id='$user_id'",
+        "DELETE FROM Freelancer_Rating WHERE employer_id='$user_id' OR freelancer_id='$user_id'",
+        "DELETE FROM Employer_Profile WHERE user_id='$user_id'",
+        "DELETE FROM Freelancer_Profile WHERE user_id='$user_id'",
+        "DELETE FROM Users WHERE user_id='$user_id'",
+    ]);
+
+    mysqli_begin_transaction($conn);
+    foreach ($queries as $query) {
+        $ok = is_array($query)
+            ? admin_delete_if_table_exists($conn, $query[0], $query[1])
+            : admin_delete_query($conn, $query);
+        if (!$ok) {
+            mysqli_rollback($conn);
+            return false;
+        }
+    }
+
+    mysqli_commit($conn);
+    delete_profile_image_file($user['profile_image'] ?? '');
+    foreach (array_unique($job_image_paths) as $path) {
+        delete_job_image_file($path);
+    }
+    foreach (array_unique($resume_files) as $path) {
+        admin_delete_uploaded_file($path, ['pdf']);
+    }
+    return true;
+}
+
+$admin_unread_support = admin_unread_support_count($conn, $admin_id_for_badge);
 
 $toast = '';
 
@@ -74,8 +197,7 @@ $toast = '';
 if(isset($_GET['delete'])){
     $del_id = intval($_GET['delete']);
     if($del_id != $_SESSION['user_id']){
-        mysqli_query($conn,"DELETE FROM users WHERE user_id='$del_id'");
-        $toast = 'deleted';
+        $toast = admin_delete_user_cascade($conn, $del_id) ? 'deleted' : 'delete_failed';
     } else { $toast = 'self'; }
     header("Location: manage_users.php?toast=$toast"); exit();
 }
@@ -89,19 +211,19 @@ if(isset($_POST['add_user'])){
     $ph   = mysqli_real_escape_string($conn, trim($_POST['phone']));
     $role = mysqli_real_escape_string($conn, $_POST['role']);
 
-    $dup = mysqli_fetch_assoc(mysqli_query($conn,"SELECT user_id FROM users WHERE username='$un' OR email='$em'"));
+    $dup = mysqli_fetch_assoc(mysqli_query($conn,"SELECT user_id FROM Users WHERE username='$un' OR email='$em'"));
     if($dup){
         $toast = 'dup';
     } else {
         mysqli_query($conn,"
-            INSERT INTO users (username,email,password,fullname,phone,role)
+            INSERT INTO Users (username,email,password,fullname,phone,role)
             VALUES ('$un','$em','$pw','$fn','$ph','$role')
         ");
         $new_id = mysqli_insert_id($conn);
         if($role === 'freelancer'){
-            mysqli_query($conn,"INSERT INTO freelancer_profile (user_id,skill,experience,location) VALUES ('$new_id','','','')");
+            mysqli_query($conn,"INSERT INTO Freelancer_Profile (user_id,skill,experience,location) VALUES ('$new_id','','','')");
         } elseif($role === 'employer'){
-            mysqli_query($conn,"INSERT INTO employer_profile (user_id,employer_name,employer_description) VALUES ('$new_id','$fn','')");
+            mysqli_query($conn,"INSERT INTO Employer_Profile (user_id,employer_name,employer_description) VALUES ('$new_id','$fn','')");
         }
         $toast = 'added';
     }
@@ -127,9 +249,9 @@ $result = mysqli_query($conn,"
         ep.province AS employer_province,
         ep.district AS employer_district,
         ep.postal_code AS employer_postal_code
-    FROM users u
-    LEFT JOIN freelancer_profile fp ON fp.user_id = u.user_id
-    LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
+    FROM Users u
+    LEFT JOIN Freelancer_Profile fp ON fp.user_id = u.user_id
+    LEFT JOIN Employer_Profile ep ON ep.user_id = u.user_id
     ORDER BY u.created_at DESC
 ");
 $rows = []; $count_fl = 0; $count_em = 0; $count_ad = 0;
@@ -295,6 +417,7 @@ $toasts = [
     'deleted'=>['ok','bi-check-circle-fill','var(--green)','ลบผู้ใช้เรียบร้อยแล้ว'],
     'added'  =>['ok','bi-check-circle-fill','var(--green)','เพิ่มผู้ใช้ใหม่เรียบร้อยแล้ว'],
     'self'   =>['err','bi-exclamation-triangle-fill','#fca5a5','ไม่สามารถลบบัญชีของตัวเองได้'],
+    'delete_failed'=>['err','bi-exclamation-triangle-fill','#fca5a5','ลบผู้ใช้ไม่สำเร็จ กรุณาตรวจสอบข้อมูลที่เกี่ยวข้อง'],
     'dup'    =>['err','bi-exclamation-triangle-fill','#fca5a5','Username หรือ Email นี้ถูกใช้งานแล้ว'],
 ];
 if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):

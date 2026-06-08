@@ -62,14 +62,14 @@ if(isset($_POST['register'])){
     if(strlen($password_plain) < 6){
         $error = "Password must be at least 6 characters.";
     } else {
-    $dup = mysqli_query($conn,"SELECT user_id FROM users WHERE username='$username' OR email='$email'");
+    $dup = mysqli_query($conn,"SELECT user_id FROM Users WHERE username='$username' OR email='$email'");
     if($dup && mysqli_num_rows($dup) > 0){
         $error = "Username หรือ Email นี้ถูกใช้งานแล้ว";
     } else {
         mysqli_begin_transaction($conn);
 
         $user_ok = mysqli_query($conn,"
-            INSERT INTO users (username,email,password,fullname,phone,gender,role,latitude,longitude)
+            INSERT INTO Users (username,email,password,fullname,phone,gender,role,latitude,longitude)
             VALUES ('$username','$email','$password','$fullname','$phone',$gender_sql,'$role',$latitude_sql,$longitude_sql)
         ");
         $user_id = $user_ok ? mysqli_insert_id($conn) : 0;
@@ -77,7 +77,7 @@ if(isset($_POST['register'])){
 
         if($user_ok && $user_id > 0 && $role == "freelancer"){
             $profile_ok = mysqli_query($conn,"
-                INSERT INTO freelancer_profile
+                INSERT INTO Freelancer_Profile
                     (user_id,skill,experience,age,location,address,province,district,postal_code,latitude,longitude,preferred_radius_km)
                 VALUES
                     ('$user_id','','',$age_sql,'$location','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql,$radius_sql)
@@ -85,7 +85,7 @@ if(isset($_POST['register'])){
         }
         if($user_ok && $user_id > 0 && $role == "employer"){
             $profile_ok = mysqli_query($conn,"
-                INSERT INTO employer_profile
+                INSERT INTO Employer_Profile
                     (user_id,employer_name,employer_description,address,province,district,postal_code,latitude,longitude)
                 VALUES
                     ('$user_id','$fullname','','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql)

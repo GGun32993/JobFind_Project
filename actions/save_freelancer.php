@@ -4,13 +4,10 @@ session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . "/../config/config.php";  // ✅ ใช้ config.php
 
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'employer') {
-    echo json_encode(['success' => false, 'message' => 'Please login']);
-    exit();
-}
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 
-$employer_id = $_SESSION['user_id'];
-$freelancer_id = $_POST['freelancer_id'] ?? 0;
+$employer_id = jobfind_require_json_role('employer', ['success' => false, 'message' => 'Please login']);
+$freelancer_id = intval($_POST['freelancer_id'] ?? 0);
 $action = $_POST['action'] ?? '';
 
 if (!$freelancer_id || !in_array($action, ['save', 'unsave'])) {
@@ -20,13 +17,13 @@ if (!$freelancer_id || !in_array($action, ['save', 'unsave'])) {
 
 try {
     if ($action === 'save') {
-        $sql = "INSERT INTO saved_freelancers (employer_id, freelancer_id, saved_at) 
-                VALUES (?, ?, NOW()) 
+        $sql = "INSERT INTO Saved_Freelancers (employer_id, freelancer_id, saved_at)
+                VALUES (?, ?, NOW())
                 ON DUPLICATE KEY UPDATE saved_at = NOW()";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("ii", $employer_id, $freelancer_id);
     } else {
-        $sql = "DELETE FROM saved_freelancers WHERE employer_id = ? AND freelancer_id = ?";
+        $sql = "DELETE FROM Saved_Freelancers WHERE employer_id = ? AND freelancer_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("ii", $employer_id, $freelancer_id);
     }

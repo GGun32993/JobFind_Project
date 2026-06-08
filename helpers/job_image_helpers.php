@@ -3,13 +3,13 @@
 require_once __DIR__ . "/../config/config.php";
 
 function ensure_job_image_schema($conn){
-    $image_col = mysqli_query($conn, "SHOW COLUMNS FROM job LIKE 'image_path'");
+    $image_col = mysqli_query($conn, "SHOW COLUMNS FROM Job LIKE 'image_path'");
     if($image_col && mysqli_num_rows($image_col) === 0){
-        mysqli_query($conn, "ALTER TABLE job ADD image_path VARCHAR(255) DEFAULT NULL AFTER category");
+        mysqli_query($conn, "ALTER TABLE Job ADD image_path VARCHAR(255) DEFAULT NULL AFTER category");
     }
 
     mysqli_query($conn, "
-        CREATE TABLE IF NOT EXISTS job_images (
+        CREATE TABLE IF NOT EXISTS Job_Images (
             image_id INT(11) NOT NULL AUTO_INCREMENT,
             job_id INT(11) NOT NULL,
             image_path VARCHAR(255) NOT NULL,
@@ -21,14 +21,14 @@ function ensure_job_image_schema($conn){
     ");
 
     mysqli_query($conn, "
-        INSERT INTO job_images (job_id, image_path, sort_order)
+        INSERT INTO Job_Images (job_id, image_path, sort_order)
         SELECT j.job_id, j.image_path, 0
-        FROM job j
+        FROM Job j
         WHERE j.image_path IS NOT NULL
           AND j.image_path <> ''
           AND NOT EXISTS (
               SELECT 1
-              FROM job_images ji
+              FROM Job_Images ji
               WHERE ji.job_id = j.job_id
                 AND ji.image_path = j.image_path
           )
@@ -129,7 +129,7 @@ function get_job_images($conn, $job_id){
     $images = [];
     $res = mysqli_query($conn, "
         SELECT image_id, job_id, image_path, sort_order
-        FROM job_images
+        FROM Job_Images
         WHERE job_id = '$job_id'
         ORDER BY sort_order ASC, image_id ASC
     ");
@@ -164,7 +164,7 @@ function sync_job_primary_image($conn, $job_id){
     $job_id = intval($job_id);
     $primary = get_job_primary_image($conn, $job_id, '');
     $primary_sql = $primary !== '' ? "'" . mysqli_real_escape_string($conn, $primary) . "'" : "NULL";
-    return mysqli_query($conn, "UPDATE job SET image_path=$primary_sql WHERE job_id='$job_id'");
+    return mysqli_query($conn, "UPDATE Job SET image_path=$primary_sql WHERE job_id='$job_id'");
 }
 
 function delete_job_image_file($path){

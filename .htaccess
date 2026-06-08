@@ -3,7 +3,7 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    RewriteRule ^(config|helpers|includes|database|docs|migrations|_deploy|_legacy)/ - [F,L]
+    RewriteRule ^(config|helpers|includes|services|database|docs|migrations|_deploy|_legacy)/ - [F,L]
 </IfModule>
 
 <FilesMatch "^\.">

@@ -1,15 +1,11 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 
 header('Content-Type: application/json');
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "freelancer"){
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
-}
-
-$freelancer_id = intval($_SESSION['user_id']);
+$freelancer_id = jobfind_require_json_role('freelancer', ['success' => false, 'message' => 'Unauthorized']);
 $employer_id = intval($_GET['employer_id'] ?? 0);
 
 if($employer_id <= 0){
@@ -19,7 +15,7 @@ if($employer_id <= 0){
 
 // Check if already liked
 $check = mysqli_query($conn, "
-    SELECT * FROM like_employer
+    SELECT * FROM Like_Employer
     WHERE freelancer_id=$freelancer_id
     AND employer_id=$employer_id
 ");
@@ -27,7 +23,7 @@ $check = mysqli_query($conn, "
 if(mysqli_num_rows($check) == 0){
     // Insert like
     if(mysqli_query($conn, "
-        INSERT INTO like_employer
+        INSERT INTO Like_Employer
         (freelancer_id, employer_id)
         VALUES
         ($freelancer_id, $employer_id)
@@ -39,7 +35,7 @@ if(mysqli_num_rows($check) == 0){
 } else {
     // Delete like (unlike)
     if(mysqli_query($conn, "
-        DELETE FROM like_employer
+        DELETE FROM Like_Employer
         WHERE freelancer_id=$freelancer_id
         AND employer_id=$employer_id
     ")){

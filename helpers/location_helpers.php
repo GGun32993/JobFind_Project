@@ -126,8 +126,8 @@ function getFreelancerLocationSummary($conn, $user_id)
         SELECT fp.location, fp.address, fp.province, fp.district,
                fp.latitude, fp.longitude, fp.preferred_radius_km,
                u.latitude AS user_lat, u.longitude AS user_lon
-        FROM freelancer_profile fp
-        JOIN users u ON u.user_id = fp.user_id
+        FROM Freelancer_Profile fp
+        JOIN Users u ON u.user_id = fp.user_id
         WHERE fp.user_id = $user_id
         LIMIT 1
     ");
@@ -177,8 +177,8 @@ function getRecommendedJobs($conn, $user_id, $limit = 10, $min_match_score = 40)
         SELECT fp.location, fp.address, fp.province, fp.district,
                fp.latitude, fp.longitude, fp.preferred_radius_km,
                u.latitude AS user_lat, u.longitude AS user_lon
-        FROM freelancer_profile fp
-        JOIN users u ON u.user_id = fp.user_id
+        FROM Freelancer_Profile fp
+        JOIN Users u ON u.user_id = fp.user_id
         WHERE fp.user_id = $user_id
         LIMIT 1
     ");
@@ -224,12 +224,12 @@ function getRecommendedJobs($conn, $user_id, $limit = 10, $min_match_score = 40)
             ep.longitude AS employer_lon,
             u.latitude AS employer_user_lat,
             u.longitude AS employer_user_lon
-        FROM job j
-        JOIN users u ON u.user_id = j.employer_id
-        LEFT JOIN employer_profile ep ON ep.user_id = j.employer_id
+        FROM Job j
+        JOIN Users u ON u.user_id = j.employer_id
+        LEFT JOIN Employer_Profile ep ON ep.user_id = j.employer_id
         LEFT JOIN (
             SELECT employer_id, AVG(rating) AS avg_rating, COUNT(*) AS total_reviews
-            FROM employer_review
+            FROM Employer_Review
             GROUP BY employer_id
         ) er ON er.employer_id = j.employer_id
         WHERE j.admin_status = 'approved'
@@ -323,8 +323,8 @@ function getNearbyFreelancers($conn, $employer_user_id, $limit = 10, $min_match_
     $employer_query = mysqli_query($conn, "
         SELECT ep.address, ep.province, ep.district, ep.latitude, ep.longitude,
                u.latitude AS user_lat, u.longitude AS user_lon
-        FROM employer_profile ep
-        JOIN users u ON u.user_id = ep.user_id
+        FROM Employer_Profile ep
+        JOIN Users u ON u.user_id = ep.user_id
         WHERE ep.user_id = $employer_user_id
         LIMIT 1
     ");
@@ -362,10 +362,10 @@ function getNearbyFreelancers($conn, $employer_user_id, $limit = 10, $min_match_
             fp.latitude,
             fp.longitude,
             fp.preferred_radius_km,
-            (SELECT COUNT(*) FROM freelancer_review WHERE freelancer_id = u.user_id) AS review_count,
-            (SELECT AVG(rating) FROM freelancer_review WHERE freelancer_id = u.user_id) AS avg_rating
-        FROM users u
-        JOIN freelancer_profile fp ON fp.user_id = u.user_id
+            (SELECT COUNT(*) FROM Freelancer_Review WHERE freelancer_id = u.user_id) AS review_count,
+            (SELECT AVG(rating) FROM Freelancer_Review WHERE freelancer_id = u.user_id) AS avg_rating
+        FROM Users u
+        JOIN Freelancer_Profile fp ON fp.user_id = u.user_id
         WHERE u.role = 'freelancer'
         ORDER BY fp.created_at DESC
         LIMIT 150

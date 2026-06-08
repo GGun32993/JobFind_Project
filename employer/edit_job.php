@@ -1,18 +1,14 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
 require_once __DIR__ . "/../helpers/category_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "employer"){
-    header("Location: ../login.php");
-    exit();
-}
-
 $job_id = intval($_GET['job_id'] ?? $_GET['id'] ?? 0);
-$employer_id = intval($_SESSION['user_id']);
+$employer_id = jobfind_require_role('employer');
 $toast = '';
 ensure_job_image_schema($conn);
 ensure_location_schema($conn);
@@ -32,7 +28,7 @@ function jobfind_location_text_from_profile(array $profile, string $fallback = '
     return $location !== '' ? $location : $fallback;
 }
 
-$query = mysqli_query($conn, "SELECT * FROM job WHERE job_id='$job_id' AND employer_id='$employer_id'");
+$query = mysqli_query($conn, "SELECT * FROM Job WHERE job_id='$job_id' AND employer_id='$employer_id'");
 $job = mysqli_fetch_assoc($query);
 
 if(!$job){
@@ -43,7 +39,7 @@ if(!$job){
 $job_images = get_job_images($conn, $job_id);
 $employer_location = mysqli_fetch_assoc(mysqli_query($conn, "
     SELECT address, province, district
-    FROM employer_profile
+    FROM Employer_Profile
     WHERE user_id='$employer_id'
     LIMIT 1
 ")) ?: [];
@@ -72,8 +68,8 @@ if(isset($_POST['update'])){
     if($image_error === ''){
         $valid_category_pair = mysqli_fetch_assoc(mysqli_query($conn, "
             SELECT js.subcategory_id
-            FROM job_subcategories js
-            JOIN categories c ON c.category_id=js.category_id
+            FROM Job_Subcategories js
+            JOIN Categories c ON c.category_id=js.category_id
             WHERE c.name='$category' AND js.name='$job_subcategory'
             LIMIT 1
         "));
@@ -97,7 +93,7 @@ if(isset($_POST['update'])){
     mysqli_begin_transaction($conn);
 
     $updated = mysqli_query($conn, "
-        UPDATE job SET 
+        UPDATE Job SET
             title='$title',
             description='$description',
             location='$location',
@@ -115,7 +111,7 @@ if(isset($_POST['update'])){
         $ids_sql = implode(',', $delete_image_ids);
         $delete_res = mysqli_query($conn, "
             SELECT image_id, image_path
-            FROM job_images
+            FROM Job_Images
             WHERE job_id='$job_id' AND image_id IN ($ids_sql)
         ");
         if($delete_res){
@@ -123,18 +119,18 @@ if(isset($_POST['update'])){
                 $delete_paths[] = $img['image_path'];
             }
         }
-        $updated = mysqli_query($conn, "DELETE FROM job_images WHERE job_id='$job_id' AND image_id IN ($ids_sql)");
+        $updated = mysqli_query($conn, "DELETE FROM Job_Images WHERE job_id='$job_id' AND image_id IN ($ids_sql)");
     }
 
     if($updated && !empty($uploaded_images)){
-        $sort_res = mysqli_query($conn, "SELECT COALESCE(MAX(sort_order), -1) AS max_sort FROM job_images WHERE job_id='$job_id'");
+        $sort_res = mysqli_query($conn, "SELECT COALESCE(MAX(sort_order), -1) AS max_sort FROM Job_Images WHERE job_id='$job_id'");
         $sort_row = $sort_res ? mysqli_fetch_assoc($sort_res) : ['max_sort' => -1];
         $sort_order = intval($sort_row['max_sort']) + 1;
 
         foreach($uploaded_images as $path){
             $path_sql = mysqli_real_escape_string($conn, $path);
             $updated = mysqli_query($conn, "
-                INSERT INTO job_images (job_id, image_path, sort_order)
+                INSERT INTO Job_Images (job_id, image_path, sort_order)
                 VALUES ('$job_id', '$path_sql', '$sort_order')
             ");
             $sort_order++;
@@ -169,7 +165,7 @@ if(isset($_POST['update'])){
 }
 
 // ── GET JOB ──
-$query = mysqli_query($conn, "SELECT * FROM job WHERE job_id='$job_id' AND employer_id='$employer_id'");
+$query = mysqli_query($conn, "SELECT * FROM Job WHERE job_id='$job_id' AND employer_id='$employer_id'");
 $job = mysqli_fetch_assoc($query);
 
 if(!$job){

@@ -1,24 +1,20 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 
 ensure_profile_image_schema($conn);
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "employer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$user_id = $_SESSION['user_id'];
+$user_id = jobfind_require_role('employer');
 $sidebar_pending_apps = get_employer_pending_application_count($conn, $user_id);
 
 $result = mysqli_query($conn,"
     SELECT er.*, u.username AS freelancer_name, u.profile_image, j.title AS job_title
-    FROM employer_review er
-    JOIN users u ON er.freelancer_id = u.user_id
-    LEFT JOIN job j ON er.job_id = j.job_id
+    FROM Employer_Review er
+    JOIN Users u ON er.freelancer_id = u.user_id
+    LEFT JOIN Job j ON er.job_id = j.job_id
     WHERE er.employer_id = '$user_id'
     ORDER BY er.created_at DESC
 ");

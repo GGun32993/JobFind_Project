@@ -1,17 +1,13 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
 require_once __DIR__ . "/../helpers/category_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$employer_id = $_SESSION['user_id'];
+$employer_id = jobfind_require_role('employer');
 $error = '';
 ensure_job_image_schema($conn);
 ensure_location_schema($conn);
@@ -22,8 +18,8 @@ $sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_
 $employer_location = mysqli_fetch_assoc(mysqli_query($conn, "
     SELECT ep.address, ep.province, ep.district, ep.latitude, ep.longitude,
            u.latitude AS user_lat, u.longitude AS user_lon
-    FROM users u
-    LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
+    FROM Users u
+    LEFT JOIN Employer_Profile ep ON ep.user_id = u.user_id
     WHERE u.user_id = '$employer_id'
     LIMIT 1
 ")) ?: [];
@@ -77,8 +73,8 @@ if(isset($_POST['submit'])){
     if($error === ''){
         $valid_category_pair = mysqli_fetch_assoc(mysqli_query($conn, "
             SELECT js.subcategory_id
-            FROM job_subcategories js
-            JOIN categories c ON c.category_id=js.category_id
+            FROM Job_Subcategories js
+            JOIN Categories c ON c.category_id=js.category_id
             WHERE c.name='$category' AND js.name='$job_subcategory'
             LIMIT 1
         "));
@@ -93,7 +89,7 @@ if(isset($_POST['submit'])){
         $job_image_path = $job_image_paths[0] ?? '';
         $job_image_sql = $job_image_path !== '' ? "'" . mysqli_real_escape_string($conn, $job_image_path) . "'" : "NULL";
         $result = mysqli_query($conn,"
-            INSERT INTO job (employer_id,title,description,location,salary,latitude,longitude,deadline,category,job_subcategory,employment_type,image_path,status,admin_status)
+            INSERT INTO Job (employer_id,title,description,location,salary,latitude,longitude,deadline,category,job_subcategory,employment_type,image_path,status,admin_status)
             VALUES ('$employer_id','$title','$description','$location','$salary',$latitude_sql,$longitude_sql,$deadline_sql,'$category','$job_subcategory','$employment_type_sql',$job_image_sql,'open','pending')
         ");
 
@@ -104,7 +100,7 @@ if(isset($_POST['submit'])){
                 $path_sql = mysqli_real_escape_string($conn, $path);
                 $sort_order = intval($index);
                 $images_saved = mysqli_query($conn, "
-                    INSERT INTO job_images (job_id, image_path, sort_order)
+                    INSERT INTO Job_Images (job_id, image_path, sort_order)
                     VALUES ('$job_id', '$path_sql', '$sort_order')
                 ");
                 if(!$images_saved){
@@ -113,8 +109,8 @@ if(isset($_POST['submit'])){
             }
 
             if(!$images_saved){
-                mysqli_query($conn, "DELETE FROM job_images WHERE job_id='$job_id'");
-                mysqli_query($conn, "DELETE FROM job WHERE job_id='$job_id'");
+                mysqli_query($conn, "DELETE FROM Job_Images WHERE job_id='$job_id'");
+                mysqli_query($conn, "DELETE FROM Job WHERE job_id='$job_id'");
                 foreach($job_image_paths as $path){
                     delete_job_image_file($path);
                 }

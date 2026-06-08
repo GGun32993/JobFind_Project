@@ -5,11 +5,11 @@ require_once __DIR__ . "/location_schema.php";
 
 function ensure_profile_image_schema($conn)
 {
-    if (!$conn || !jobfind_table_exists($conn, 'users')) {
+    if (!$conn || !jobfind_table_exists($conn, 'Users')) {
         return false;
     }
 
-    return jobfind_add_column_if_missing($conn, 'users', 'profile_image', 'VARCHAR(255) DEFAULT NULL AFTER `longitude`');
+    return jobfind_add_column_if_missing($conn, 'Users', 'profile_image', 'VARCHAR(255) DEFAULT NULL AFTER `longitude`');
 }
 
 function profile_initials($name, $max_chars = 1)

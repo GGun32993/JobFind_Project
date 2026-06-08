@@ -1,14 +1,10 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$freelancer_id = $_SESSION['user_id'];
+$freelancer_id = jobfind_require_role('freelancer');
 $employer_id   = intval($_GET['employer_id'] ?? 0);
 $job_id        = isset($_GET['job_id']) ? intval($_GET['job_id']) : null;
 
@@ -36,14 +32,14 @@ $return_query = $return_url !== '' ? '&return_url=' . urlencode($return_url) : '
 if(!$employer_id){ header("Location: " . ($return_url ?: "browse_jobs.php")); exit(); }
 ensure_profile_image_schema($conn);
 
-$employer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT u.user_id, u.profile_image, COALESCE(ep.employer_name, u.username) AS company_name FROM users u LEFT JOIN employer_profile ep ON ep.user_id = u.user_id WHERE u.user_id='$employer_id'"));
+$employer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT u.user_id, u.profile_image, COALESCE(ep.employer_name, u.username) AS company_name FROM Users u LEFT JOIN Employer_Profile ep ON ep.user_id = u.user_id WHERE u.user_id='$employer_id'"));
 if(!$employer){ header("Location: browse_jobs.php"); exit(); }
 
 $profile_url = "../employer/profile.php?employer_id=$employer_id" . $return_query;
 $back_url = $return_url ?: "my_applications.php";
 $liked = mysqli_fetch_assoc(mysqli_query($conn, "
     SELECT 1
-    FROM like_employer
+    FROM Like_Employer
     WHERE freelancer_id='$freelancer_id'
     AND employer_id='$employer_id'
     LIMIT 1
@@ -51,9 +47,9 @@ $liked = mysqli_fetch_assoc(mysqli_query($conn, "
 
 // ตรวจสอบว่ารีวิวไปแล้วหรือยัง (แยกกรณีมี job_id กับ ไม่มี job_id)
 if($job_id){
-    $already_q = "SELECT review_id FROM employer_review WHERE employer_id='$employer_id' AND freelancer_id='$freelancer_id' AND job_id='$job_id'";
+    $already_q = "SELECT review_id FROM Employer_Review WHERE employer_id='$employer_id' AND freelancer_id='$freelancer_id' AND job_id='$job_id'";
 } else {
-    $already_q = "SELECT review_id FROM employer_review WHERE employer_id='$employer_id' AND freelancer_id='$freelancer_id' AND job_id IS NULL";
+    $already_q = "SELECT review_id FROM Employer_Review WHERE employer_id='$employer_id' AND freelancer_id='$freelancer_id' AND job_id IS NULL";
 }
 $already = mysqli_fetch_assoc(mysqli_query($conn, $already_q));
 
@@ -67,7 +63,7 @@ if(isset($_POST['submit']) && !$already){
         $error = 'กรุณาเลือกคะแนน 1-5 ดาว';
     } else {
         $job_val = $job_id ? "'$job_id'" : "NULL";
-        mysqli_query($conn, "INSERT INTO employer_review (employer_id, freelancer_id, job_id, rating, comment) VALUES ('$employer_id','$freelancer_id',$job_val,'$rating','$comment')");
+        mysqli_query($conn, "INSERT INTO Employer_Review (employer_id, freelancer_id, job_id, rating, comment) VALUES ('$employer_id','$freelancer_id',$job_val,'$rating','$comment')");
         header("Location: ../employer/profile.php?employer_id=$employer_id&reviewed=1" . $return_query);
         exit();
     }

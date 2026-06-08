@@ -31,7 +31,7 @@ $age = jobfind_normalize_age($_POST['age'] ?? '');
 $age_sql = $age !== null ? (string)$age : "NULL";
 
 mysqli_query($conn,"
-UPDATE users SET
+UPDATE Users SET
 fullname='$fullname',
 phone='$phone',
 email='$email',
@@ -39,16 +39,16 @@ gender=$gender_sql
 WHERE user_id='$user_id'
 ");
 
-$profile_exists = mysqli_fetch_assoc(mysqli_query($conn,"SELECT freelancer_id FROM freelancer_profile WHERE user_id='$user_id' LIMIT 1"));
+$profile_exists = mysqli_fetch_assoc(mysqli_query($conn,"SELECT freelancer_id FROM Freelancer_Profile WHERE user_id='$user_id' LIMIT 1"));
 if($profile_exists){
 mysqli_query($conn,"
-UPDATE freelancer_profile
+UPDATE Freelancer_Profile
 SET age=$age_sql
 WHERE user_id='$user_id'
 ");
 } else {
 mysqli_query($conn,"
-INSERT INTO freelancer_profile (user_id, age)
+INSERT INTO Freelancer_Profile (user_id, age)
 VALUES ('$user_id', $age_sql)
 ");
 }
@@ -63,7 +63,7 @@ echo "<script>alert('Profile updated');</script>";
 // =====================
 
 $query = mysqli_query($conn,"
-SELECT * FROM users
+SELECT * FROM Users
 WHERE user_id='$user_id'
 ");
 
@@ -71,7 +71,7 @@ $user = mysqli_fetch_assoc($query);
 $selected_gender = jobfind_normalize_gender($user['gender'] ?? '');
 
 $profile_query = mysqli_query($conn,"
-SELECT age FROM freelancer_profile
+SELECT age FROM Freelancer_Profile
 WHERE user_id='$user_id'
 LIMIT 1
 ");

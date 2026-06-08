@@ -10,7 +10,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
 $employer_id = $_SESSION['user_id'];
 
 $result = mysqli_query($conn,"
-SELECT * FROM job
+SELECT * FROM Job
 WHERE employer_id='$employer_id'
 ORDER BY job_id DESC
 ");

@@ -6,8 +6,8 @@ if(!function_exists('get_employer_pending_application_count')){
         $employer_id = (int)$employer_id;
         $stmt = $conn->prepare("
             SELECT COUNT(*) AS total_pending
-            FROM job_application ja
-            JOIN job j ON j.job_id = ja.job_id
+            FROM Job_Application ja
+            JOIN Job j ON j.job_id = ja.job_id
             WHERE j.employer_id = ?
             AND ja.status = 'pending'
         ");

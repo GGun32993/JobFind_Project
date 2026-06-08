@@ -1,20 +1,17 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 
 ensure_profile_image_schema($conn);
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="employer"){
-    header("Location: ../login.php"); exit();
-}
-
 $job_id      = $_GET['job_id'] ?? 0;
-$employer_id = $_SESSION['user_id'];
+$employer_id = jobfind_require_role('employer');
 $sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
-$job_query = "SELECT * FROM job WHERE job_id = ? AND employer_id = ?";
+$job_query = "SELECT * FROM Job WHERE job_id = ? AND employer_id = ?";
 $stmt = $conn->prepare($job_query);
 $stmt->bind_param("ii", $job_id, $employer_id);
 $stmt->execute();
@@ -26,10 +23,10 @@ if(!$job){ header("Location: manage_jobs.php"); exit(); }
 $applicants_query = "
     SELECT ja.*, u.username, u.email, u.phone, u.fullname, u.profile_image,
            fp.skill, fp.experience, fp.rating, fp.location,
-           (SELECT file_name FROM resume WHERE freelancer_id=ja.freelancer_id ORDER BY resume_id DESC LIMIT 1) AS resume_file
-    FROM job_application ja
-    JOIN users u ON ja.freelancer_id = u.user_id
-    LEFT JOIN freelancer_profile fp ON u.user_id = fp.user_id
+           (SELECT file_name FROM Resume WHERE freelancer_id=ja.freelancer_id ORDER BY resume_id DESC LIMIT 1) AS resume_file
+    FROM Job_Application ja
+    JOIN Users u ON ja.freelancer_id = u.user_id
+    LEFT JOIN Freelancer_Profile fp ON u.user_id = fp.user_id
     WHERE ja.job_id = ?
     ORDER BY ja.apply_date DESC
 ";
@@ -40,7 +37,7 @@ $applicants = $stmt->get_result();
 $stmt->close();
 
 function isFreelancerSaved($conn, $employer_id, $freelancer_id){
-    $query = "SELECT id FROM saved_freelancers WHERE employer_id = ? AND freelancer_id = ?";
+    $query = "SELECT id FROM Saved_Freelancers WHERE employer_id = ? AND freelancer_id = ?";
     $stmt  = $conn->prepare($query);
     $stmt->bind_param("ii", $employer_id, $freelancer_id);
     $stmt->execute();

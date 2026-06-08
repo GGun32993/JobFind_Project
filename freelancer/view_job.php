@@ -1,16 +1,14 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/location_schema.php";
 require_once __DIR__ . "/../helpers/category_helpers.php";
 
 // ตรวจสอบว่าเป็น Freelancer หรือไม่
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
+jobfind_require_role('freelancer');
 
 $job_id = $_GET['job_id'] ?? 0;
 ensure_job_image_schema($conn);
@@ -42,7 +40,7 @@ $back_url = $return_url ?: 'browse_jobs.php';
 $back_label = strpos($back_url, 'my_applications.php') === 0 ? 'กลับไป My Applications' : 'กลับไป Browse Jobs';
 
 // ดึงข้อมูลงาน
-$job_query = "SELECT * FROM job WHERE job_id = ?";
+$job_query = "SELECT * FROM Job WHERE job_id = ?";
 $stmt = $conn->prepare($job_query);
 $stmt->bind_param("i", $job_id);
 $stmt->execute();
@@ -65,8 +63,8 @@ $job_subcategory_display = $job_subcategory_display !== '' ? $job_subcategory_di
 $employer_query = "
     SELECT u.user_id, u.username, u.email, u.phone, u.created_at, u.profile_image,
            ep.employer_description
-    FROM users u
-    LEFT JOIN employer_profile ep ON u.user_id = ep.user_id
+    FROM Users u
+    LEFT JOIN Employer_Profile ep ON u.user_id = ep.user_id
     WHERE u.user_id = ?
 ";
 $stmt_emp = $conn->prepare($employer_query);
@@ -80,10 +78,10 @@ if (!$employer) {
 }
 
 // ── ดึงรีวิวของนายจ้าง ──
-$reviews_query = "SELECT er.*, u.username as reviewer_name 
-                  FROM employer_review er 
-                  JOIN users u ON er.freelancer_id = u.user_id 
-                  WHERE er.employer_id = ? 
+$reviews_query = "SELECT er.*, u.username as reviewer_name
+                  FROM Employer_Review er
+                  JOIN Users u ON er.freelancer_id = u.user_id
+                  WHERE er.employer_id = ?
                   ORDER BY er.created_at DESC";
 $stmt_rev = $conn->prepare($reviews_query);
 $stmt_rev->bind_param("i", $job['employer_id']);

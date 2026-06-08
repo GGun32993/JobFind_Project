@@ -1,56 +1,34 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
+require_once __DIR__ . "/../helpers/support_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
+require_once __DIR__ . "/../services/admin_dashboard_service.php";
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role']!="admin"){
-    header("Location: ../login.php");
-    exit();
-}
+$admin_id = jobfind_require_role('admin');
 
 $username = $_SESSION['username'];
 
 // ── stats ──
-$total_users     = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) AS c FROM users WHERE role!='admin'"))['c'];
-$total_freelance = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) AS c FROM users WHERE role='freelancer'"))['c'];
-$total_employer  = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) AS c FROM users WHERE role='employer'"))['c'];
-$total_jobs      = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) AS c FROM job"))['c'];
-$pending_jobs    = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) AS c FROM job WHERE admin_status='pending'"))['c'];
-$total_apps      = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) AS c FROM job_application"))['c'];
+$stats = admin_dashboard_stats($conn);
+$total_users     = $stats['total_users'];
+$total_freelance = $stats['total_freelance'];
+$total_employer  = $stats['total_employer'];
+$total_jobs      = $stats['total_jobs'];
+$pending_jobs    = $stats['pending_jobs'];
+$total_apps      = $stats['total_apps'];
 
 // ── auto-add is_read column ถ้ายังไม่มี ──
-$admin_id = $_SESSION['user_id'];
-$col_check = mysqli_query($conn,"SHOW COLUMNS FROM chat_messages LIKE 'is_read'");
-if(mysqli_num_rows($col_check) === 0){
-    mysqli_query($conn,"ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) DEFAULT 0");
-}
+$unread_res = admin_unread_support_count($conn, $admin_id);
 
 // ── unread support messages (เฉพาะที่ยังไม่ได้อ่าน) ──
-$unread_res = mysqli_fetch_assoc(mysqli_query($conn,"
-    SELECT COUNT(*) AS c
-    FROM chat_messages cm
-    JOIN users u ON u.user_id=cm.sender_id
-    WHERE cm.receiver_id='$admin_id'
-    AND cm.is_read = 0
-"))['c'];
 
 // ── recent jobs ──
-$recent_jobs = mysqli_query($conn,"
-    SELECT job.title, job.admin_status, users.username AS employer, job.created_at
-    FROM job
-    JOIN users ON users.user_id = job.employer_id
-    ORDER BY job.created_at DESC
-    LIMIT 5
-");
+$recent_jobs = admin_dashboard_recent_jobs($conn);
 
 // ── recent users ──
-$recent_users = mysqli_query($conn,"
-    SELECT username, role, created_at
-    FROM users
-    WHERE role != 'admin'
-    ORDER BY created_at DESC
-    LIMIT 5
-");
+$recent_users = admin_dashboard_recent_users($conn);
 ?>
 <!DOCTYPE html>
 <html lang="th">

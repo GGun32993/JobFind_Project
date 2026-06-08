@@ -127,48 +127,48 @@ function ensure_location_schema($conn)
         return $done;
     }
 
-    if (jobfind_table_exists($conn, 'freelancer_profile')) {
-        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'age', 'INT DEFAULT NULL AFTER `experience`');
-        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'address', 'VARCHAR(255) DEFAULT NULL AFTER `location`');
-        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'province', 'VARCHAR(100) DEFAULT NULL AFTER `address`');
-        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'district', 'VARCHAR(100) DEFAULT NULL AFTER `province`');
-        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'postal_code', 'VARCHAR(20) DEFAULT NULL AFTER `district`');
-        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'latitude', 'DOUBLE DEFAULT NULL AFTER `postal_code`');
-        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
-        jobfind_add_column_if_missing($conn, 'freelancer_profile', 'preferred_radius_km', 'DOUBLE NOT NULL DEFAULT 30 AFTER `longitude`');
+    if (jobfind_table_exists($conn, 'Freelancer_Profile')) {
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'age', 'INT DEFAULT NULL AFTER `experience`');
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'address', 'VARCHAR(255) DEFAULT NULL AFTER `location`');
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'province', 'VARCHAR(100) DEFAULT NULL AFTER `address`');
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'district', 'VARCHAR(100) DEFAULT NULL AFTER `province`');
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'postal_code', 'VARCHAR(20) DEFAULT NULL AFTER `district`');
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'latitude', 'DOUBLE DEFAULT NULL AFTER `postal_code`');
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'preferred_radius_km', 'DOUBLE NOT NULL DEFAULT 30 AFTER `longitude`');
 
-        jobfind_add_index_if_missing($conn, 'freelancer_profile', 'idx_freelancer_geo', '(`latitude`, `longitude`)');
-        jobfind_add_index_if_missing($conn, 'freelancer_profile', 'idx_freelancer_radius', '(`preferred_radius_km`)');
-        jobfind_add_index_if_missing($conn, 'freelancer_profile', 'idx_freelancer_user', '(`user_id`)');
+        jobfind_add_index_if_missing($conn, 'Freelancer_Profile', 'idx_freelancer_geo', '(`latitude`, `longitude`)');
+        jobfind_add_index_if_missing($conn, 'Freelancer_Profile', 'idx_freelancer_radius', '(`preferred_radius_km`)');
+        jobfind_add_index_if_missing($conn, 'Freelancer_Profile', 'idx_freelancer_user', '(`user_id`)');
     }
 
-    if (jobfind_table_exists($conn, 'employer_profile')) {
-        jobfind_add_column_if_missing($conn, 'employer_profile', 'address', 'VARCHAR(255) DEFAULT NULL AFTER `employer_description`');
-        jobfind_add_column_if_missing($conn, 'employer_profile', 'province', 'VARCHAR(100) DEFAULT NULL AFTER `address`');
-        jobfind_add_column_if_missing($conn, 'employer_profile', 'district', 'VARCHAR(100) DEFAULT NULL AFTER `province`');
-        jobfind_add_column_if_missing($conn, 'employer_profile', 'postal_code', 'VARCHAR(20) DEFAULT NULL AFTER `district`');
-        jobfind_add_column_if_missing($conn, 'employer_profile', 'latitude', 'DOUBLE DEFAULT NULL AFTER `postal_code`');
-        jobfind_add_column_if_missing($conn, 'employer_profile', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
+    if (jobfind_table_exists($conn, 'Employer_Profile')) {
+        jobfind_add_column_if_missing($conn, 'Employer_Profile', 'address', 'VARCHAR(255) DEFAULT NULL AFTER `employer_description`');
+        jobfind_add_column_if_missing($conn, 'Employer_Profile', 'province', 'VARCHAR(100) DEFAULT NULL AFTER `address`');
+        jobfind_add_column_if_missing($conn, 'Employer_Profile', 'district', 'VARCHAR(100) DEFAULT NULL AFTER `province`');
+        jobfind_add_column_if_missing($conn, 'Employer_Profile', 'postal_code', 'VARCHAR(20) DEFAULT NULL AFTER `district`');
+        jobfind_add_column_if_missing($conn, 'Employer_Profile', 'latitude', 'DOUBLE DEFAULT NULL AFTER `postal_code`');
+        jobfind_add_column_if_missing($conn, 'Employer_Profile', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
 
-        jobfind_add_index_if_missing($conn, 'employer_profile', 'idx_employer_geo', '(`latitude`, `longitude`)');
-        jobfind_add_index_if_missing($conn, 'employer_profile', 'idx_employer_user', '(`user_id`)');
+        jobfind_add_index_if_missing($conn, 'Employer_Profile', 'idx_employer_geo', '(`latitude`, `longitude`)');
+        jobfind_add_index_if_missing($conn, 'Employer_Profile', 'idx_employer_user', '(`user_id`)');
     }
 
-    if (jobfind_table_exists($conn, 'users')) {
-        jobfind_add_column_if_missing($conn, 'users', 'gender', "VARCHAR(20) DEFAULT NULL AFTER `phone`");
-        jobfind_add_column_if_missing($conn, 'users', 'latitude', 'DOUBLE DEFAULT NULL AFTER `phone`');
-        jobfind_add_column_if_missing($conn, 'users', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
+    if (jobfind_table_exists($conn, 'Users')) {
+        jobfind_add_column_if_missing($conn, 'Users', 'gender', "VARCHAR(20) DEFAULT NULL AFTER `phone`");
+        jobfind_add_column_if_missing($conn, 'Users', 'latitude', 'DOUBLE DEFAULT NULL AFTER `phone`');
+        jobfind_add_column_if_missing($conn, 'Users', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
 
-        jobfind_add_index_if_missing($conn, 'users', 'idx_user_geo', '(`latitude`, `longitude`)');
+        jobfind_add_index_if_missing($conn, 'Users', 'idx_user_geo', '(`latitude`, `longitude`)');
     }
 
-    if (jobfind_table_exists($conn, 'job')) {
-        jobfind_add_column_if_missing($conn, 'job', 'latitude', 'DOUBLE DEFAULT NULL AFTER `location`');
-        jobfind_add_column_if_missing($conn, 'job', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
-        jobfind_add_column_if_missing($conn, 'job', 'employment_type', 'VARCHAR(40) DEFAULT NULL AFTER `category`');
+    if (jobfind_table_exists($conn, 'Job')) {
+        jobfind_add_column_if_missing($conn, 'Job', 'latitude', 'DOUBLE DEFAULT NULL AFTER `location`');
+        jobfind_add_column_if_missing($conn, 'Job', 'longitude', 'DOUBLE DEFAULT NULL AFTER `latitude`');
+        jobfind_add_column_if_missing($conn, 'Job', 'employment_type', 'VARCHAR(40) DEFAULT NULL AFTER `category`');
 
-        jobfind_add_index_if_missing($conn, 'job', 'idx_job_geo', '(`latitude`, `longitude`)');
-        jobfind_add_index_if_missing($conn, 'job', 'idx_job_status_admin', '(`status`, `admin_status`)');
+        jobfind_add_index_if_missing($conn, 'Job', 'idx_job_geo', '(`latitude`, `longitude`)');
+        jobfind_add_index_if_missing($conn, 'Job', 'idx_job_status_admin', '(`status`, `admin_status`)');
     }
 
     $done = true;

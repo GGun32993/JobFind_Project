@@ -18,10 +18,10 @@ $job_id = $_GET['job_id'];
 
 
 $query = mysqli_query($conn,"
-SELECT job.*, users.username AS employer
-FROM job
-JOIN users ON job.employer_id = users.user_id
-WHERE job.job_id='$job_id'
+SELECT Job.*, Users.username AS employer
+FROM Job
+JOIN Users ON Job.employer_id = Users.user_id
+WHERE Job.job_id='$job_id'
 ");
 
 $job = mysqli_fetch_assoc($query);

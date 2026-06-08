@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/location_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/review_schema.php";
@@ -8,14 +9,9 @@ require_once __DIR__ . "/../helpers/review_schema.php";
 ensure_profile_image_schema($conn);
 ensure_freelancer_review_schema($conn);
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] != "freelancer"){
-    header("Location: ../login.php");
-    exit();
-}
-
-$user_id   = $_SESSION['user_id'];
+$user_id   = jobfind_require_role('freelancer');
 $username  = $_SESSION['username'];
-$current_user = mysqli_fetch_assoc(mysqli_query($conn,"SELECT profile_image FROM users WHERE user_id='$user_id'"));
+$current_user = mysqli_fetch_assoc(mysqli_query($conn,"SELECT profile_image FROM Users WHERE user_id='$user_id'"));
 $profile_image = trim($current_user['profile_image'] ?? '');
 $location_summary = getFreelancerLocationSummary($conn, $user_id);
 $user_location = $location_summary['label'] ?? '';
@@ -37,21 +33,21 @@ $popular_employers = mysqli_query($conn,"
            COALESCE(r.total_reviews,0) AS total_reviews,
            COALESCE(r.avg_rating,0) AS avg_rating,
            COALESCE(j.total_jobs,0) AS total_jobs
-    FROM users u
-    LEFT JOIN employer_profile ep ON ep.user_id = u.user_id
+    FROM Users u
+    LEFT JOIN Employer_Profile ep ON ep.user_id = u.user_id
     LEFT JOIN (
         SELECT employer_id, COUNT(*) AS total_likes
-        FROM like_employer
+        FROM Like_Employer
         GROUP BY employer_id
     ) l ON l.employer_id = u.user_id
     LEFT JOIN (
         SELECT employer_id, COUNT(*) AS total_reviews, AVG(rating) AS avg_rating
-        FROM employer_review
+        FROM Employer_Review
         GROUP BY employer_id
     ) r ON r.employer_id = u.user_id
     LEFT JOIN (
         SELECT employer_id, COUNT(*) AS total_jobs
-        FROM job
+        FROM Job
         WHERE admin_status='approved'
         GROUP BY employer_id
     ) j ON j.employer_id = u.user_id
@@ -71,14 +67,14 @@ $top_freelancers = mysqli_query($conn,"
            COALESCE(fp.skill, '') AS skill,
            COALESCE(fp.experience, '') AS experience,
            COALESCE(fp.location, 'ไม่ระบุ') AS location,
-           (SELECT file_name FROM resume WHERE freelancer_id=u.user_id ORDER BY resume_id DESC LIMIT 1) AS resume_file,
+           (SELECT file_name FROM Resume WHERE freelancer_id=u.user_id ORDER BY resume_id DESC LIMIT 1) AS resume_file,
            COALESCE(fr.total_reviews, 0) AS total_reviews,
            COALESCE(fr.avg_rating, 0) AS avg_rating
-    FROM users u
-    LEFT JOIN freelancer_profile fp ON fp.user_id = u.user_id
+    FROM Users u
+    LEFT JOIN Freelancer_Profile fp ON fp.user_id = u.user_id
     LEFT JOIN (
         SELECT freelancer_id, COUNT(*) AS total_reviews, AVG(rating) AS avg_rating
-        FROM freelancer_review
+        FROM Freelancer_Review
         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         GROUP BY freelancer_id
     ) fr ON fr.freelancer_id = u.user_id
@@ -98,10 +94,10 @@ function getFreelancerReviewHistory($conn, $freelancer_id){
                fr.created_at,
                COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username, 'ไม่ระบุผู้ว่าจ้าง') AS employer_name,
                COALESCE(NULLIF(j.title,''), 'ไม่ระบุชื่องาน') AS job_title
-        FROM freelancer_review fr
-        LEFT JOIN users u ON u.user_id = fr.employer_id
-        LEFT JOIN employer_profile ep ON ep.user_id = fr.employer_id
-        LEFT JOIN job j ON j.job_id = fr.job_id
+        FROM Freelancer_Review fr
+        LEFT JOIN Users u ON u.user_id = fr.employer_id
+        LEFT JOIN Employer_Profile ep ON ep.user_id = fr.employer_id
+        LEFT JOIN Job j ON j.job_id = fr.job_id
         WHERE fr.freelancer_id = $freelancer_id
         AND fr.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         ORDER BY fr.created_at DESC, fr.review_id DESC
@@ -131,12 +127,12 @@ $popular_jobs = mysqli_query($conn,"
            COUNT(j.job_id) AS total_jobs,
            COALESCE(jr.total_reviews, 0) AS total_reviews,
            COALESCE(jr.avg_rating, 0) AS avg_rating
-    FROM job j
+    FROM Job j
     LEFT JOIN (
         SELECT job_id, 
                 COUNT(*) AS total_reviews, 
                 AVG(rating) AS avg_rating
-        FROM freelancer_review
+        FROM Freelancer_Review
         WHERE job_id IS NOT NULL 
         AND job_id > 0
         AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -145,7 +141,7 @@ $popular_jobs = mysqli_query($conn,"
         SELECT job_id,
                 COUNT(*) AS total_reviews,
                 AVG(rating) AS avg_rating
-        FROM employer_review
+        FROM Employer_Review
         WHERE job_id IS NOT NULL 
         AND job_id > 0
         AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -166,8 +162,8 @@ $most_applied_jobs = mysqli_query($conn,"
            COUNT(ja.application_id) AS applicant_count,
            COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
            MAX(j.created_at) AS latest_job_at
-    FROM job j
-    JOIN job_application ja ON ja.job_id = j.job_id
+    FROM Job j
+    JOIN Job_Application ja ON ja.job_id = j.job_id
     WHERE j.admin_status='approved'
     GROUP BY COALESCE(NULLIF(j.category,''), 'ไม่ระบุ')
     ORDER BY applicant_count DESC, total_jobs DESC, latest_job_at DESC
@@ -737,7 +733,7 @@ $most_applied_count = count($most_applied_jobs_list);
       foreach ($recommend as $job):
         $hasJobs = true;
         $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
-        $icon  = $icons[crc32($job['title'] ?? 'job') % count($icons)];
+        $icon  = $icons[crc32($job['title'] ?? 'Job') % count($icons)];
         $match_score = $job['match_score'] ?? 0;
         $distance_km = $job['distance_km'] ?? null;
         $job_image = trim($job['image_path'] ?? '');

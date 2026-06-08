@@ -17,7 +17,7 @@ if(isset($_POST['submit'])){
 $comment = $_POST['comment'];
 
 mysqli_query($conn,"
-INSERT INTO freelancer_review
+INSERT INTO Freelancer_Review
 (freelancer_id, employer_id, comment)
 VALUES
 ('$freelancer_id','$employer_id','$comment')
