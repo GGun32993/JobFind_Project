@@ -242,7 +242,7 @@ $categories = [];
 $categoryShowcaseGroups = [];
 $featuredJobs = [];
 $companies = [];
-$stats = ['jobs' => 0, 'employers' => 0, 'freelancers' => 0];
+$stats = ['jobs' => 0, 'total_jobs' => 0, 'employers' => 0, 'freelancers' => 0];
 
 if($conn){
     $hasCategoriesTable = table_exists($conn, 'Categories');
@@ -383,6 +383,7 @@ if($conn){
 
     $stats = [
         'jobs' => db_count($conn, "SELECT COUNT(*) AS c FROM Job WHERE admin_status = 'approved' AND COALESCE(NULLIF(status,''), 'open') != 'closed'"),
+        'total_jobs' => db_count($conn, "SELECT COUNT(*) AS c FROM Job"),
         'employers' => db_count($conn, "SELECT COUNT(*) AS c FROM Users WHERE role = 'employer'"),
         'freelancers' => db_count($conn, "SELECT COUNT(*) AS c FROM Users WHERE role = 'freelancer'"),
     ];
@@ -1829,8 +1830,14 @@ $pinStatusText = $hasLocationPin
       <?php endif; ?>
 
       <div class="job-grid">
-        <?php if(count($featuredJobs) === 0): ?>
-          <div class="empty-state">ไม่พบงานที่ตรงกับเงื่อนไขนี้</div>
+        <?php if(!$dbError && count($featuredJobs) === 0): ?>
+          <?php if($isSearchActive): ?>
+            <div class="empty-state">ไม่พบงานที่ตรงกับเงื่อนไขนี้</div>
+          <?php elseif(($stats['total_jobs'] ?? 0) > 0): ?>
+            <div class="empty-state">มีข้อมูลงานในระบบแล้ว แต่ยังไม่มีงานที่อนุมัติและเปิดรับอยู่ในขณะนี้</div>
+          <?php else: ?>
+            <div class="empty-state">ยังไม่มีข้อมูลงานในระบบ</div>
+          <?php endif; ?>
         <?php endif; ?>
 
         <?php foreach($featuredJobs as $job): ?>
