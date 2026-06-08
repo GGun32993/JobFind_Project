@@ -40,8 +40,16 @@ body {
 }
 
 .shell,
-.shell * {
+.shell *,
+.shell *::before,
+.shell *::after {
+  box-sizing: border-box;
   letter-spacing: 0 !important;
+}
+
+.shell button,
+.shell input {
+  font: inherit;
 }
 
 .shell {
@@ -51,6 +59,7 @@ body {
 
 .shell .container {
   width: min(1180px, calc(100% - 40px)) !important;
+  margin: 0 auto;
 }
 
 .shell a {
@@ -402,6 +411,22 @@ body {
 
 .shell .btn-pin:hover {
   background: #e2e8ff !important;
+}
+
+.shell .pin-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shell .btn-pin-clear {
+  border-color: #fecdd3 !important;
+  background: #fff1f2 !important;
+  color: var(--jf-rose) !important;
+}
+
+.shell .btn-pin-clear:hover {
+  background: #ffe4e9 !important;
 }
 
 .shell .hero-actions {
@@ -1182,9 +1207,52 @@ body {
   background: #f8fafc !important;
 }
 
+.shell .radius-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.shell .radius-row span {
+  color: var(--jf-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shell .radius-value {
+  color: var(--jf-indigo);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .shell .radius-slider {
   width: 100%;
   accent-color: var(--jf-indigo);
+}
+
+.shell .radius-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--jf-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.shell #index-map {
+  flex: 1;
+  min-height: 360px;
+}
+
+.shell .map-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--jf-line);
 }
 
 .shell .btn-map-cancel,
@@ -1332,17 +1400,21 @@ body {
   }
 
   .shell .location-pin-field {
-    grid-template-columns: auto minmax(0, 1fr) 42px !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
     overflow: hidden;
   }
 
-  .shell .btn-pin {
+  .shell .pin-actions {
+    gap: 4px;
+  }
+
+  .shell .pin-actions .btn-pin {
     width: 42px;
     padding: 0 !important;
     font-size: 0;
   }
 
-  .shell .btn-pin i {
+  .shell .pin-actions .btn-pin i {
     font-size: 16px;
   }
 

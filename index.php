@@ -66,9 +66,36 @@ function db_count($conn, $sql){
 }
 
 function table_exists($conn, $table){
+    if(!$conn || !preg_match('/^[A-Za-z0-9_]+$/', (string)$table)){
+        return false;
+    }
+
     $table = mysqli_real_escape_string($conn, $table);
     $result = mysqli_query($conn, "SHOW TABLES LIKE '$table'");
     return $result && mysqli_num_rows($result) > 0;
+}
+
+function column_exists($conn, $table, $column){
+    if(
+        !$conn
+        || !preg_match('/^[A-Za-z0-9_]+$/', (string)$table)
+        || !preg_match('/^[A-Za-z0-9_]+$/', (string)$column)
+    ){
+        return false;
+    }
+
+    $column = mysqli_real_escape_string($conn, $column);
+    $result = mysqli_query($conn, "SHOW COLUMNS FROM `$table` LIKE '$column'");
+    return $result && mysqli_num_rows($result) > 0;
+}
+
+function coalesce_sql($expressions, $fallback = "''"){
+    $expressions = array_values(array_filter($expressions, fn($expression) => trim((string)$expression) !== ''));
+    if(count($expressions) === 0){
+        return $fallback;
+    }
+
+    return count($expressions) === 1 ? $expressions[0] : 'COALESCE(' . implode(', ', $expressions) . ')';
 }
 
 function initials($name){
@@ -145,6 +172,57 @@ function category_icon($name){
     return '💼';
 }
 
+function landing_category_groups($conn){
+    if(!$conn || !table_exists($conn, 'Categories')){
+        return jobfind_default_job_category_groups();
+    }
+
+    $hasIconColumn = column_exists($conn, 'Categories', 'icon');
+    $iconSelect = $hasIconColumn ? 'icon' : "'' AS icon";
+    $categoryOrder = jobfind_category_order_clause($conn, 'name', 'category_id');
+    $categories = db_fetch_all($conn, "
+        SELECT category_id,
+               name,
+               $iconSelect
+        FROM Categories
+        ORDER BY $categoryOrder
+    ");
+
+    if(count($categories) === 0){
+        return jobfind_default_job_category_groups();
+    }
+
+    $groups = [];
+    foreach($categories as $category){
+        $categoryId = (int)($category['category_id'] ?? 0);
+        $groups[$categoryId] = [
+            'name' => $category['name'] ?? '',
+            'icon' => $category['icon'] ?? '',
+            'subcategories' => [],
+        ];
+    }
+
+    if(table_exists($conn, 'Job_Subcategories')){
+        $subcategoryOrder = jobfind_category_sort_expression($conn, 'name') . " ASC, subcategory_id ASC";
+        $subcategories = db_fetch_all($conn, "
+            SELECT category_id,
+                   name
+            FROM Job_Subcategories
+            ORDER BY category_id ASC, $subcategoryOrder
+        ");
+
+        foreach($subcategories as $subcategory){
+            $categoryId = (int)($subcategory['category_id'] ?? 0);
+            $subcategoryName = trim((string)($subcategory['name'] ?? ''));
+            if($subcategoryName !== '' && isset($groups[$categoryId])){
+                $groups[$categoryId]['subcategories'][] = $subcategoryName;
+            }
+        }
+    }
+
+    return array_values($groups);
+}
+
 $role = $_SESSION['role'] ?? '';
 $isLoggedIn = isset($_SESSION['user_id']) && $role !== '';
 $dashboardUrl = dashboard_for_role($role);
@@ -167,22 +245,36 @@ $companies = [];
 $stats = ['jobs' => 0, 'employers' => 0, 'freelancers' => 0];
 
 if($conn){
-    ensure_location_schema($conn);
-    ensure_job_image_schema($conn);
-    ensure_category_schema($conn);
-    ensure_default_job_categories($conn);
+    $hasCategoriesTable = table_exists($conn, 'Categories');
+    $hasCategoryIconColumn = $hasCategoriesTable && column_exists($conn, 'Categories', 'icon');
+    $hasJobImagesTable = table_exists($conn, 'Job_Images');
+    $hasJobImagePathColumn = column_exists($conn, 'Job', 'image_path');
+    $hasJobSubcategoryColumn = column_exists($conn, 'Job', 'job_subcategory');
+    $jobLatParts = [];
+    $jobLngParts = [];
 
-    if(table_exists($conn, 'Categories')){
+    if(column_exists($conn, 'Job', 'latitude')) $jobLatParts[] = 'j.latitude';
+    if(column_exists($conn, 'Employer_Profile', 'latitude')) $jobLatParts[] = 'ep.latitude';
+    if(column_exists($conn, 'Users', 'latitude')) $jobLatParts[] = 'u.latitude';
+    if(column_exists($conn, 'Job', 'longitude')) $jobLngParts[] = 'j.longitude';
+    if(column_exists($conn, 'Employer_Profile', 'longitude')) $jobLngParts[] = 'ep.longitude';
+    if(column_exists($conn, 'Users', 'longitude')) $jobLngParts[] = 'u.longitude';
+
+    $canSearchByDistance = $hasLocationPin && count($jobLatParts) > 0 && count($jobLngParts) > 0;
+
+    if($hasCategoriesTable){
         $categoryOrder = jobfind_category_order_clause($conn, 'c.name', 'c.category_id');
+        $categoryIconSelect = $hasCategoryIconColumn ? 'c.icon' : "'' AS icon";
+        $categoryGroupBy = $hasCategoryIconColumn ? 'c.category_id, c.name, c.icon' : 'c.category_id, c.name';
         $categories = db_fetch_all($conn, "
             SELECT c.name,
-                   c.icon,
+                   $categoryIconSelect,
                    COUNT(j.job_id) AS jobs
             FROM Categories c
             LEFT JOIN Job j ON j.category = c.name
                 AND j.admin_status = 'approved'
                 AND COALESCE(NULLIF(j.status,''), 'open') != 'closed'
-            GROUP BY c.category_id, c.name, c.icon
+            GROUP BY $categoryGroupBy
             ORDER BY $categoryOrder
             LIMIT 20
         ");
@@ -201,8 +293,8 @@ if($conn){
         ");
     }
 
-    $jobLatSql = "COALESCE(j.latitude, ep.latitude, u.latitude)";
-    $jobLngSql = "COALESCE(j.longitude, ep.longitude, u.longitude)";
+    $jobLatSql = coalesce_sql($jobLatParts, 'NULL');
+    $jobLngSql = coalesce_sql($jobLngParts, 'NULL');
     $distanceSql = "(6371 * ACOS(LEAST(1, GREATEST(-1, COS(RADIANS(?)) * COS(RADIANS($jobLatSql)) * COS(RADIANS($jobLngSql) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS($jobLatSql))))))";
     $distanceSelect = '';
     $jobOrder = "j.created_at DESC";
@@ -210,7 +302,7 @@ if($conn){
     $jobTypes = '';
     $jobParams = [];
 
-    if($hasLocationPin){
+    if($canSearchByDistance){
         $distanceSelect = ", $distanceSql AS distance_km";
         $jobTypes .= 'ddd';
         array_push($jobParams, $searchLat, $searchLng, $searchLat);
@@ -224,9 +316,16 @@ if($conn){
 
     if($titleSearch !== ''){
         $likeTitle = '%' . $titleSearch . '%';
-        $jobWhere[] = "(j.title LIKE ? OR j.category LIKE ? OR j.job_subcategory LIKE ? OR u.username LIKE ? OR u.fullname LIKE ? OR ep.employer_name LIKE ?)";
-        $jobTypes .= 'ssssss';
-        array_push($jobParams, $likeTitle, $likeTitle, $likeTitle, $likeTitle, $likeTitle, $likeTitle);
+        $titleConditions = ["j.title LIKE ?", "j.category LIKE ?", "u.username LIKE ?", "u.fullname LIKE ?", "ep.employer_name LIKE ?"];
+        $titleParams = [$likeTitle, $likeTitle, $likeTitle, $likeTitle, $likeTitle];
+        if($hasJobSubcategoryColumn){
+            array_splice($titleConditions, 2, 0, "j.job_subcategory LIKE ?");
+            array_splice($titleParams, 2, 0, $likeTitle);
+        }
+
+        $jobWhere[] = "(" . implode(' OR ', $titleConditions) . ")";
+        $jobTypes .= str_repeat('s', count($titleParams));
+        array_push($jobParams, ...$titleParams);
     }
 
     if($locationSearch !== ''){
@@ -235,6 +334,15 @@ if($conn){
         $jobTypes .= 's';
         $jobParams[] = $likeLocation;
     }
+
+    $jobImageExpressions = [];
+    if($hasJobImagesTable){
+        $jobImageExpressions[] = "(SELECT ji.image_path FROM Job_Images ji WHERE ji.job_id = j.job_id ORDER BY ji.sort_order ASC, ji.image_id ASC LIMIT 1)";
+    }
+    if($hasJobImagePathColumn){
+        $jobImageExpressions[] = 'j.image_path';
+    }
+    $jobImageSelect = coalesce_sql($jobImageExpressions, "''") . " AS job_image";
 
     $featuredJobs = db_fetch_all($conn, "
         SELECT j.job_id,
@@ -245,10 +353,7 @@ if($conn){
                j.status,
                j.category,
                j.created_at,
-               COALESCE(
-                   (SELECT ji.image_path FROM Job_Images ji WHERE ji.job_id = j.job_id ORDER BY ji.sort_order ASC, ji.image_id ASC LIMIT 1),
-                   j.image_path
-               ) AS job_image
+               $jobImageSelect
                $distanceSelect,
                COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS company
         FROM Job j
@@ -277,7 +382,7 @@ if($conn){
     ");
 
     $stats = [
-        'jobs' => db_count($conn, "SELECT COUNT(*) AS c FROM Job WHERE admin_status = 'approved'"),
+        'jobs' => db_count($conn, "SELECT COUNT(*) AS c FROM Job WHERE admin_status = 'approved' AND COALESCE(NULLIF(status,''), 'open') != 'closed'"),
         'employers' => db_count($conn, "SELECT COUNT(*) AS c FROM Users WHERE role = 'employer'"),
         'freelancers' => db_count($conn, "SELECT COUNT(*) AS c FROM Users WHERE role = 'freelancer'"),
     ];
@@ -288,7 +393,7 @@ foreach($categories as $category){
     $categoryJobsByName[(string)($category['name'] ?? '')] = (int)($category['jobs'] ?? 0);
 }
 
-$rawCategoryGroups = jobfind_get_categories_with_subcategories($conn);
+$rawCategoryGroups = landing_category_groups($conn);
 foreach($rawCategoryGroups as $category){
     $categoryName = trim((string)($category['name'] ?? ''));
     if($categoryName === ''){
@@ -377,10 +482,12 @@ if($titleSearch !== ''){
     }
 }
 
+$isSearchActive = $titleSearch !== '' || $locationSearch !== '' || $hasLocationPin;
 $heroStyle = "--hero-bg: #f1f5f9;";
+$defaultPinStatusText = 'ยังไม่ได้ปักหมุดพื้นที่หางาน';
 $pinStatusText = $hasLocationPin
     ? 'ปักหมุดแล้ว รัศมี ' . number_format($searchRadiusKm, 0) . ' กม.'
-    : ($locationSearch !== '' ? $locationSearch : 'ยังไม่ได้ปักหมุดพื้นที่หางาน');
+    : ($locationSearch !== '' ? $locationSearch : $defaultPinStatusText);
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -393,6 +500,7 @@ $pinStatusText = $hasLocationPin
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.min.css">
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+<?php /* Legacy inline landing stylesheet intentionally disabled; assets/css/index-modern.css owns this page. ?>
 <style>
   :root {
     --navy: #0b1220;
@@ -1524,6 +1632,7 @@ $pinStatusText = $hasLocationPin
     .category-tile-title { font-size: 16px; }
   }
 </style>
+<?php */ ?>
 <link rel="stylesheet" href="assets/css/index-modern.css?v=20260608">
 </head>
 <body>
@@ -1570,9 +1679,16 @@ $pinStatusText = $hasLocationPin
                 <span class="pin-label">ปักหมุดพื้นที่หางาน</span>
                 <span class="pin-status" id="index-location-status"><?php echo e($pinStatusText); ?></span>
               </div>
-              <button class="btn-pin" type="button" onclick="openIndexMapModal()">
-                <i class="bi bi-pin-map"></i> เลือก
-              </button>
+              <div class="pin-actions">
+                <button class="btn-pin" type="button" onclick="openIndexMapModal()">
+                  <i class="bi bi-pin-map"></i> เลือก
+                </button>
+                <?php if($hasLocationPin || $locationSearch !== ''): ?>
+                  <button class="btn-pin btn-pin-clear" type="button" onclick="clearIndexLocation()">
+                    <i class="bi bi-x-lg"></i> ล้าง
+                  </button>
+                <?php endif; ?>
+              </div>
               <input type="hidden" name="location" id="index-location" value="<?php echo e($locationSearch); ?>">
               <input type="hidden" name="latitude" id="index-latitude" value="<?php echo $hasLocationPin ? e($searchLat) : ''; ?>">
               <input type="hidden" name="longitude" id="index-longitude" value="<?php echo $hasLocationPin ? e($searchLng) : ''; ?>">
@@ -1703,7 +1819,7 @@ $pinStatusText = $hasLocationPin
       <div class="section-head">
         <div>
           <div class="section-kicker"><i class="bi bi-briefcase"></i> งานล่าสุด</div>
-          <h2 class="section-title"><?php echo ($titleSearch !== '' || $locationSearch !== '') ? 'ผลการค้นหา' : 'งานที่กำลังเปิดรับ'; ?></h2>
+          <h2 class="section-title"><?php echo $isSearchActive ? 'ผลการค้นหา' : 'งานที่กำลังเปิดรับ'; ?></h2>
         </div>
         <p class="section-desc">ดูรายละเอียดงานก่อนสมัครได้ เมื่อเข้าสู่ระบบด้วยบัญชี Freelancer</p>
       </div>
@@ -1720,9 +1836,15 @@ $pinStatusText = $hasLocationPin
         <?php foreach($featuredJobs as $job): ?>
           <?php
             $jobImage = trim($job['job_image'] ?? '');
-            $jobHref = $role === 'freelancer'
-              ? 'freelancer/view_job.php?job_id=' . urlencode($job['job_id']) . '&return_url=' . urlencode('index.php')
-              : 'login.php';
+            if($role === 'freelancer'){
+              $jobHref = 'freelancer/view_job.php?job_id=' . urlencode($job['job_id']) . '&return_url=' . urlencode('index.php');
+            } elseif($role === 'admin'){
+              $jobHref = 'admin/job_detail.php?id=' . urlencode($job['job_id']);
+            } elseif($role === 'employer'){
+              $jobHref = $dashboardUrl;
+            } else {
+              $jobHref = 'login.php';
+            }
           ?>
           <article class="job-card">
             <div class="job-media">
@@ -1888,6 +2010,19 @@ function updateIndexRadius(value) {
   if (mapRadius) mapRadius.value = indexSelectedRadiusKm;
   if (mapLabel) mapLabel.textContent = indexSelectedRadiusKm;
   if (indexMapInstance) indexMapInstance.setRadius(indexSelectedRadiusKm);
+}
+
+function clearIndexLocation() {
+  indexHasSelectedPin = false;
+  const latitude = document.getElementById('index-latitude');
+  const longitude = document.getElementById('index-longitude');
+  const location = document.getElementById('index-location');
+  const status = document.getElementById('index-location-status');
+
+  if (latitude) latitude.value = '';
+  if (longitude) longitude.value = '';
+  if (location) location.value = '';
+  if (status) status.textContent = <?php echo json_encode($defaultPinStatusText, JSON_UNESCAPED_UNICODE); ?>;
 }
 
 function openIndexMapModal() {
