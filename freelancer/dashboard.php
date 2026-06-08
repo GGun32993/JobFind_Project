@@ -160,54 +160,58 @@ $popular_jobs = mysqli_query($conn,"
 ");
 
 $most_applied_jobs = mysqli_query($conn,"
-    SELECT j.job_id,
-           j.title,
-           COALESCE(NULLIF(j.category,''), 'ไม่ระบุ') AS category,
-           COALESCE(NULLIF(j.job_subcategory,''), 'ไม่ระบุ') AS job_subcategory,
-           COUNT(ja.application_id) AS applicant_count,
-           COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
+    SELECT summary.job_subcategory,
+           summary.total_jobs,
+           summary.applicant_count,
+           summary.freelancer_count,
+           summary.latest_job_at,
            COALESCE(
                NULLIF((
-                   SELECT c.icon
-                   FROM Job_Subcategories js
-                   JOIN Categories c ON c.category_id = js.category_id
-                   WHERE js.name = j.job_subcategory
-                   ORDER BY CASE WHEN c.name = j.category THEN 0 ELSE 1 END, js.subcategory_id ASC
-                   LIMIT 1
-               ), ''),
-               NULLIF((
-                   SELECT c.icon
-                   FROM Categories c
-                   WHERE c.name = j.category
+                   SELECT COALESCE(NULLIF(c.icon,''), NULLIF(c2.icon,''), '')
+                   FROM Job j2
+                   LEFT JOIN Job_Subcategories js ON js.name = j2.job_subcategory
+                   LEFT JOIN Categories c ON c.category_id = js.category_id
+                   LEFT JOIN Categories c2 ON c2.name = j2.category
+                   WHERE j2.admin_status='approved'
+                     AND COALESCE(NULLIF(j2.job_subcategory,''), NULLIF(j2.category,''), 'ไม่ระบุ') = summary.job_subcategory
+                   ORDER BY CASE WHEN c.name = j2.category THEN 0 ELSE 1 END, j2.created_at DESC, j2.job_id DESC
                    LIMIT 1
                ), ''),
                '💼'
            ) AS category_icon,
            COALESCE(
                NULLIF((
-                   SELECT c.name
-                   FROM Job_Subcategories js
-                   JOIN Categories c ON c.category_id = js.category_id
-                   WHERE js.name = j.job_subcategory
-                   ORDER BY CASE WHEN c.name = j.category THEN 0 ELSE 1 END, js.subcategory_id ASC
+                   SELECT COALESCE(NULLIF(c.name,''), NULLIF(j2.category,''), '')
+                   FROM Job j2
+                   LEFT JOIN Job_Subcategories js ON js.name = j2.job_subcategory
+                   LEFT JOIN Categories c ON c.category_id = js.category_id
+                   WHERE j2.admin_status='approved'
+                     AND COALESCE(NULLIF(j2.job_subcategory,''), NULLIF(j2.category,''), 'ไม่ระบุ') = summary.job_subcategory
+                   ORDER BY CASE WHEN c.name = j2.category THEN 0 ELSE 1 END, j2.created_at DESC, j2.job_id DESC
                    LIMIT 1
                ), ''),
-               NULLIF(j.category, ''),
                'ไม่ระบุ'
            ) AS category_name
-    FROM Job j
-    JOIN Job_Application ja ON ja.job_id = j.job_id
-    WHERE j.admin_status='approved'
-    GROUP BY j.job_id, j.title, j.category, j.job_subcategory, j.created_at
-    ORDER BY applicant_count DESC, freelancer_count DESC, j.created_at DESC, j.job_id DESC
+    FROM (
+        SELECT COALESCE(NULLIF(j.job_subcategory,''), NULLIF(j.category,''), 'ไม่ระบุ') AS job_subcategory,
+               COUNT(DISTINCT j.job_id) AS total_jobs,
+               COUNT(ja.application_id) AS applicant_count,
+               COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
+               MAX(j.created_at) AS latest_job_at
+        FROM Job j
+        JOIN Job_Application ja ON ja.job_id = j.job_id
+        WHERE j.admin_status='approved'
+        GROUP BY COALESCE(NULLIF(j.job_subcategory,''), NULLIF(j.category,''), 'ไม่ระบุ')
+    ) summary
+    ORDER BY summary.applicant_count DESC, summary.total_jobs DESC, summary.freelancer_count DESC, summary.latest_job_at DESC
     LIMIT 5
 ");
 
 $most_applied_jobs_list = [];
 if($most_applied_jobs){
     while($row = mysqli_fetch_assoc($most_applied_jobs)){
-        $row['job_id'] = (int)$row['job_id'];
         $row['applicant_count'] = (int)$row['applicant_count'];
+        $row['total_jobs'] = (int)$row['total_jobs'];
         $row['freelancer_count'] = (int)$row['freelancer_count'];
         $most_applied_jobs_list[] = $row;
     }
@@ -999,10 +1003,10 @@ $most_applied_count = count($most_applied_jobs_list);
     </div>
   </section>
 
-  <!-- Most Applied Jobs -->
+  <!-- Most Applied Subcategories -->
   <section class="popular-card">
     <div class="popular-head">
-      <h4><i class="bi bi-bar-chart-line"></i> ตำแหน่งงานที่มีผู้สมัครมากที่สุด</h4>
+      <h4><i class="bi bi-bar-chart-line"></i> หมวดหมู่รองที่มีผู้สมัครมากที่สุด</h4>
       <span class="popular-top-label">Top <?php echo $most_applied_count; ?></span>
     </div>
 
@@ -1010,26 +1014,26 @@ $most_applied_count = count($most_applied_jobs_list);
     <div class="popular-list">
       <?php
         $rank = 1;
-        foreach($most_applied_jobs_list as $job_rank):
-          $job_id = (int)($job_rank['job_id'] ?? 0);
-          $job_title = trim($job_rank['title'] ?? '');
-          $job_title = $job_title !== '' ? $job_title : 'Untitled Job';
-          $job_url = $job_id > 0 ? 'view_job.php?id=' . $job_id : 'browse_jobs.php';
-          $category_icon = trim($job_rank['category_icon'] ?? '');
+        foreach($most_applied_jobs_list as $subcategory_rank):
+          $subcategory_name = trim($subcategory_rank['job_subcategory'] ?? '');
+          $subcategory_name = $subcategory_name !== '' ? $subcategory_name : 'ไม่ระบุ';
+          $category_name = trim($subcategory_rank['category_name'] ?? '');
+          $category_url = ($category_name !== '' && $category_name !== 'ไม่ระบุ')
+              ? 'browse_jobs.php?category=' . urlencode($category_name)
+              : 'browse_jobs.php';
+          $category_icon = trim($subcategory_rank['category_icon'] ?? '');
           $category_icon = $category_icon !== '' ? $category_icon : '💼';
-          $category_name = trim($job_rank['category_name'] ?? ($job_rank['category'] ?? ''));
-          $job_subcategory = trim($job_rank['job_subcategory'] ?? '');
       ?>
-      <a href="<?php echo htmlspecialchars($job_url, ENT_QUOTES, 'UTF-8'); ?>" class="popular-item">
+      <a href="<?php echo htmlspecialchars($category_url, ENT_QUOTES, 'UTF-8'); ?>" class="popular-item">
         <div class="popular-top">
           <div class="popular-rank"><?php echo $rank; ?></div>
           <div class="popular-avatar" style="font-size: 24px;"><?php echo htmlspecialchars($category_icon, ENT_QUOTES, 'UTF-8'); ?></div>
-          <div class="popular-name"><?php echo htmlspecialchars($job_title); ?></div>
+          <div class="popular-name"><?php echo htmlspecialchars($subcategory_name); ?></div>
         </div>
         <div class="popular-stats">
-          <span class="popular-pill"><i class="bi bi-people-fill"></i><?php echo (int)$job_rank['applicant_count']; ?> ผู้สมัคร</span>
-          <span class="popular-pill"><i class="bi bi-person-check-fill"></i><?php echo (int)$job_rank['freelancer_count']; ?> คน</span>
-          <span class="popular-pill"><i class="bi bi-diagram-3"></i><?php echo htmlspecialchars($job_subcategory !== '' ? $job_subcategory : $category_name); ?></span>
+          <span class="popular-pill"><i class="bi bi-people-fill"></i><?php echo (int)$subcategory_rank['applicant_count']; ?> ผู้สมัคร</span>
+          <span class="popular-pill"><i class="bi bi-briefcase"></i><?php echo (int)$subcategory_rank['total_jobs']; ?> งาน</span>
+          <span class="popular-pill"><i class="bi bi-tag"></i><?php echo htmlspecialchars($category_name !== '' ? $category_name : 'ไม่ระบุ'); ?></span>
         </div>
       </a>
       <?php $rank++; endforeach; ?>
