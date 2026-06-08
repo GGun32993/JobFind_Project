@@ -206,13 +206,16 @@ if(isset($_GET['delete'])){
 if(isset($_POST['add_user'])){
     $un   = mysqli_real_escape_string($conn, trim($_POST['username']));
     $em   = mysqli_real_escape_string($conn, trim($_POST['email']));
-    $pw   = mysqli_real_escape_string($conn, $_POST['password']);
+    $password_plain = $_POST['password'] ?? '';
+    $pw   = mysqli_real_escape_string($conn, password_hash($password_plain, PASSWORD_DEFAULT));
     $fn   = mysqli_real_escape_string($conn, trim($_POST['fullname']));
     $ph   = mysqli_real_escape_string($conn, trim($_POST['phone']));
     $role = mysqli_real_escape_string($conn, $_POST['role']);
 
     $dup = mysqli_fetch_assoc(mysqli_query($conn,"SELECT user_id FROM Users WHERE username='$un' OR email='$em'"));
-    if($dup){
+    if(strlen($password_plain) < 6){
+        $toast = 'weak_password';
+    } elseif($dup){
         $toast = 'dup';
     } else {
         mysqli_query($conn,"
@@ -419,6 +422,7 @@ $toasts = [
     'self'   =>['err','bi-exclamation-triangle-fill','#fca5a5','ไม่สามารถลบบัญชีของตัวเองได้'],
     'delete_failed'=>['err','bi-exclamation-triangle-fill','#fca5a5','ลบผู้ใช้ไม่สำเร็จ กรุณาตรวจสอบข้อมูลที่เกี่ยวข้อง'],
     'dup'    =>['err','bi-exclamation-triangle-fill','#fca5a5','Username หรือ Email นี้ถูกใช้งานแล้ว'],
+    'weak_password'=>['err','bi-exclamation-triangle-fill','#fca5a5','รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'],
 ];
 if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
     [$type,$icon,$color,$msg] = $toasts[$_GET['toast']];

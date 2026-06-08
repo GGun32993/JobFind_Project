@@ -19,7 +19,7 @@ $success = false;
 
 if(isset($_POST['register'])){
     if(!$conn){
-        $error = $db_error ?: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
+        $error = "Unable to register right now. Please try again later.";
     } else {
     $username = mysqli_real_escape_string($conn, trim($_POST['username']));
     $email    = mysqli_real_escape_string($conn, trim($_POST['email']));

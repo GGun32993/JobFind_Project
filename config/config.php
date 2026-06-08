@@ -176,7 +176,7 @@ if (!$conn) {
         echo "</head>";
         echo "<body>";
         echo "<h1>Database unavailable</h1>";
-        echo "<p>" . htmlspecialchars($db_error, ENT_QUOTES, 'UTF-8') . "</p>";
+        echo "<p>Please try again later.</p>";
         echo "</body>";
         echo "</html>";
         exit();

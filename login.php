@@ -38,7 +38,7 @@ if(isset($_POST['login'])){
     $password = $_POST['password'] ?? '';
 
     if(!$conn){
-        $error = $db_error ?: "Database is not available. Please try again later.";
+        $error = "Unable to login right now. Please try again later.";
     } elseif($email === '' || $password === ''){
         $error = "Email and password are required.";
     } else {
@@ -59,14 +59,38 @@ if(isset($_POST['login'])){
                 error_log("Login execute failed: " . mysqli_stmt_error($stmt));
                 $error = "Unable to login right now. Please try again later.";
             } else {
+                mysqli_stmt_store_result($stmt);
                 mysqli_stmt_bind_result($stmt, $user_id, $username, $role, $stored_password);
                 $found = mysqli_stmt_fetch($stmt);
-                $password_ok = $found && (
-                    password_verify($password, (string)$stored_password) ||
-                    hash_equals((string)$stored_password, (string)$password)
-                );
+                $stored_password = (string)$stored_password;
+                $password_ok = false;
+                $should_rehash_password = false;
+
+                if($found){
+                    if(password_verify($password, $stored_password)){
+                        $password_ok = true;
+                        $should_rehash_password = password_needs_rehash($stored_password, PASSWORD_DEFAULT);
+                    } elseif(hash_equals($stored_password, (string)$password)){
+                        $password_ok = true;
+                        $should_rehash_password = true;
+                    }
+                }
 
                 if($password_ok && login_target_for_role($role)){
+                    if($should_rehash_password){
+                        $new_hash = password_hash($password, PASSWORD_DEFAULT);
+                        $update_stmt = mysqli_prepare($conn, "UPDATE Users SET password=? WHERE user_id=?");
+                        if($update_stmt){
+                            mysqli_stmt_bind_param($update_stmt, "si", $new_hash, $user_id);
+                            if(!mysqli_stmt_execute($update_stmt)){
+                                error_log("Login password rehash failed: " . mysqli_stmt_error($update_stmt));
+                            }
+                            mysqli_stmt_close($update_stmt);
+                        } else {
+                            error_log("Login password rehash prepare failed: " . mysqli_error($conn));
+                        }
+                    }
+
                     session_regenerate_id(true);
                     $_SESSION['user_id']  = $user_id;
                     $_SESSION['username'] = $username;
