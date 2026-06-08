@@ -300,7 +300,13 @@ $stmt2->close();
     $date_str = !empty($row['apply_date']) ? date('d M Y', strtotime($row['apply_date'])) : '';
     $is_saved = isFreelancerSaved($conn, $employer_id, $row['freelancer_id']);
     $profile_img = trim($row['profile_image'] ?? '');
-    $data_json = htmlspecialchars(json_encode($row, JSON_UNESCAPED_UNICODE), ENT_QUOTES);
+    $modal_row = $row;
+    $modal_row['profile_image_url'] = $profile_img !== '' ? jobfind_url($profile_img) : '';
+    $data_json = htmlspecialchars(
+        json_encode($modal_row, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_TAG),
+        ENT_QUOTES,
+        'UTF-8'
+    );
   ?>
   <div class="app-card" onclick='openModal(<?php echo $data_json; ?>)'>
     <div class="card-top">
@@ -411,13 +417,18 @@ function openModal(ap){
 
   const avatar = document.getElementById('m-av');
   avatar.innerHTML = '';
-  if (ap.profile_image) {
+  const fallbackInitials = (ap.username || '?').substring(0, 2).toUpperCase();
+  if (ap.profile_image_url) {
     const img = document.createElement('img');
-    img.src = ap.profile_image;
+    img.src = ap.profile_image_url;
     img.alt = 'Profile image';
+    img.onerror = () => {
+      avatar.innerHTML = '';
+      avatar.textContent = fallbackInitials;
+    };
     avatar.appendChild(img);
   } else {
-    avatar.textContent = ap.username.substring(0,2).toUpperCase();
+    avatar.textContent = fallbackInitials;
   }
   document.getElementById('m-name').textContent  = ap.username;
   document.getElementById('m-email').textContent = ap.email || '—';
