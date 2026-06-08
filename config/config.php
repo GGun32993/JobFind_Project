@@ -44,6 +44,111 @@ if (!function_exists('jobfind_url')) {
     }
 }
 
+if (!function_exists('jobfind_db_table_name_map')) {
+    function jobfind_db_table_name_map()
+    {
+        return [
+            'categories' => 'Categories',
+            'category_seed_runs' => 'Category_Seed_Runs',
+            'chat_messages' => 'Chat_Messages',
+            'employer_profile' => 'Employer_Profile',
+            'employer_rating' => 'Employer_Rating',
+            'employer_review' => 'Employer_Review',
+            'freelancer_profile' => 'Freelancer_Profile',
+            'freelancer_rating' => 'Freelancer_Rating',
+            'freelancer_review' => 'Freelancer_Review',
+            'job' => 'Job',
+            'job_application' => 'Job_Application',
+            'job_images' => 'Job_Images',
+            'job_subcategories' => 'Job_Subcategories',
+            'like_employer' => 'Like_Employer',
+            'resume' => 'Resume',
+            'saved_freelancers' => 'Saved_Freelancers',
+            'users' => 'Users',
+        ];
+    }
+}
+
+if (!function_exists('jobfind_db_quote_identifier')) {
+    function jobfind_db_quote_identifier($identifier)
+    {
+        return '`' . str_replace('`', '``', (string)$identifier) . '`';
+    }
+}
+
+if (!function_exists('jobfind_repair_table_names')) {
+    function jobfind_repair_table_names($conn)
+    {
+        static $done = false;
+
+        if ($done || !$conn) {
+            return $done;
+        }
+
+        $done = true;
+        $database_result = mysqli_query($conn, "SELECT DATABASE() AS db_name");
+        $database_row = $database_result ? mysqli_fetch_assoc($database_result) : null;
+        $database_name = $database_row['db_name'] ?? '';
+
+        if ($database_name === '') {
+            return false;
+        }
+
+        $database_sql = mysqli_real_escape_string($conn, $database_name);
+        $tables_result = mysqli_query($conn, "
+            SELECT TABLE_NAME, TABLE_TYPE
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = '$database_sql'
+        ");
+
+        if (!$tables_result) {
+            error_log('Job_Find DB repair: failed reading table list - ' . mysqli_error($conn));
+            return false;
+        }
+
+        $existing = [];
+        $existing_by_lower = [];
+        while ($table = mysqli_fetch_assoc($tables_result)) {
+            $table_name = (string)$table['TABLE_NAME'];
+            $existing[$table_name] = (string)$table['TABLE_TYPE'];
+            $existing_by_lower[strtolower($table_name)][] = $table_name;
+        }
+
+        $rename_parts = [];
+        foreach (jobfind_db_table_name_map() as $old_name => $new_name) {
+            if (isset($existing[$new_name])) {
+                continue;
+            }
+
+            $old_candidates = $existing_by_lower[strtolower($old_name)] ?? [];
+            if (empty($old_candidates)) {
+                continue;
+            }
+
+            $source_name = in_array($old_name, $old_candidates, true) ? $old_name : $old_candidates[0];
+            if (($existing[$source_name] ?? '') !== 'BASE TABLE') {
+                continue;
+            }
+
+            $rename_parts[] =
+                jobfind_db_quote_identifier($database_name) . '.' . jobfind_db_quote_identifier($source_name) .
+                ' TO ' .
+                jobfind_db_quote_identifier($database_name) . '.' . jobfind_db_quote_identifier($new_name);
+        }
+
+        if (empty($rename_parts)) {
+            return true;
+        }
+
+        $ok = mysqli_query($conn, 'RENAME TABLE ' . implode(', ', $rename_parts));
+        if (!$ok) {
+            error_log('Job_Find DB repair: failed renaming tables - ' . mysqli_error($conn));
+        }
+
+        return (bool)$ok;
+    }
+}
+
 $host = "sql205.infinityfree.com";
 $user = "if0_42031060";
 $pass = "";
@@ -78,4 +183,5 @@ if (!$conn) {
     }
 } else {
     mysqli_set_charset($conn, "utf8mb4");
+    jobfind_repair_table_names($conn);
 }
