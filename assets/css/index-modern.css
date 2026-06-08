@@ -22,6 +22,7 @@
   --jf-rose: #e11d48;
   --jf-blue: #0284c7;
   --jf-radius: 8px;
+  --jf-container: 1360px;
   --jf-shadow-sm: 0 1px 2px rgba(16, 24, 40, .04), 0 10px 24px rgba(16, 24, 40, .06);
   --jf-shadow-md: 0 18px 42px rgba(16, 24, 40, .10);
   --jf-focus: 0 0 0 4px rgba(79, 70, 229, .16);
@@ -58,8 +59,10 @@ body {
 }
 
 .shell .container {
-  width: min(1180px, calc(100% - 40px)) !important;
-  margin: 0 auto;
+  width: calc(100% - 48px) !important;
+  max-width: var(--jf-container) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .shell a {
@@ -234,9 +237,9 @@ body {
 .shell .hero-layout {
   min-height: 560px !important;
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr) !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .92fr) !important;
   align-items: center !important;
-  gap: 56px !important;
+  gap: clamp(36px, 4vw, 64px) !important;
   overflow: visible !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -294,11 +297,14 @@ body {
 }
 
 .shell .search-strip {
-  width: min(100%, 760px) !important;
+  width: min(100%, 720px) !important;
   max-width: none !important;
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(230px, 1fr) minmax(248px, .86fr) auto;
+  grid-template-columns: minmax(0, 1fr) 128px;
+  grid-template-areas:
+    "title title"
+    "location submit";
   gap: 10px;
   align-items: center;
   margin: 0 0 22px !important;
@@ -326,10 +332,12 @@ body {
 }
 
 .shell .search-field {
+  grid-area: title;
   padding: 0 14px !important;
 }
 
 .shell .location-pin-field {
+  grid-area: location;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto !important;
   padding: 8px 8px 8px 14px !important;
@@ -364,8 +372,10 @@ body {
 }
 
 .shell .search-strip > .btn {
+  grid-area: submit;
+  width: 100%;
   min-height: 54px;
-  padding-inline: 22px;
+  padding-inline: 16px;
 }
 
 .shell .pin-copy {
@@ -1300,10 +1310,6 @@ body {
     align-items: center;
   }
 
-  .shell .search-strip {
-    grid-template-columns: minmax(0, 1fr) minmax(220px, .86fr) auto;
-  }
-
   .shell .category-tile-grid,
   .shell .company-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -1385,6 +1391,10 @@ body {
     width: 100% !important;
     max-width: 100% !important;
     grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "title"
+      "location"
+      "submit";
     padding: 8px;
     overflow: hidden;
   }

@@ -1633,7 +1633,7 @@ $pinStatusText = $hasLocationPin
   }
 </style>
 <?php */ ?>
-<link rel="stylesheet" href="assets/css/index-modern.css?v=20260608">
+<link rel="stylesheet" href="assets/css/index-modern.css?v=20260608-layout2">
 </head>
 <body>
 <div class="shell">
