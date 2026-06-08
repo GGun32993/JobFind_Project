@@ -3,9 +3,11 @@ session_start();
 require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/location_helpers.php";
+require_once __DIR__ . "/../helpers/job_image_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/review_schema.php";
 
+ensure_job_image_schema($conn);
 ensure_profile_image_schema($conn);
 ensure_freelancer_review_schema($conn);
 
@@ -157,16 +159,46 @@ $popular_jobs = mysqli_query($conn,"
 ");
 
 $most_applied_jobs = mysqli_query($conn,"
-    SELECT COALESCE(NULLIF(j.category,''), 'ไม่ระบุ') AS category,
-           COUNT(DISTINCT j.job_id) AS total_jobs,
-           COUNT(ja.application_id) AS applicant_count,
-           COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
-           MAX(j.created_at) AS latest_job_at
-    FROM Job j
-    JOIN Job_Application ja ON ja.job_id = j.job_id
-    WHERE j.admin_status='approved'
-    GROUP BY COALESCE(NULLIF(j.category,''), 'ไม่ระบุ')
-    ORDER BY applicant_count DESC, total_jobs DESC, latest_job_at DESC
+    SELECT summary.category,
+           summary.total_jobs,
+           summary.applicant_count,
+           summary.freelancer_count,
+           summary.latest_job_at,
+           top_job.job_id AS top_job_id,
+           top_job.title AS top_job_title,
+           COALESCE(
+               (
+                   SELECT ji.image_path
+                   FROM Job_Images ji
+                   WHERE ji.job_id = top_job.job_id
+                   ORDER BY ji.sort_order ASC, ji.image_id ASC
+                   LIMIT 1
+               ),
+               top_job.image_path,
+               ''
+           ) AS job_image
+    FROM (
+        SELECT COALESCE(NULLIF(j.category,''), 'ไม่ระบุ') AS category,
+               COUNT(DISTINCT j.job_id) AS total_jobs,
+               COUNT(ja.application_id) AS applicant_count,
+               COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
+               MAX(j.created_at) AS latest_job_at
+        FROM Job j
+        JOIN Job_Application ja ON ja.job_id = j.job_id
+        WHERE j.admin_status='approved'
+        GROUP BY COALESCE(NULLIF(j.category,''), 'ไม่ระบุ')
+    ) summary
+    LEFT JOIN Job top_job ON top_job.job_id = (
+        SELECT j2.job_id
+        FROM Job j2
+        JOIN Job_Application ja2 ON ja2.job_id = j2.job_id
+        WHERE j2.admin_status='approved'
+          AND COALESCE(NULLIF(j2.category,''), 'ไม่ระบุ') = summary.category
+        GROUP BY j2.job_id, j2.created_at
+        ORDER BY COUNT(ja2.application_id) DESC, j2.created_at DESC, j2.job_id DESC
+        LIMIT 1
+    )
+    ORDER BY summary.applicant_count DESC, summary.total_jobs DESC, summary.latest_job_at DESC
     LIMIT 5
 ");
 
@@ -574,6 +606,7 @@ $most_applied_count = count($most_applied_jobs_list);
     display: flex; align-items: center; justify-content: center;
     font-size: 17px; flex-shrink: 0; overflow:hidden;
   }
+  .popular-avatar.has-image { background:#fff; color:transparent; }
   .popular-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .popular-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .popular-stats { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -984,11 +1017,20 @@ $most_applied_count = count($most_applied_jobs_list);
               ? 'browse_jobs.php?category=' . urlencode($category)
               : 'browse_jobs.php';
           $category_icon = $categoryIcons[$category] ?? '📁';
+          $job_image = trim($category_rank['job_image'] ?? '');
+          $top_job_title = trim($category_rank['top_job_title'] ?? '');
+          $image_alt = $top_job_title !== '' ? $top_job_title : $category;
       ?>
       <a href="<?php echo htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8'); ?>" class="popular-item">
         <div class="popular-top">
           <div class="popular-rank"><?php echo $rank; ?></div>
-          <div class="popular-avatar" style="font-size: 24px;"><?php echo $category_icon; ?></div>
+          <div class="popular-avatar<?php echo $job_image !== '' ? ' has-image' : ''; ?>"<?php echo $job_image === '' ? ' style="font-size: 24px;"' : ''; ?>>
+            <?php if($job_image !== ''): ?>
+              <img src="<?php echo job_image_src($job_image); ?>" alt="<?php echo htmlspecialchars($image_alt, ENT_QUOTES, 'UTF-8'); ?>">
+            <?php else: ?>
+              <?php echo $category_icon; ?>
+            <?php endif; ?>
+          </div>
           <div class="popular-name"><?php echo htmlspecialchars($category); ?></div>
         </div>
         <div class="popular-stats">
