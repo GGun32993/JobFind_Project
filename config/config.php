@@ -155,7 +155,14 @@ $pass = "";
 $db = "if0_42031060_jobfind";
 
 $local_config = __DIR__ . "/config.local.php";
-if (is_file($local_config)) {
+$server_name = strtolower((string)($_SERVER['SERVER_NAME'] ?? ''));
+$server_addr = strtolower((string)($_SERVER['SERVER_ADDR'] ?? ''));
+$is_local_environment = $server_name === ''
+    || in_array($server_name, ['localhost', '127.0.0.1', '::1'], true)
+    || in_array($server_addr, ['127.0.0.1', '::1'], true)
+    || php_sapi_name() === 'cli';
+
+if ($is_local_environment && is_file($local_config)) {
     require $local_config;
 }
 
