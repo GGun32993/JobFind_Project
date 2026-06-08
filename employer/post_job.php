@@ -132,6 +132,13 @@ if(isset($_POST['submit'])){
 // ดึง categories จาก DB (Admin จัดการได้)
 $cats = jobfind_get_categories_with_subcategories($conn);
 $category_subcategory_map = jobfind_category_subcategory_map($cats);
+$category_subcategory_map_json = json_encode(
+    $category_subcategory_map,
+    JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE
+);
+if ($category_subcategory_map_json === false) {
+    $category_subcategory_map_json = '{}';
+}
 $selected_category = $_POST['category'] ?? '';
 $selected_job_subcategory = $_POST['job_subcategory'] ?? '';
 $selected_employment_type = jobfind_normalize_employment_type($_POST['employment_type'] ?? 'freelance_project');
@@ -356,6 +363,20 @@ $selected_employment_type = jobfind_normalize_employment_type($_POST['employment
           <select name="job_subcategory" id="job-subcategory-select" class="form-input" style="padding-left:40px;cursor:pointer;" required
                   data-selected="<?php echo htmlspecialchars($selected_job_subcategory); ?>">
             <option value="">-- เลือกประเภทงานหลักก่อน --</option>
+            <?php foreach($cats as $cat): ?>
+              <?php foreach(($cat['subcategories'] ?? []) as $subcategory): ?>
+                <?php
+                  $subcategory_name = is_array($subcategory) ? ($subcategory['name'] ?? '') : $subcategory;
+                  if(trim((string)$subcategory_name) === '') continue;
+                ?>
+                <option
+                  value="<?php echo htmlspecialchars($subcategory_name); ?>"
+                  data-category="<?php echo htmlspecialchars($cat['name']); ?>"
+                  <?php echo ($selected_category === $cat['name'] && $selected_job_subcategory === $subcategory_name) ? 'selected' : ''; ?>>
+                  <?php echo htmlspecialchars($cat['name'] . ' - ' . $subcategory_name); ?>
+                </option>
+              <?php endforeach; ?>
+            <?php endforeach; ?>
           </select>
         </div>
       </div>
@@ -475,7 +496,23 @@ $selected_employment_type = jobfind_normalize_employment_type($_POST['employment
   }
   updateCount();
 
-  const categorySubcategoryMap = <?php echo json_encode($category_subcategory_map, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+  const categorySubcategoryMap = <?php echo $category_subcategory_map_json; ?>;
+  const fallbackSubcategoryMap = (() => {
+    const select = document.getElementById('job-subcategory-select');
+    const map = {};
+    if (!select) return map;
+
+    Array.from(select.options).forEach((option) => {
+      const category = option.dataset.category || '';
+      if (!category || !option.value) return;
+      if (!map[category]) map[category] = [];
+      if (!map[category].includes(option.value)) {
+        map[category].push(option.value);
+      }
+    });
+
+    return map;
+  })();
 
   function updateJobSubcategoryOptions(resetSelected = false){
     const categorySelect = document.getElementById('category-select');
@@ -484,7 +521,7 @@ $selected_employment_type = jobfind_normalize_employment_type($_POST['employment
 
     const selectedCategory = categorySelect.value;
     const currentValue = resetSelected ? '' : (subcategorySelect.dataset.selected || subcategorySelect.value || '');
-    const options = categorySubcategoryMap[selectedCategory] || [];
+    const options = categorySubcategoryMap[selectedCategory] || fallbackSubcategoryMap[selectedCategory] || [];
 
     subcategorySelect.innerHTML = '';
     const placeholder = document.createElement('option');
