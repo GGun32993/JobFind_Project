@@ -11,12 +11,15 @@ $employer_id = jobfind_require_role('employer');
 $sidebar_pending_apps = get_employer_pending_application_count($conn, $employer_id);
 
 $result = mysqli_query($conn,"
-    SELECT Employer_Review.*, Users.username, Users.profile_image, Job.title
-    FROM Employer_Review
-    JOIN Users ON Users.user_id = Employer_Review.freelancer_id
-    JOIN Job   ON Job.job_id    = Employer_Review.job_id
-    WHERE Employer_Review.employer_id='$employer_id'
-    ORDER BY Employer_Review.created_at DESC
+    SELECT er.*,
+           COALESCE(NULLIF(u.username, ''), 'Freelancer') AS username,
+           u.profile_image,
+           COALESCE(NULLIF(j.title, ''), 'รีวิวบริษัท') AS title
+    FROM Employer_Review er
+    LEFT JOIN Users u ON u.user_id = er.freelancer_id
+    LEFT JOIN Job j ON j.job_id = er.job_id
+    WHERE er.employer_id='$employer_id'
+    ORDER BY er.created_at DESC, er.review_id DESC
 ");
 
 // pre-fetch for stats
@@ -25,11 +28,16 @@ $total = 0;
 $sum   = 0;
 $dist  = [1=>0, 2=>0, 3=>0, 4=>0, 5=>0];
 
-while($r = mysqli_fetch_assoc($result)){
-    $rows[] = $r;
-    $total++;
-    $sum += $r['rating'];
-    $dist[(int)$r['rating']]++;
+if($result){
+    while($r = mysqli_fetch_assoc($result)){
+        $rating = (int)($r['rating'] ?? 0);
+        $rows[] = $r;
+        $total++;
+        $sum += $rating;
+        if(isset($dist[$rating])){
+            $dist[$rating]++;
+        }
+    }
 }
 
 $avg = $total > 0 ? round($sum / $total, 1) : 0;
