@@ -155,7 +155,7 @@ function getFreelancerReviewHistory($conn, $freelancer_id){
     return $reviews;
 }
 
-function dashboard_category_icon($category, $db_icon = ''){
+function dashboard_category_icon($category, $db_icon = '', $fallback = '&#128193;'){
     $db_icon = trim((string)$db_icon);
     if($db_icon !== '' && !preg_match('/[\x{00C0}-\x{00FF}\x{FFFD}]/u', $db_icon)){
         return $db_icon;
@@ -177,7 +177,7 @@ function dashboard_category_icon($category, $db_icon = ''){
         'Other' => '&#128230;'
     ];
 
-    return html_entity_decode($icons[$category] ?? '&#128193;', ENT_QUOTES, 'UTF-8');
+    return html_entity_decode($icons[$category] ?? $fallback, ENT_QUOTES, 'UTF-8');
 }
 
 // ── Popular Categories - Rating ในช่วง 7 วัน ──
@@ -222,22 +222,47 @@ $popular_jobs = mysqli_query($conn,"
 ");
 
 $most_applied_jobs = mysqli_query($conn,"
-    SELECT COALESCE(NULLIF(j.category,''), 'ไม่ระบุ') AS category,
-           COALESCE(MAX(NULLIF(c.icon, '')), '') AS category_icon,
-           COUNT(DISTINCT j.job_id) AS total_jobs,
-           COUNT(ja.application_id) AS applicant_count,
-           SUM(CASE WHEN ja.status='pending' THEN 1 ELSE 0 END) AS pending_count,
-           MAX(j.created_at) AS latest_job_at
-    FROM Job j
-    LEFT JOIN (
-        SELECT name, MAX(NULLIF(icon, '')) AS icon
-        FROM Categories
-        GROUP BY name
-    ) c ON c.name = j.category
-    JOIN Job_Application ja ON ja.job_id = j.job_id
-    WHERE j.employer_id='$user_id'
-    GROUP BY COALESCE(NULLIF(j.category,''), 'ไม่ระบุ')
-    ORDER BY applicant_count DESC, pending_count DESC, total_jobs DESC, latest_job_at DESC
+    SELECT summary.job_subcategory,
+           summary.total_jobs,
+           summary.applicant_count,
+           summary.freelancer_count,
+           summary.latest_job_at,
+           COALESCE(NULLIF((
+               SELECT COALESCE(NULLIF(c.icon,''), NULLIF(c2.icon,''), '')
+               FROM Job j2
+               LEFT JOIN Job_Subcategories js ON js.name = j2.job_subcategory
+               LEFT JOIN Categories c ON c.category_id = js.category_id
+               LEFT JOIN Categories c2 ON c2.name = j2.category
+               WHERE j2.admin_status='approved'
+                 AND COALESCE(NULLIF(j2.job_subcategory,''), NULLIF(j2.category,''), 'ไม่ระบุ') = summary.job_subcategory
+               ORDER BY CASE WHEN c.name = j2.category THEN 0 ELSE 1 END, j2.created_at DESC, j2.job_id DESC
+               LIMIT 1
+           ), ''), '') AS category_icon,
+           COALESCE(
+               NULLIF((
+                   SELECT COALESCE(NULLIF(c.name,''), NULLIF(j2.category,''), '')
+                   FROM Job j2
+                   LEFT JOIN Job_Subcategories js ON js.name = j2.job_subcategory
+                   LEFT JOIN Categories c ON c.category_id = js.category_id
+                   WHERE j2.admin_status='approved'
+                     AND COALESCE(NULLIF(j2.job_subcategory,''), NULLIF(j2.category,''), 'ไม่ระบุ') = summary.job_subcategory
+                   ORDER BY CASE WHEN c.name = j2.category THEN 0 ELSE 1 END, j2.created_at DESC, j2.job_id DESC
+                   LIMIT 1
+               ), ''),
+               'ไม่ระบุ'
+           ) AS category_name
+    FROM (
+        SELECT COALESCE(NULLIF(j.job_subcategory,''), NULLIF(j.category,''), 'ไม่ระบุ') AS job_subcategory,
+               COUNT(DISTINCT j.job_id) AS total_jobs,
+               COUNT(ja.application_id) AS applicant_count,
+               COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
+               MAX(j.created_at) AS latest_job_at
+        FROM Job j
+        JOIN Job_Application ja ON ja.job_id = j.job_id
+        WHERE j.admin_status='approved'
+        GROUP BY COALESCE(NULLIF(j.job_subcategory,''), NULLIF(j.category,''), 'ไม่ระบุ')
+    ) summary
+    ORDER BY summary.applicant_count DESC, summary.total_jobs DESC, summary.freelancer_count DESC, summary.latest_job_at DESC
     LIMIT 5
 ");
 
@@ -245,11 +270,14 @@ $most_applied_jobs_list = [];
 if($most_applied_jobs){
     while($row = mysqli_fetch_assoc($most_applied_jobs)){
         $row['applicant_count'] = (int)$row['applicant_count'];
-        $row['pending_count'] = (int)$row['pending_count'];
         $row['total_jobs'] = (int)$row['total_jobs'];
+        $row['freelancer_count'] = (int)$row['freelancer_count'];
         $most_applied_jobs_list[] = $row;
     }
 }
+$popular_employer_count = $popular_employers ? mysqli_num_rows($popular_employers) : 0;
+$top_freelancer_count = $top_freelancers ? mysqli_num_rows($top_freelancers) : 0;
+$popular_job_count = $popular_jobs ? mysqli_num_rows($popular_jobs) : 0;
 $most_applied_count = count($most_applied_jobs_list);
 ?>
 <!DOCTYPE html>
@@ -337,17 +365,18 @@ $most_applied_count = count($most_applied_jobs_list);
   .rating-tip { font-size:13px; color:var(--muted); line-height:1.7; }
   .rating-tip strong { color:var(--text); }
 
-  .popular-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin-bottom:28px; }
-  .popular-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
-  .popular-head h4 { font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px; margin:0; }
-  .popular-head h4 i { color:var(--accent); }
+  .popular-card { background:var(--white); border:1px solid var(--border); border-radius:16px; padding:18px; margin-bottom:18px; box-shadow:0 10px 26px rgba(15,23,42,.04); }
+  .popular-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+  .popular-head h4 { font-size:15px; font-weight:700; display:flex; align-items:center; gap:9px; margin:0; }
+  .popular-head h4 i { width:30px; height:30px; border-radius:10px; background:#eef2ff; color:var(--accent); display:inline-flex; align-items:center; justify-content:center; font-size:15px; }
   .popular-top-label { font-size:11px; font-weight:700; color:var(--accent); background:#eef2ff; border:1px solid #c7d2fe; padding:4px 10px; border-radius:999px; }
-  .popular-list { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
-  .popular-item { display:flex; flex-direction:column; gap:10px; min-width:0; padding:14px; border:1px solid var(--border); border-radius:12px; color:var(--text); text-decoration:none; background:#fff; transition:border-color .15s,box-shadow .2s,transform .15s; font-family:'Sora',sans-serif; text-align:left; cursor:pointer; }
-  .popular-item:hover { color:var(--text); border-color:#c7d2fe; box-shadow:0 6px 18px rgba(99,102,241,.12); transform:translateY(-1px); }
+  .popular-list { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+  .popular-item { display:flex; flex-direction:column; justify-content:space-between; gap:11px; width:100%; min-width:0; min-height:108px; padding:14px; border:1px solid var(--border); border-radius:12px; color:var(--text); text-decoration:none; background:#fff; transition:border-color .15s,box-shadow .2s,transform .15s; font-family:'Sora',sans-serif; text-align:left; cursor:pointer; }
+  .popular-item:hover { color:var(--text); border-color:#c7d2fe; box-shadow:0 12px 24px rgba(99,102,241,.12); transform:translateY(-2px); }
+  .popular-item:focus-visible { outline:3px solid rgba(99,102,241,.24); outline-offset:2px; }
   .popular-top { display:flex; align-items:center; gap:10px; min-width:0; }
   .popular-rank { width:28px; height:28px; border-radius:9px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
-  .popular-avatar { width:34px; height:34px; border-radius:10px; background:var(--light); color:var(--accent); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; overflow:hidden; }
+  .popular-avatar { width:36px; height:36px; border-radius:11px; background:var(--light); color:var(--accent); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; overflow:hidden; }
   .popular-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .popular-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .popular-stats { display:flex; flex-wrap:wrap; gap:6px; }
@@ -531,7 +560,7 @@ $most_applied_count = count($most_applied_jobs_list);
   <section class="popular-card">
     <div class="popular-head">
       <h4><i class="bi bi-trophy"></i> ผู้ว่าจ้างยอดนิยม</h4>
-      <span class="popular-top-label">Top 5</span>
+      <span class="popular-top-label">Top <?php echo $popular_employer_count; ?></span>
     </div>
 
     <div class="popular-list">
@@ -566,7 +595,7 @@ $most_applied_count = count($most_applied_jobs_list);
   <section class="popular-card">
     <div class="popular-head">
       <h4><i class="bi bi-person-badge"></i> Freelancers ยอดเยี่ยม (7 วันที่ผ่านมา)</h4>
-      <span class="popular-top-label">Top 5</span>
+      <span class="popular-top-label">Top <?php echo $top_freelancer_count; ?></span>
     </div>
 
     <div class="popular-list">
@@ -624,7 +653,7 @@ $most_applied_count = count($most_applied_jobs_list);
   <section class="popular-card">
     <div class="popular-head">
       <h4><i class="bi bi-fire"></i> หมวดงานยอดนิยม (7 วันที่ผ่านมา)</h4>
-      <span class="popular-top-label">Top 5</span>
+      <span class="popular-top-label">Top <?php echo $popular_job_count; ?></span>
     </div>
 
     <div class="popular-list">
@@ -667,20 +696,22 @@ $most_applied_count = count($most_applied_jobs_list);
     <div class="popular-list">
       <?php
         $rank = 1;
-        foreach($most_applied_jobs_list as $category_rank):
-          $category = $category_rank['category'] ?? 'ไม่ระบุ';
-          $category_icon = dashboard_category_icon($category, $category_rank['category_icon'] ?? '');
+        foreach($most_applied_jobs_list as $subcategory_rank):
+          $subcategory_name = trim($subcategory_rank['job_subcategory'] ?? '');
+          $subcategory_name = $subcategory_name !== '' ? $subcategory_name : 'ไม่ระบุ';
+          $category_name = trim($subcategory_rank['category_name'] ?? '');
+          $category_icon = dashboard_category_icon($category_name, $subcategory_rank['category_icon'] ?? '', '&#128188;');
       ?>
       <a href="manage_jobs.php" class="popular-item">
         <div class="popular-top">
           <div class="popular-rank"><?php echo $rank; ?></div>
           <div class="popular-avatar" style="font-size: 24px;"><?php echo htmlspecialchars($category_icon, ENT_QUOTES, 'UTF-8'); ?></div>
-          <div class="popular-name"><?php echo htmlspecialchars($category); ?></div>
+          <div class="popular-name"><?php echo htmlspecialchars($subcategory_name); ?></div>
         </div>
         <div class="popular-stats">
-          <span class="popular-pill"><i class="bi bi-people-fill"></i><?php echo (int)$category_rank['applicant_count']; ?> ผู้สมัคร</span>
-          <span class="popular-pill"><i class="bi bi-hourglass-split"></i><?php echo (int)$category_rank['pending_count']; ?> รอพิจารณา</span>
-          <span class="popular-pill"><i class="bi bi-briefcase"></i><?php echo (int)$category_rank['total_jobs']; ?> งาน</span>
+          <span class="popular-pill"><i class="bi bi-people-fill"></i><?php echo (int)$subcategory_rank['applicant_count']; ?> ผู้สมัคร</span>
+          <span class="popular-pill"><i class="bi bi-briefcase"></i><?php echo (int)$subcategory_rank['total_jobs']; ?> งาน</span>
+          <span class="popular-pill"><i class="bi bi-tag"></i><?php echo htmlspecialchars($category_name !== '' ? $category_name : 'ไม่ระบุ'); ?></span>
         </div>
       </a>
       <?php $rank++; endforeach; ?>

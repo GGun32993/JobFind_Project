@@ -84,7 +84,7 @@ $top_freelancers = mysqli_query($conn,"
     WHERE u.role='freelancer'
     AND COALESCE(fr.total_reviews, 0) > 0
     ORDER BY avg_rating DESC, total_reviews DESC
-    LIMIT 7
+    LIMIT 5
 ");
 
 function getFreelancerReviewHistory($conn, $freelancer_id){
@@ -124,7 +124,7 @@ function getFreelancerReviewHistory($conn, $freelancer_id){
     return $reviews;
 }
 
-function dashboard_category_icon($category, $db_icon = ''){
+function dashboard_category_icon($category, $db_icon = '', $fallback = '&#128193;'){
     $db_icon = trim((string)$db_icon);
     if($db_icon !== '' && !preg_match('/[\x{00C0}-\x{00FF}\x{FFFD}]/u', $db_icon)){
         return $db_icon;
@@ -139,10 +139,14 @@ function dashboard_category_icon($category, $db_icon = ''){
         'Finance' => '&#128176;',
         'Writing' => '&#9997;&#65039;',
         'Education' => '&#127891;',
+        'Programmer' => '&#128187;',
+        'Data Analyst' => '&#128202;',
+        'Cyber Security' => '&#128737;&#65039;',
+        'AI Engineer' => '&#129302;',
         'Other' => '&#128230;'
     ];
 
-    return html_entity_decode($icons[$category] ?? '&#128193;', ENT_QUOTES, 'UTF-8');
+    return html_entity_decode($icons[$category] ?? $fallback, ENT_QUOTES, 'UTF-8');
 }
 
 // ── Popular Categories - Rating ในช่วง 7 วัน ──
@@ -153,7 +157,11 @@ $popular_jobs = mysqli_query($conn,"
            COALESCE(jr.total_reviews, 0) AS total_reviews,
            COALESCE(jr.avg_rating, 0) AS avg_rating
     FROM Job j
-    LEFT JOIN Categories c ON c.name = j.category
+    LEFT JOIN (
+        SELECT name, MAX(NULLIF(icon, '')) AS icon
+        FROM Categories
+        GROUP BY name
+    ) c ON c.name = j.category
     LEFT JOIN (
         SELECT job_id, 
                 COUNT(*) AS total_reviews, 
@@ -188,20 +196,17 @@ $most_applied_jobs = mysqli_query($conn,"
            summary.applicant_count,
            summary.freelancer_count,
            summary.latest_job_at,
-           COALESCE(
-               NULLIF((
-                   SELECT COALESCE(NULLIF(c.icon,''), NULLIF(c2.icon,''), '')
-                   FROM Job j2
-                   LEFT JOIN Job_Subcategories js ON js.name = j2.job_subcategory
-                   LEFT JOIN Categories c ON c.category_id = js.category_id
-                   LEFT JOIN Categories c2 ON c2.name = j2.category
-                   WHERE j2.admin_status='approved'
-                     AND COALESCE(NULLIF(j2.job_subcategory,''), NULLIF(j2.category,''), 'ไม่ระบุ') = summary.job_subcategory
-                   ORDER BY CASE WHEN c.name = j2.category THEN 0 ELSE 1 END, j2.created_at DESC, j2.job_id DESC
-                   LIMIT 1
-               ), ''),
-               '💼'
-           ) AS category_icon,
+           COALESCE(NULLIF((
+               SELECT COALESCE(NULLIF(c.icon,''), NULLIF(c2.icon,''), '')
+               FROM Job j2
+               LEFT JOIN Job_Subcategories js ON js.name = j2.job_subcategory
+               LEFT JOIN Categories c ON c.category_id = js.category_id
+               LEFT JOIN Categories c2 ON c2.name = j2.category
+               WHERE j2.admin_status='approved'
+                 AND COALESCE(NULLIF(j2.job_subcategory,''), NULLIF(j2.category,''), 'ไม่ระบุ') = summary.job_subcategory
+               ORDER BY CASE WHEN c.name = j2.category THEN 0 ELSE 1 END, j2.created_at DESC, j2.job_id DESC
+               LIMIT 1
+           ), ''), '') AS category_icon,
            COALESCE(
                NULLIF((
                    SELECT COALESCE(NULLIF(c.name,''), NULLIF(j2.category,''), '')
@@ -1025,10 +1030,10 @@ $most_applied_count = count($most_applied_jobs_list);
     </div>
   </section>
 
-  <!-- Most Applied Subcategories -->
+  <!-- Most Applied Jobs -->
   <section class="popular-card">
     <div class="popular-head">
-      <h4><i class="bi bi-bar-chart-line"></i> หมวดหมู่รองที่มีผู้สมัครมากที่สุด</h4>
+      <h4><i class="bi bi-bar-chart-line"></i> ตำแหน่งงานที่มีผู้สมัครมากที่สุด</h4>
       <span class="popular-top-label">Top <?php echo $most_applied_count; ?></span>
     </div>
 
@@ -1044,7 +1049,7 @@ $most_applied_count = count($most_applied_jobs_list);
               ? 'browse_jobs.php?category=' . urlencode($category_name)
               : 'browse_jobs.php';
           $category_icon = trim($subcategory_rank['category_icon'] ?? '');
-          $category_icon = $category_icon !== '' ? $category_icon : '💼';
+          $category_icon = dashboard_category_icon($category_name, $category_icon, '&#128188;');
       ?>
       <a href="<?php echo htmlspecialchars($category_url, ENT_QUOTES, 'UTF-8'); ?>" class="popular-item">
         <div class="popular-top">
