@@ -31,6 +31,7 @@ if (!empty($recommended_jobs)) {
 
 $popular_employers = mysqli_query($conn,"
     SELECT u.user_id,
+           u.profile_image,
            COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS company_name,
            COALESCE(l.total_likes,0) AS total_likes,
            COALESCE(r.total_reviews,0) AS total_reviews,
@@ -921,11 +922,18 @@ $most_applied_count = count($most_applied_jobs_list);
         while($emp = mysqli_fetch_assoc($popular_employers)):
           $hasPopular = true;
           $rating = round($emp['avg_rating'] ?? 0, 1);
+          $employer_profile_img = trim($emp['profile_image'] ?? '');
       ?>
       <a href="../employer/profile.php?employer_id=<?php echo (int)$emp['user_id']; ?>&return_url=dashboard.php" class="popular-item">
         <div class="popular-top">
           <div class="popular-rank"><?php echo $rank; ?></div>
-          <div class="popular-avatar"><i class="bi bi-building"></i></div>
+          <div class="popular-avatar">
+            <?php if($employer_profile_img !== ''): ?>
+              <img src="<?php echo profile_image_src($employer_profile_img); ?>" alt="Employer profile image">
+            <?php else: ?>
+              <i class="bi bi-building"></i>
+            <?php endif; ?>
+          </div>
           <div class="popular-name"><?php echo htmlspecialchars($emp['company_name']); ?></div>
         </div>
         <div class="popular-stats">
