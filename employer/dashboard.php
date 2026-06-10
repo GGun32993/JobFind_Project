@@ -240,7 +240,7 @@ $most_applied_jobs = mysqli_query($conn,"
                LEFT JOIN Categories c ON c.category_id = js.category_id
                LEFT JOIN Categories c2 ON c2.name = j2.category
                WHERE j2.admin_status='approved'
-                 AND COALESCE(NULLIF(j2.job_subcategory,''), NULLIF(j2.category,''), 'ไม่ระบุ') = summary.job_subcategory
+                 AND COALESCE(NULLIF(j2.job_subcategory,''), 'ไม่ระบุ') = summary.job_subcategory
                ORDER BY CASE WHEN c.name = j2.category THEN 0 ELSE 1 END, j2.created_at DESC, j2.job_id DESC
                LIMIT 1
            ), ''), '') AS category_icon,
@@ -251,14 +251,14 @@ $most_applied_jobs = mysqli_query($conn,"
                    LEFT JOIN Job_Subcategories js ON js.name = j2.job_subcategory
                    LEFT JOIN Categories c ON c.category_id = js.category_id
                    WHERE j2.admin_status='approved'
-                     AND COALESCE(NULLIF(j2.job_subcategory,''), NULLIF(j2.category,''), 'ไม่ระบุ') = summary.job_subcategory
+                     AND COALESCE(NULLIF(j2.job_subcategory,''), 'ไม่ระบุ') = summary.job_subcategory
                    ORDER BY CASE WHEN c.name = j2.category THEN 0 ELSE 1 END, j2.created_at DESC, j2.job_id DESC
                    LIMIT 1
                ), ''),
                'ไม่ระบุ'
            ) AS category_name
     FROM (
-        SELECT COALESCE(NULLIF(j.job_subcategory,''), NULLIF(j.category,''), 'ไม่ระบุ') AS job_subcategory,
+        SELECT COALESCE(NULLIF(j.job_subcategory,''), 'ไม่ระบุ') AS job_subcategory,
                COUNT(DISTINCT j.job_id) AS total_jobs,
                COUNT(ja.application_id) AS applicant_count,
                COUNT(DISTINCT ja.freelancer_id) AS freelancer_count,
@@ -266,7 +266,7 @@ $most_applied_jobs = mysqli_query($conn,"
         FROM Job j
         JOIN Job_Application ja ON ja.job_id = j.job_id
         WHERE j.admin_status='approved'
-        GROUP BY COALESCE(NULLIF(j.job_subcategory,''), NULLIF(j.category,''), 'ไม่ระบุ')
+        GROUP BY COALESCE(NULLIF(j.job_subcategory,''), 'ไม่ระบุ')
     ) summary
     ORDER BY summary.applicant_count DESC, summary.total_jobs DESC, summary.freelancer_count DESC, summary.latest_job_at DESC
     LIMIT 5
