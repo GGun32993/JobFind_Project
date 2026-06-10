@@ -4,8 +4,10 @@ require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/profile_image_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
+require_once __DIR__ . "/../helpers/review_schema.php";
 
 ensure_profile_image_schema($conn);
+ensure_freelancer_review_schema($conn);
 
 $job_id      = $_GET['job_id'] ?? 0;
 $employer_id = jobfind_require_role('employer');
@@ -23,10 +25,18 @@ if(!$job){ header("Location: manage_jobs.php"); exit(); }
 $applicants_query = "
     SELECT ja.*, u.username, u.email, u.phone, u.fullname, u.profile_image,
            fp.skill, fp.experience, fp.rating, fp.location,
+           COALESCE(fr_stats.review_count, 0) AS review_count,
+           fr_stats.review_rating AS review_rating,
            (SELECT file_name FROM Resume WHERE freelancer_id=ja.freelancer_id ORDER BY resume_id DESC LIMIT 1) AS resume_file
     FROM Job_Application ja
     JOIN Users u ON ja.freelancer_id = u.user_id
     LEFT JOIN Freelancer_Profile fp ON u.user_id = fp.user_id
+    LEFT JOIN (
+        SELECT freelancer_id, COUNT(*) AS review_count, ROUND(AVG(rating), 1) AS review_rating
+        FROM Freelancer_Review
+        WHERE rating IS NOT NULL
+        GROUP BY freelancer_id
+    ) fr_stats ON fr_stats.freelancer_id = u.user_id
     WHERE ja.job_id = ?
     ORDER BY ja.apply_date DESC
 ";
@@ -46,6 +56,59 @@ function isFreelancerSaved($conn, $employer_id, $freelancer_id){
     return $is_saved;
 }
 
+function getFreelancerReviewHistory($conn, $freelancer_ids){
+    $ids = array_values(array_unique(array_map('intval', $freelancer_ids)));
+    $ids = array_values(array_filter($ids, fn($id) => $id > 0));
+    if(empty($ids)){
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $query = "
+        SELECT fr.freelancer_id, fr.rating,
+               COALESCE(NULLIF(fr.comment, ''), NULLIF(fr.review, '')) AS comment,
+               fr.created_at,
+               COALESCE(NULLIF(ep.employer_name, ''), NULLIF(u.fullname, ''), u.username) AS employer_name,
+               COALESCE(NULLIF(j.title, ''), 'ไม่ระบุงาน') AS job_title
+        FROM Freelancer_Review fr
+        LEFT JOIN Users u ON u.user_id = fr.employer_id
+        LEFT JOIN Employer_Profile ep ON ep.user_id = fr.employer_id
+        LEFT JOIN Job j ON j.job_id = fr.job_id
+        WHERE fr.freelancer_id IN ($placeholders)
+          AND fr.rating IS NOT NULL
+        ORDER BY fr.freelancer_id ASC, fr.created_at DESC, fr.review_id DESC
+    ";
+
+    $stmt = $conn->prepare($query);
+    if(!$stmt){
+        return [];
+    }
+
+    $types = str_repeat('i', count($ids));
+    $bind_params = [$types];
+    foreach($ids as $idx => $id){
+        $bind_params[] = &$ids[$idx];
+    }
+    call_user_func_array([$stmt, 'bind_param'], $bind_params);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $reviews = [];
+    while($row = $result->fetch_assoc()){
+        $fid = (int)$row['freelancer_id'];
+        $reviews[$fid][] = [
+            'rating' => (int)($row['rating'] ?? 0),
+            'comment' => $row['comment'] ?? '',
+            'created_at' => $row['created_at'] ?? '',
+            'employer_name' => $row['employer_name'] ?? 'Employer',
+            'job_title' => $row['job_title'] ?? 'ไม่ระบุงาน'
+        ];
+    }
+    $stmt->close();
+
+    return $reviews;
+}
+
 // นับสถิติ
 $all_rows = []; $cnt_pending = 0; $cnt_accepted = 0; $cnt_rejected = 0;
 $tmp = $conn->prepare($applicants_query);
@@ -61,6 +124,18 @@ while($r = $tmp_res->fetch_assoc()){
 }
 $tmp->close();
 $cnt_all = count($all_rows);
+
+$review_history_by_freelancer = getFreelancerReviewHistory($conn, array_column($all_rows, 'freelancer_id'));
+foreach($all_rows as &$applicant_row){
+    $fid = (int)($applicant_row['freelancer_id'] ?? 0);
+    $history = $review_history_by_freelancer[$fid] ?? [];
+    $applicant_row['review_history'] = $history;
+    $applicant_row['review_count'] = (int)($applicant_row['review_count'] ?? count($history));
+    $applicant_row['review_rating'] = $applicant_row['review_rating'] !== null
+        ? round((float)$applicant_row['review_rating'], 1)
+        : 0;
+}
+unset($applicant_row);
 
 // reset pointer
 $stmt2 = $conn->prepare($applicants_query);
@@ -201,6 +276,27 @@ $stmt2->close();
   .modal-skills{display:flex;flex-wrap:wrap;gap:7px;}
   .modal-skill{font-size:12px;font-weight:500;padding:4px 12px;border-radius:20px;background:#eef2ff;color:var(--accent);}
 
+  /* Review history */
+  .review-summary{display:grid;grid-template-columns:130px 1fr;gap:12px;margin-bottom:12px;}
+  .review-score-card{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;text-align:center;}
+  .review-score-num{font-size:30px;font-weight:600;line-height:1;color:#92400e;}
+  .review-score-stars{color:var(--yellow);font-size:14px;margin:5px 0 3px;display:flex;justify-content:center;gap:2px;}
+  .review-score-count{font-size:12px;color:#92400e;}
+  .review-distribution{background:var(--light);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px;}
+  .review-dist-row{display:grid;grid-template-columns:34px 1fr 24px;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+  .review-dist-label{display:flex;align-items:center;gap:3px;white-space:nowrap;}
+  .review-dist-bar{height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden;}
+  .review-dist-fill{height:100%;background:var(--yellow);border-radius:99px;}
+  .review-list{display:flex;flex-direction:column;gap:10px;max-height:280px;overflow-y:auto;padding-right:2px;}
+  .review-item{background:var(--light);border:1px solid var(--border);border-radius:10px;padding:13px;}
+  .review-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .review-employer{font-size:13.5px;font-weight:600;color:var(--text);}
+  .review-job{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:4px;}
+  .review-item-stars{color:var(--yellow);display:flex;gap:1px;font-size:13px;white-space:nowrap;}
+  .review-comment{font-size:13px;line-height:1.6;color:var(--text);margin:8px 0;}
+  .review-date{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+  .review-empty{background:var(--light);border:1px dashed #cbd5e1;border-radius:10px;padding:16px;color:var(--muted);font-size:13px;text-align:center;}
+
   /* Resume link */
   .btn-resume{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;background:#e0f2fe;color:#0369a1;font-size:13px;font-weight:500;text-decoration:none;transition:opacity .15s;}
   .btn-resume:hover{opacity:.85;color:#0369a1;}
@@ -215,7 +311,7 @@ $stmt2->close();
   .btn-rate:hover{opacity:.85;transform:translateY(-1px);}
   .btn-hired-done{padding:11px;background:var(--light);color:var(--muted);border:1px solid var(--border);border-radius:10px;font-family:'Sora',sans-serif;font-size:14px;font-weight:500;cursor:default;display:flex;align-items:center;justify-content:center;gap:6px;grid-column:1/-1;}
 
-  @media(max-width:768px){.sidebar{display:none;}.main{margin-left:0;padding:20px 16px;}.info-grid{grid-template-columns:1fr;}.modal-actions{grid-template-columns:1fr;}}
+  @media(max-width:768px){.sidebar{display:none;}.main{margin-left:0;padding:20px 16px;}.info-grid{grid-template-columns:1fr;}.review-summary{grid-template-columns:1fr;}.modal-actions{grid-template-columns:1fr;}}
 </style>
 <link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
 
@@ -295,7 +391,8 @@ $stmt2->close();
     $status   = strtolower($row['status']);
     $sp_class = match($status){ 'accepted','hired'=>'sp-accepted','rejected'=>'sp-rejected',default=>'sp-pending' };
     $sp_label = match($status){ 'accepted','hired'=>'รับแล้ว','rejected'=>'ไม่ผ่าน',default=>'รอพิจารณา' };
-    $avg_r    = round($row['rating'] ?? 0, 1);
+    $review_count = (int)($row['review_count'] ?? 0);
+    $avg_r    = round(($row['review_rating'] ?? 0) ?: ($row['rating'] ?? 0), 1);
     $skills   = !empty($row['skill']) ? array_map('trim', explode(',', $row['skill'])) : [];
     $date_str = !empty($row['apply_date']) ? date('d M Y', strtotime($row['apply_date'])) : '';
     $is_saved = isFreelancerSaved($conn, $employer_id, $row['freelancer_id']);
@@ -321,7 +418,7 @@ $stmt2->close();
         <div class="card-name"><?php echo htmlspecialchars($row['username']); ?></div>
         <div class="card-meta">
           <?php if(!empty($row['location'])): ?><span><i class="bi bi-geo-alt"></i><?php echo htmlspecialchars($row['location']); ?></span><?php endif; ?>
-          <?php if($avg_r > 0): ?><span style="color:var(--yellow);"><i class="bi bi-star-fill"></i><?php echo $avg_r; ?></span><?php endif; ?>
+          <?php if($avg_r > 0): ?><span style="color:var(--yellow);"><i class="bi bi-star-fill"></i><?php echo $avg_r; ?><?php echo $review_count > 0 ? ' ('.$review_count.')' : ''; ?></span><?php endif; ?>
         </div>
       </div>
       <span class="status-pill <?php echo $sp_class; ?>"><?php echo $sp_label; ?></span>
@@ -394,6 +491,19 @@ $stmt2->close();
         <div class="exp-box" id="m-exp"></div>
       </div>
 
+      <div class="modal-section" id="m-review-wrap">
+        <div class="modal-section-title"><i class="bi bi-star"></i> ประวัติรีวิวและเรท</div>
+        <div class="review-summary">
+          <div class="review-score-card">
+            <div class="review-score-num" id="m-review-score">-</div>
+            <div class="review-score-stars" id="m-review-stars"></div>
+            <div class="review-score-count" id="m-review-count">ยังไม่มีรีวิว</div>
+          </div>
+          <div class="review-distribution" id="m-review-dist"></div>
+        </div>
+        <div class="review-list" id="m-review-list"></div>
+      </div>
+
       <div class="modal-section" id="m-resume-wrap" style="display:none;">
         <div class="modal-section-title"><i class="bi bi-file-earmark-pdf"></i> Resume</div>
         <a href="#" id="m-resume-link" target="_blank" class="btn-resume">
@@ -434,7 +544,13 @@ function openModal(ap){
   document.getElementById('m-email').textContent = ap.email || '—';
   document.getElementById('m-phone').textContent = ap.phone || 'ไม่ระบุ';
   document.getElementById('m-location').textContent = ap.location ? '📍 '+ap.location : '';
-  document.getElementById('m-rating').textContent   = ap.rating ? '⭐ '+parseFloat(ap.rating).toFixed(1) : '';
+  const reviewRating = Number(ap.review_rating || 0);
+  const reviewCount = parseInt(ap.review_count || 0, 10);
+  const profileRating = Number(ap.rating || 0);
+  const displayRating = reviewRating > 0 ? reviewRating : profileRating;
+  document.getElementById('m-rating').textContent = displayRating > 0
+    ? `\u2605 ${displayRating.toFixed(1)}${reviewCount > 0 ? ` (${reviewCount} รีวิว)` : ''}`
+    : '';
 
   const badges = {accepted:'✅ รับแล้ว', hired:'✅ รับแล้ว', rejected:'❌ ไม่ผ่าน', pending:'⏳ รอพิจารณา'};
   document.getElementById('m-status-badge').textContent = badges[status] || '';
@@ -454,6 +570,8 @@ function openModal(ap){
   // Experience
   const expEl = document.getElementById('m-exp');
   expEl.textContent = ap.experience || 'ไม่ระบุ';
+
+  renderReviewHistory(ap);
 
   // Actions
   const actEl = document.getElementById('m-actions');
@@ -488,6 +606,144 @@ function openModal(ap){
   }
   document.getElementById('fl-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
+}
+
+function appendStars(container, rating){
+  container.innerHTML = '';
+  const value = Number(rating || 0);
+  const full = Math.floor(value);
+  const hasHalf = value - full >= 0.5;
+  for(let i = 1; i <= 5; i++){
+    const icon = document.createElement('i');
+    if(i <= full){
+      icon.className = 'bi bi-star-fill';
+    } else if(i === full + 1 && hasHalf){
+      icon.className = 'bi bi-star-half';
+    } else {
+      icon.className = 'bi bi-star';
+    }
+    container.appendChild(icon);
+  }
+}
+
+function formatReviewDate(value){
+  if(!value) return '';
+  const parsed = new Date(String(value).replace(' ', 'T'));
+  if(Number.isNaN(parsed.getTime())){
+    return value;
+  }
+  return parsed.toLocaleDateString('th-TH', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function renderReviewHistory(ap){
+  const reviews = Array.isArray(ap.review_history) ? ap.review_history : [];
+  const total = parseInt(ap.review_count || reviews.length || 0, 10);
+  const avg = Number(ap.review_rating || 0);
+  const scoreEl = document.getElementById('m-review-score');
+  const starsEl = document.getElementById('m-review-stars');
+  const countEl = document.getElementById('m-review-count');
+  const distEl = document.getElementById('m-review-dist');
+  const listEl = document.getElementById('m-review-list');
+
+  scoreEl.textContent = avg > 0 ? avg.toFixed(1) : '-';
+  countEl.textContent = total > 0 ? `${total} รีวิว` : 'ยังไม่มีรีวิว';
+  appendStars(starsEl, avg);
+
+  const counts = {1:0, 2:0, 3:0, 4:0, 5:0};
+  reviews.forEach(review => {
+    const rating = parseInt(review.rating || 0, 10);
+    if(counts[rating] !== undefined){
+      counts[rating]++;
+    }
+  });
+
+  distEl.innerHTML = '';
+  [5,4,3,2,1].forEach(star => {
+    const row = document.createElement('div');
+    row.className = 'review-dist-row';
+
+    const label = document.createElement('div');
+    label.className = 'review-dist-label';
+    const icon = document.createElement('i');
+    icon.className = 'bi bi-star-fill';
+    icon.style.color = 'var(--yellow)';
+    label.appendChild(icon);
+    label.appendChild(document.createTextNode(` ${star}`));
+
+    const bar = document.createElement('div');
+    bar.className = 'review-dist-bar';
+    const fill = document.createElement('div');
+    fill.className = 'review-dist-fill';
+    fill.style.width = total > 0 ? `${Math.round((counts[star] / total) * 100)}%` : '0%';
+    bar.appendChild(fill);
+
+    const count = document.createElement('div');
+    count.textContent = counts[star];
+
+    row.appendChild(label);
+    row.appendChild(bar);
+    row.appendChild(count);
+    distEl.appendChild(row);
+  });
+
+  listEl.innerHTML = '';
+  if(reviews.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'review-empty';
+    empty.textContent = 'ยังไม่มีประวัติรีวิวจากผู้ว่าจ้าง';
+    listEl.appendChild(empty);
+    return;
+  }
+
+  reviews.forEach(review => {
+    const item = document.createElement('div');
+    item.className = 'review-item';
+
+    const head = document.createElement('div');
+    head.className = 'review-item-head';
+
+    const reviewer = document.createElement('div');
+    const employer = document.createElement('div');
+    employer.className = 'review-employer';
+    employer.textContent = review.employer_name || 'Employer';
+
+    const job = document.createElement('div');
+    job.className = 'review-job';
+    const jobIcon = document.createElement('i');
+    jobIcon.className = 'bi bi-briefcase';
+    job.appendChild(jobIcon);
+    job.appendChild(document.createTextNode(review.job_title || 'ไม่ระบุงาน'));
+
+    reviewer.appendChild(employer);
+    reviewer.appendChild(job);
+
+    const stars = document.createElement('div');
+    stars.className = 'review-item-stars';
+    appendStars(stars, parseInt(review.rating || 0, 10));
+
+    head.appendChild(reviewer);
+    head.appendChild(stars);
+    item.appendChild(head);
+
+    const comment = document.createElement('div');
+    comment.className = 'review-comment';
+    const commentText = (review.comment || '').trim();
+    comment.textContent = commentText !== '' ? commentText : 'ไม่มีความคิดเห็นเพิ่มเติม';
+    item.appendChild(comment);
+
+    const dateText = formatReviewDate(review.created_at);
+    if(dateText){
+      const date = document.createElement('div');
+      date.className = 'review-date';
+      const dateIcon = document.createElement('i');
+      dateIcon.className = 'bi bi-clock';
+      date.appendChild(dateIcon);
+      date.appendChild(document.createTextNode(dateText));
+      item.appendChild(date);
+    }
+
+    listEl.appendChild(item);
+  });
 }
 
 function closeModal(){
