@@ -182,42 +182,48 @@ function dashboard_category_icon($category, $db_icon = '', $fallback = '&#128193
 
 // ── Popular Categories - Rating ในช่วง 7 วัน ──
 $popular_jobs = mysqli_query($conn,"
-    SELECT COALESCE(j.category, 'ไม่ระบุ') AS category,
+    SELECT rated.category,
            COALESCE(MAX(NULLIF(c.icon, '')), '') AS category_icon,
-           COUNT(j.job_id) AS total_jobs,
-           COALESCE(jr.total_reviews, 0) AS total_reviews,
-           COALESCE(jr.avg_rating, 0) AS avg_rating
-    FROM Job j
+           COUNT(DISTINCT rated.job_id) AS total_jobs,
+           COUNT(*) AS total_reviews,
+           ROUND(AVG(rated.rating), 1) AS avg_rating,
+           MIN(rated.created_at) AS first_rated_at
+    FROM (
+        SELECT j.job_id,
+               COALESCE(NULLIF(j.category, ''), 'ไม่ระบุ') AS category,
+               fr.rating,
+               fr.created_at
+        FROM Freelancer_Review fr
+        JOIN Job j ON j.job_id = fr.job_id
+        WHERE fr.job_id IS NOT NULL
+        AND fr.job_id > 0
+        AND fr.rating IS NOT NULL
+        AND fr.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND j.admin_status='approved'
+        AND (j.status IN ('in_progress', 'completed', 'closed')
+             OR j.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY))
+        UNION ALL
+        SELECT j.job_id,
+               COALESCE(NULLIF(j.category, ''), 'ไม่ระบุ') AS category,
+               er.rating,
+               er.created_at
+        FROM Employer_Review er
+        JOIN Job j ON j.job_id = er.job_id
+        WHERE er.job_id IS NOT NULL
+        AND er.job_id > 0
+        AND er.rating IS NOT NULL
+        AND er.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND j.admin_status='approved'
+        AND (j.status IN ('in_progress', 'completed', 'closed')
+             OR j.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY))
+    ) rated
     LEFT JOIN (
         SELECT name, MAX(NULLIF(icon, '')) AS icon
         FROM Categories
         GROUP BY name
-    ) c ON c.name = j.category
-    LEFT JOIN (
-        SELECT job_id, 
-                COUNT(*) AS total_reviews, 
-                AVG(rating) AS avg_rating
-        FROM Freelancer_Review
-        WHERE job_id IS NOT NULL 
-        AND job_id > 0
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        GROUP BY job_id
-        UNION ALL
-        SELECT job_id,
-                COUNT(*) AS total_reviews,
-                AVG(rating) AS avg_rating
-        FROM Employer_Review
-        WHERE job_id IS NOT NULL 
-        AND job_id > 0
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        GROUP BY job_id
-    ) jr ON jr.job_id = j.job_id
-    WHERE j.admin_status='approved'
-    AND (j.status IN ('in_progress', 'completed', 'closed')
-         OR j.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY))
-    AND COALESCE(jr.total_reviews, 0) > 0
-    GROUP BY COALESCE(j.category, 'ไม่ระบุ')
-    ORDER BY avg_rating DESC, total_reviews DESC
+    ) c ON c.name = rated.category
+    GROUP BY rated.category
+    ORDER BY avg_rating DESC, first_rated_at ASC, total_reviews DESC
     LIMIT 5
 ");
 
