@@ -124,13 +124,36 @@ function getFreelancerReviewHistory($conn, $freelancer_id){
     return $reviews;
 }
 
+function dashboard_category_icon($category, $db_icon = ''){
+    $db_icon = trim((string)$db_icon);
+    if($db_icon !== '' && !preg_match('/[\x{00C0}-\x{00FF}\x{FFFD}]/u', $db_icon)){
+        return $db_icon;
+    }
+
+    $icons = [
+        'IT' => '&#128187;',
+        'IT & Software' => '&#128187;',
+        'Design' => '&#127912;',
+        'Marketing' => '&#128227;',
+        'Accounting' => '&#128176;',
+        'Finance' => '&#128176;',
+        'Writing' => '&#9997;&#65039;',
+        'Education' => '&#127891;',
+        'Other' => '&#128230;'
+    ];
+
+    return html_entity_decode($icons[$category] ?? '&#128193;', ENT_QUOTES, 'UTF-8');
+}
+
 // ── Popular Categories - Rating ในช่วง 7 วัน ──
 $popular_jobs = mysqli_query($conn,"
     SELECT COALESCE(j.category, 'ไม่ระบุ') AS category,
+           COALESCE(MAX(NULLIF(c.icon, '')), '') AS category_icon,
            COUNT(j.job_id) AS total_jobs,
            COALESCE(jr.total_reviews, 0) AS total_reviews,
            COALESCE(jr.avg_rating, 0) AS avg_rating
     FROM Job j
+    LEFT JOIN Categories c ON c.name = j.category
     LEFT JOIN (
         SELECT job_id, 
                 COUNT(*) AS total_reviews, 
@@ -977,16 +1000,15 @@ $most_applied_count = count($most_applied_jobs_list);
       <?php
         $rank = 1;
         $hasPopularJobs = false;
-        $categoryIcons = ['IT' => '💻', 'Design' => '🎨', 'Marketing' => '📢', 'Accounting' => '💰'];
         while($category_data = mysqli_fetch_assoc($popular_jobs)):
           $hasPopularJobs = true;
           $rating = round($category_data['avg_rating'] ?? 0, 1);
-          $category_icon = $categoryIcons[$category_data['category']] ?? '📁';
+          $category_icon = dashboard_category_icon($category_data['category'] ?? '', $category_data['category_icon'] ?? '');
       ?>
       <a href="browse_jobs.php?category=<?php echo urlencode($category_data['category']); ?>" class="popular-item">
         <div class="popular-top">
           <div class="popular-rank"><?php echo $rank; ?></div>
-          <div class="popular-avatar" style="font-size: 24px;"><?php echo $category_icon; ?></div>
+          <div class="popular-avatar" style="font-size: 24px;"><?php echo htmlspecialchars($category_icon, ENT_QUOTES, 'UTF-8'); ?></div>
           <div class="popular-name"><?php echo htmlspecialchars($category_data['category']); ?></div>
         </div>
         <div class="popular-stats">
