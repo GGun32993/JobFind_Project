@@ -17,8 +17,8 @@ $query = "
            u.user_id AS freelancer_id, u.username, u.fullname, u.email, u.phone, u.profile_image,
            fp.skill, fp.experience, fp.location, fp.rating,
            (SELECT file_name FROM Resume WHERE freelancer_id = u.user_id ORDER BY resume_id DESC LIMIT 1) AS resume_file,
-           (SELECT COUNT(*) FROM Freelancer_Review fr WHERE fr.freelancer_id = u.user_id) AS review_count,
-           (SELECT ROUND(AVG(fr.rating), 1) FROM Freelancer_Review fr WHERE fr.freelancer_id = u.user_id) AS review_rating
+           (SELECT COUNT(*) FROM Freelancer_Review fr WHERE fr.freelancer_id = u.user_id AND fr.rating IS NOT NULL) AS review_count,
+           (SELECT ROUND(AVG(fr.rating), 1) FROM Freelancer_Review fr WHERE fr.freelancer_id = u.user_id AND fr.rating IS NOT NULL) AS review_rating
     FROM Saved_Freelancers sf
     JOIN Users u ON sf.freelancer_id = u.user_id
     LEFT JOIN Freelancer_Profile fp ON u.user_id = fp.user_id
@@ -44,6 +44,71 @@ function skill_list($skills){
     if(empty($skills)) return [];
     return array_values(array_filter(array_map('trim', explode(',', $skills))));
 }
+
+function get_saved_freelancer_review_history($conn, $freelancer_ids){
+    $ids = array_values(array_unique(array_map('intval', $freelancer_ids)));
+    $ids = array_values(array_filter($ids, fn($id) => $id > 0));
+    if(empty($ids)){
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $query = "
+        SELECT fr.freelancer_id, fr.rating,
+               COALESCE(NULLIF(fr.comment, ''), NULLIF(fr.review, '')) AS comment,
+               fr.created_at,
+               COALESCE(NULLIF(ep.employer_name, ''), NULLIF(u.fullname, ''), u.username) AS employer_name,
+               COALESCE(NULLIF(j.title, ''), 'ไม่ระบุงาน') AS job_title
+        FROM Freelancer_Review fr
+        LEFT JOIN Users u ON u.user_id = fr.employer_id
+        LEFT JOIN Employer_Profile ep ON ep.user_id = fr.employer_id
+        LEFT JOIN Job j ON j.job_id = fr.job_id
+        WHERE fr.freelancer_id IN ($placeholders)
+          AND fr.rating IS NOT NULL
+        ORDER BY fr.freelancer_id ASC, fr.created_at DESC, fr.review_id DESC
+    ";
+
+    $stmt = $conn->prepare($query);
+    if(!$stmt){
+        return [];
+    }
+
+    $types = str_repeat('i', count($ids));
+    $bind_params = [$types];
+    foreach($ids as $idx => $id){
+        $bind_params[] = &$ids[$idx];
+    }
+    call_user_func_array([$stmt, 'bind_param'], $bind_params);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $reviews = [];
+    while($row = $result->fetch_assoc()){
+        $fid = (int)$row['freelancer_id'];
+        $reviews[$fid][] = [
+            'rating' => (int)($row['rating'] ?? 0),
+            'comment' => $row['comment'] ?? '',
+            'created_at' => $row['created_at'] ?? '',
+            'employer_name' => $row['employer_name'] ?? 'Employer',
+            'job_title' => $row['job_title'] ?? 'ไม่ระบุงาน'
+        ];
+    }
+    $stmt->close();
+
+    return $reviews;
+}
+
+$review_history_by_freelancer = get_saved_freelancer_review_history($conn, array_column($saved_freelancers, 'freelancer_id'));
+foreach($saved_freelancers as &$saved_freelancer){
+    $fid = (int)($saved_freelancer['freelancer_id'] ?? 0);
+    $history = $review_history_by_freelancer[$fid] ?? [];
+    $saved_freelancer['review_history'] = $history;
+    $saved_freelancer['review_count'] = (int)($saved_freelancer['review_count'] ?? count($history));
+    $saved_freelancer['review_rating'] = $saved_freelancer['review_rating'] !== null
+        ? round((float)$saved_freelancer['review_rating'], 1)
+        : 0;
+}
+unset($saved_freelancer);
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -122,9 +187,47 @@ function skill_list($skills){
   .detail{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;}
   .detail i{color:var(--accent);width:18px;text-align:center;}
   .detail strong{color:var(--text);font-weight:600;}
-  .resume-link{display:inline-flex;align-items:center;gap:8px;background:#e0f2fe;color:#0369a1;text-decoration:none;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600;margin-top:4px;}
+  .card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+  .review-btn{display:inline-flex;align-items:center;gap:8px;background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:10px;padding:9px 12px;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,transform .1s;}
+  .review-btn:hover{background:#fef3c7;border-color:#fbbf24;transform:translateY(-1px);}
+  .resume-link{display:inline-flex;align-items:center;gap:8px;background:#e0f2fe;color:#0369a1;text-decoration:none;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600;margin-top:0;}
   .resume-link:hover{background:#bae6fd;color:#075985;}
   .saved-date{border-top:1px solid var(--border);margin-top:16px;padding-top:12px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.58);display:none;align-items:center;justify-content:center;padding:24px;z-index:240;}
+  .modal-overlay.show{display:flex;}
+  .review-modal{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(15,23,42,.28);}
+  .review-modal-head{position:relative;background:var(--navy);color:#fff;padding:22px 24px;display:flex;gap:14px;align-items:center;}
+  .modal-avatar{width:58px;height:58px;border-radius:14px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;flex-shrink:0;overflow:hidden;border:1px solid rgba(255,255,255,.18);}
+  .modal-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  .modal-title-wrap{min-width:0;padding-right:34px;}
+  .modal-name{font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .modal-handle{font-size:12.5px;color:#cbd5e1;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .modal-rating-pill{display:inline-flex;align-items:center;gap:7px;margin-top:9px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 10px;font-size:12.5px;font-weight:600;color:#fff;}
+  .modal-rating-pill i{color:var(--yellow);}
+  .modal-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border:0;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .modal-close:hover{background:rgba(255,255,255,.2);}
+  .review-modal-body{padding:22px 24px 24px;}
+  .review-summary{display:grid;grid-template-columns:140px 1fr;gap:12px;margin-bottom:14px;}
+  .review-score-card{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px;text-align:center;}
+  .review-score-num{font-size:34px;font-weight:700;line-height:1;color:#92400e;}
+  .review-score-stars{color:var(--yellow);font-size:15px;margin:7px 0 4px;display:flex;justify-content:center;gap:2px;}
+  .review-score-count{font-size:12px;color:#92400e;}
+  .review-distribution{background:var(--light);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:7px;}
+  .review-dist-row{display:grid;grid-template-columns:36px 1fr 26px;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+  .review-dist-label{display:flex;align-items:center;gap:3px;white-space:nowrap;}
+  .review-dist-label i{color:var(--yellow);}
+  .review-dist-bar{height:7px;background:#e2e8f0;border-radius:999px;overflow:hidden;}
+  .review-dist-fill{height:100%;background:var(--yellow);border-radius:999px;}
+  .review-list{display:flex;flex-direction:column;gap:10px;max-height:310px;overflow-y:auto;padding-right:2px;}
+  .review-item{background:var(--light);border:1px solid var(--border);border-radius:12px;padding:13px;}
+  .review-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .review-employer{font-size:13.5px;font-weight:700;color:var(--text);}
+  .review-job{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;}
+  .review-item-stars{color:var(--yellow);display:flex;gap:1px;font-size:13px;white-space:nowrap;}
+  .review-comment{font-size:13px;line-height:1.6;color:var(--text);margin:8px 0;}
+  .review-date{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+  .review-empty{background:var(--light);border:1px dashed #cbd5e1;border-radius:12px;padding:18px;color:var(--muted);font-size:13px;text-align:center;}
 
   .empty-state{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);min-height:430px;display:grid;place-items:center;padding:44px 24px;color:var(--muted);box-shadow:0 4px 14px rgba(15,23,42,.04);}
   .empty-panel{width:100%;max-width:620px;text-align:center;}
@@ -155,6 +258,9 @@ function skill_list($skills){
     .topbar{flex-direction:column;}
     .saved-grid{grid-template-columns:1fr;}
     .meta-row{grid-template-columns:1fr;}
+    .review-summary{grid-template-columns:1fr;}
+    .review-modal-head{padding:20px 18px;}
+    .review-modal-body{padding:18px;}
     .empty-state{min-height:380px;padding:34px 16px;}
     .empty-visual{width:190px;}
   }
@@ -209,8 +315,18 @@ function skill_list($skills){
           $skills = skill_list($freelancer['skill'] ?? '');
           $display_name = $freelancer['fullname'] ?: $freelancer['username'];
           $initials = profile_initials($freelancer['username'] ?: 'FL');
+          $review_count = (int)($freelancer['review_count'] ?? 0);
           $rating = $freelancer['review_rating'] ?: ($freelancer['rating'] ?: 0);
           $profile_img = trim($freelancer['profile_image'] ?? '');
+          $modal_row = $freelancer;
+          $modal_row['display_name'] = $display_name;
+          $modal_row['initials'] = $initials;
+          $modal_row['profile_image_url'] = $profile_img !== '' ? jobfind_url($profile_img) : '';
+          $data_json = htmlspecialchars(
+              json_encode($modal_row, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_TAG),
+              ENT_QUOTES,
+              'UTF-8'
+          );
         ?>
         <article class="freelancer-card" data-card="<?php echo (int)$freelancer['freelancer_id']; ?>">
           <div class="freelancer-head">
@@ -262,15 +378,21 @@ function skill_list($skills){
             </div>
             <div class="detail">
               <i class="bi bi-star-fill"></i>
-              <span>Rating: <strong><?php echo $rating > 0 ? e(number_format((float)$rating, 1)) : 'ยังไม่มีรีวิว'; ?></strong></span>
+              <span>Rating: <strong><?php echo $rating > 0 ? e(number_format((float)$rating, 1)) . ($review_count > 0 ? ' (' . $review_count . ' รีวิว)' : '') : 'ยังไม่มีรีวิว'; ?></strong></span>
             </div>
           </div>
 
-          <?php if(!empty($freelancer['resume_file'])): ?>
-            <a class="resume-link" href="<?php echo e(jobfind_url('uploads/' . $freelancer['resume_file'])); ?>" target="_blank">
-              <i class="bi bi-file-earmark-pdf"></i> ดู Resume
-            </a>
-          <?php endif; ?>
+          <div class="card-actions">
+            <button class="review-btn" type="button" onclick='openReviewModal(<?php echo $data_json; ?>)'>
+              <i class="bi bi-star"></i>
+              ดูรีวิว<?php echo $review_count > 0 ? ' (' . $review_count . ')' : ''; ?>
+            </button>
+            <?php if(!empty($freelancer['resume_file'])): ?>
+              <a class="resume-link" href="<?php echo e(jobfind_url('uploads/' . $freelancer['resume_file'])); ?>" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> ดู Resume
+              </a>
+            <?php endif; ?>
+          </div>
 
           <div class="saved-date">
             <i class="bi bi-clock"></i>
@@ -303,9 +425,228 @@ function skill_list($skills){
   <?php endif; ?>
 </main>
 
+<div class="modal-overlay" id="review-modal" onclick="closeReviewModal()">
+  <div class="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-modal-name" onclick="event.stopPropagation()">
+    <div class="review-modal-head">
+      <button class="modal-close" type="button" onclick="closeReviewModal()" aria-label="ปิดหน้าต่างรีวิว">
+        <i class="bi bi-x-lg"></i>
+      </button>
+      <div class="modal-avatar" id="review-modal-avatar"></div>
+      <div class="modal-title-wrap">
+        <div class="modal-name" id="review-modal-name"></div>
+        <div class="modal-handle" id="review-modal-handle"></div>
+        <div class="modal-rating-pill" id="review-modal-rating">
+          <i class="bi bi-star-fill"></i>
+          <span>ยังไม่มีรีวิว</span>
+        </div>
+      </div>
+    </div>
+    <div class="review-modal-body">
+      <div class="review-summary">
+        <div class="review-score-card">
+          <div class="review-score-num" id="review-score">-</div>
+          <div class="review-score-stars" id="review-stars"></div>
+          <div class="review-score-count" id="review-count">ยังไม่มีรีวิว</div>
+        </div>
+        <div class="review-distribution" id="review-dist"></div>
+      </div>
+      <div class="review-list" id="review-list"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
+function openReviewModal(freelancer){
+  const modal = document.getElementById('review-modal');
+  const avatar = document.getElementById('review-modal-avatar');
+  const displayName = freelancer.display_name || freelancer.fullname || freelancer.username || 'Freelancer';
+  const username = freelancer.username || '';
+  const initials = freelancer.initials || (displayName.substring(0, 1).toUpperCase() || 'F');
+  const reviewRating = Number(freelancer.review_rating || 0);
+  const profileRating = Number(freelancer.rating || 0);
+  const reviewCount = parseInt(freelancer.review_count || 0, 10);
+  const displayRating = reviewRating > 0 ? reviewRating : profileRating;
+
+  avatar.innerHTML = '';
+  if(freelancer.profile_image_url){
+    const img = document.createElement('img');
+    img.src = freelancer.profile_image_url;
+    img.alt = 'Profile image';
+    img.onerror = () => {
+      avatar.innerHTML = '';
+      avatar.textContent = initials;
+    };
+    avatar.appendChild(img);
+  } else {
+    avatar.textContent = initials;
+  }
+
+  document.getElementById('review-modal-name').textContent = displayName;
+  document.getElementById('review-modal-handle').textContent = username ? `@${username}` : '';
+
+  const ratingPill = document.getElementById('review-modal-rating');
+  ratingPill.querySelector('span').textContent = displayRating > 0
+    ? `${displayRating.toFixed(1)}${reviewCount > 0 ? ` จาก ${reviewCount} รีวิว` : ' เรทจากโปรไฟล์'}`
+    : 'ยังไม่มีรีวิว';
+
+  renderReviewHistory(freelancer, displayRating);
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReviewModal(){
+  const modal = document.getElementById('review-modal');
+  modal.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function appendStars(container, rating){
+  container.innerHTML = '';
+  const value = Number(rating || 0);
+  const full = Math.floor(value);
+  const hasHalf = value - full >= 0.5;
+  for(let i = 1; i <= 5; i++){
+    const icon = document.createElement('i');
+    if(i <= full){
+      icon.className = 'bi bi-star-fill';
+    } else if(i === full + 1 && hasHalf){
+      icon.className = 'bi bi-star-half';
+    } else {
+      icon.className = 'bi bi-star';
+    }
+    container.appendChild(icon);
+  }
+}
+
+function formatReviewDate(value){
+  if(!value) return '';
+  const parsed = new Date(String(value).replace(' ', 'T'));
+  if(Number.isNaN(parsed.getTime())){
+    return value;
+  }
+  return parsed.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+function renderReviewHistory(freelancer, displayRating){
+  const reviews = Array.isArray(freelancer.review_history) ? freelancer.review_history : [];
+  const total = parseInt(freelancer.review_count || reviews.length || 0, 10);
+  const reviewRating = Number(freelancer.review_rating || 0);
+  const profileRating = Number(freelancer.rating || 0);
+  const score = reviewRating > 0 ? reviewRating : (displayRating || profileRating || 0);
+  const scoreEl = document.getElementById('review-score');
+  const starsEl = document.getElementById('review-stars');
+  const countEl = document.getElementById('review-count');
+  const distEl = document.getElementById('review-dist');
+  const listEl = document.getElementById('review-list');
+
+  scoreEl.textContent = score > 0 ? score.toFixed(1) : '-';
+  countEl.textContent = total > 0 ? `${total} รีวิว` : (profileRating > 0 ? 'เรทจากโปรไฟล์' : 'ยังไม่มีรีวิว');
+  appendStars(starsEl, score);
+
+  const counts = {1:0, 2:0, 3:0, 4:0, 5:0};
+  reviews.forEach(review => {
+    const rating = parseInt(review.rating || 0, 10);
+    if(counts[rating] !== undefined){
+      counts[rating]++;
+    }
+  });
+
+  distEl.innerHTML = '';
+  [5, 4, 3, 2, 1].forEach(star => {
+    const row = document.createElement('div');
+    row.className = 'review-dist-row';
+
+    const label = document.createElement('div');
+    label.className = 'review-dist-label';
+    const icon = document.createElement('i');
+    icon.className = 'bi bi-star-fill';
+    label.appendChild(icon);
+    label.appendChild(document.createTextNode(` ${star}`));
+
+    const bar = document.createElement('div');
+    bar.className = 'review-dist-bar';
+    const fill = document.createElement('div');
+    fill.className = 'review-dist-fill';
+    fill.style.width = total > 0 ? `${Math.round((counts[star] / total) * 100)}%` : '0%';
+    bar.appendChild(fill);
+
+    const count = document.createElement('div');
+    count.textContent = counts[star];
+
+    row.appendChild(label);
+    row.appendChild(bar);
+    row.appendChild(count);
+    distEl.appendChild(row);
+  });
+
+  listEl.innerHTML = '';
+  if(reviews.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'review-empty';
+    empty.textContent = 'ยังไม่มีประวัติรีวิวจากผู้ว่าจ้าง';
+    listEl.appendChild(empty);
+    return;
+  }
+
+  reviews.forEach(review => {
+    const item = document.createElement('div');
+    item.className = 'review-item';
+
+    const head = document.createElement('div');
+    head.className = 'review-item-head';
+
+    const reviewer = document.createElement('div');
+    const employer = document.createElement('div');
+    employer.className = 'review-employer';
+    employer.textContent = review.employer_name || 'Employer';
+
+    const job = document.createElement('div');
+    job.className = 'review-job';
+    const jobIcon = document.createElement('i');
+    jobIcon.className = 'bi bi-briefcase';
+    job.appendChild(jobIcon);
+    job.appendChild(document.createTextNode(review.job_title || 'ไม่ระบุงาน'));
+
+    reviewer.appendChild(employer);
+    reviewer.appendChild(job);
+
+    const stars = document.createElement('div');
+    stars.className = 'review-item-stars';
+    appendStars(stars, parseInt(review.rating || 0, 10));
+
+    head.appendChild(reviewer);
+    head.appendChild(stars);
+    item.appendChild(head);
+
+    const comment = document.createElement('div');
+    comment.className = 'review-comment';
+    const commentText = (review.comment || '').trim();
+    comment.textContent = commentText !== '' ? commentText : 'ไม่มีความคิดเห็นเพิ่มเติม';
+    item.appendChild(comment);
+
+    const dateText = formatReviewDate(review.created_at);
+    if(dateText){
+      const date = document.createElement('div');
+      date.className = 'review-date';
+      const dateIcon = document.createElement('i');
+      dateIcon.className = 'bi bi-clock';
+      date.appendChild(dateIcon);
+      date.appendChild(document.createTextNode(dateText));
+      item.appendChild(date);
+    }
+
+    listEl.appendChild(item);
+  });
+}
+
+document.addEventListener('keydown', function(event){
+  if(event.key === 'Escape'){
+    closeReviewModal();
+  }
+});
+
 function showToast(message){
   const toast = document.getElementById('toast');
   toast.textContent = message;
