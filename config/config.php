@@ -94,6 +94,12 @@ if (!function_exists('jobfind_repair_table_names')) {
             return false;
         }
 
+        $case_variable_result = mysqli_query($conn, "SHOW VARIABLES LIKE 'lower_case_table_names'");
+        $case_variable = $case_variable_result ? mysqli_fetch_assoc($case_variable_result) : null;
+        if ((int)($case_variable['Value'] ?? 0) !== 0) {
+            return true;
+        }
+
         $database_sql = mysqli_real_escape_string($conn, $database_name);
         $tables_result = mysqli_query($conn, "
             SELECT TABLE_NAME, TABLE_TYPE
