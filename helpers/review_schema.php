@@ -14,7 +14,7 @@ function jobfind_table_readable($conn, $table)
         return true;
     }
 
-    error_log("Job_Find review schema: table $table is not readable - " . mysqli_error($conn));
+    error_log("Freelance Matching Online review schema: table $table is not readable - " . mysqli_error($conn));
     return false;
 }
 
@@ -48,7 +48,7 @@ function ensure_freelancer_review_schema($conn)
     ");
 
     if (!$ok) {
-        error_log("Job_Find review schema: failed creating Freelancer_Review - " . mysqli_error($conn));
+        error_log("Freelance Matching Online review schema: failed creating Freelancer_Review - " . mysqli_error($conn));
         return false;
     }
 

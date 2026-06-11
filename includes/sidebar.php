@@ -1,6 +1,6 @@
 <div style="width:250px;height:100vh;background:#0d6efd;color:white;position:fixed;padding:20px;">
 
-<h4>Job_Find</h4>
+<h4>Freelance Matching Online</h4>
 
 <hr>
 

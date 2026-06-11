@@ -37,7 +37,7 @@ if(!$job)
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=13">
+<link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 
 <title>Job Details</title>
 

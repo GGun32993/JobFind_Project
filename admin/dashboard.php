@@ -33,7 +33,7 @@ $recent_users = admin_dashboard_recent_users($conn);
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=13">
+<link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
@@ -152,9 +152,9 @@ $recent_users = admin_dashboard_recent_users($conn);
 <aside class="sidebar">
   <div class="sidebar-brand">
     <a href="../index.php" class="logo">
-      <div class="logo-icon" style="width:132px!important;height:120px!important;min-width:132px!important;max-width:132px!important;max-height:120px!important;flex:0 0 120px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;margin:0 auto!important;align-self:center!important;"><img class="brand-logo-img" src="../assets/images/jobfind-logo.png?v=13" alt="Job_Find logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="logo-icon" style="width:132px!important;height:120px!important;min-width:132px!important;max-width:132px!important;max-height:120px!important;flex:0 0 120px!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;margin:0 auto!important;align-self:center!important;"><img class="brand-logo-img" src="../assets/images/jobfind-logo.png?v=14" alt="Freelance Matching Online logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <div>
-        <div class="logo-text" style="display:none!important;">Job_Find</div>
+        <div class="logo-text" style="display:none!important;">Freelance Matching Online</div>
         <div class="logo-sub" style="display:none!important;">Admin Panel</div>
       </div>
     </a>

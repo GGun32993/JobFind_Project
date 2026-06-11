@@ -368,7 +368,7 @@ if($conn){
         SELECT u.user_id,
                u.profile_image,
                COALESCE(NULLIF(ep.employer_name,''), NULLIF(u.fullname,''), u.username) AS name,
-               COALESCE(NULLIF(ep.employer_description,''), 'ผู้ว่าจ้างในระบบ Job_Find') AS description,
+               COALESCE(NULLIF(ep.employer_description,''), 'ผู้ว่าจ้างในระบบ Freelance Matching Online') AS description,
                COUNT(j.job_id) AS jobs
         FROM Users u
         LEFT JOIN Employer_Profile ep ON ep.user_id = u.user_id
@@ -493,11 +493,11 @@ $pinStatusText = $hasLocationPin
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=13">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Job_Find แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
-<title>Job_Find - หางานฟรีแลนซ์และจ้างงาน</title>
+<meta name="description" content="Freelance Matching Online แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
+<title>Freelance Matching Online - หางานฟรีแลนซ์และจ้างงาน</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.min.css">
 <link rel="stylesheet" href="assets/css/freelancehub-theme.css">
@@ -1640,9 +1640,9 @@ $pinStatusText = $hasLocationPin
 <div class="shell">
   <nav class="top-nav">
     <div class="container nav-inner">
-      <a class="brand" href="index.php" aria-label="Job_Find home">
-        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo"></span>
-        <span class="brand-name" style="display:none!important;">Job_Find</span>
+      <a class="brand" href="index.php" aria-label="Freelance Matching Online home">
+        <span class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=14" alt="Freelance Matching Online logo"></span>
+        <span class="brand-name" style="display:none!important;">Freelance Matching Online</span>
       </a>
 
       <div class="nav-links" aria-label="Primary navigation">
@@ -1665,7 +1665,7 @@ $pinStatusText = $hasLocationPin
     <div class="container">
       <div class="hero-layout">
         <div class="hero-content">
-          <span class="eyebrow"><i class="bi bi-stars"></i> Job_Find สำหรับฟรีแลนซ์และผู้ว่าจ้าง</span>
+          <span class="eyebrow"><i class="bi bi-stars"></i> Freelance Matching Online สำหรับฟรีแลนซ์และผู้ว่าจ้าง</span>
           <h1><span class="hero-title-part">หางานที่ใช่</span> <span class="hero-title-part">จ้างคนที่ชอบ</span></h1>
           <p class="hero-copy">เริ่มจากเลือกบทบาทของคุณ ค้นหางานที่ตรงทักษะ หรือโพสต์งานเพื่อหาคนที่เหมาะกับโปรเจกต์ พร้อมระบบสมัครงาน โปรไฟล์ รีวิว และติดตามสถานะในที่เดียว</p>
 
@@ -1712,7 +1712,7 @@ $pinStatusText = $hasLocationPin
 
         <div class="hero-side">
           <div class="hero-logo-showcase" aria-hidden="true">
-            <img src="assets/images/jobfind-logo.png?v=13" alt="">
+            <img src="assets/images/jobfind-logo.png?v=14" alt="">
           </div>
 
           <aside class="role-choice-panel" id="start" aria-label="เลือกเส้นทางเริ่มใช้งาน">

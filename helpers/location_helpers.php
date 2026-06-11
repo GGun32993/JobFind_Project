@@ -240,7 +240,7 @@ function getRecommendedJobs($conn, $user_id, $limit = 10, $min_match_score = 40)
 
     $recommended = [];
     if (!$jobs_query) {
-        error_log('Job_Find recommendations query failed: ' . mysqli_error($conn));
+        error_log('Freelance Matching Online recommendations query failed: ' . mysqli_error($conn));
         return [];
     }
 
@@ -373,7 +373,7 @@ function getNearbyFreelancers($conn, $employer_user_id, $limit = 10, $min_match_
 
     $nearby = [];
     if (!$freelancers_query) {
-        error_log('Job_Find nearby freelancers query failed: ' . mysqli_error($conn));
+        error_log('Freelance Matching Online nearby freelancers query failed: ' . mysqli_error($conn));
         return [];
     }
 

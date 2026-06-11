@@ -102,10 +102,10 @@ if(isset($_POST['login'])){
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=13">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - Job_Find</title>
+<title>Login - Freelance Matching Online</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
   *,
@@ -712,11 +712,11 @@ if(isset($_POST['login'])){
 <?php endif; ?>
 
 <main class="auth-shell">
-  <section class="brand-panel" aria-label="Job_Find">
-    <a class="brand-lockup" href="index.php" aria-label="Job_Find home">
-      <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo"></div>
+  <section class="brand-panel" aria-label="Freelance Matching Online">
+    <a class="brand-lockup" href="index.php" aria-label="Freelance Matching Online home">
+      <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=14" alt="Freelance Matching Online logo"></div>
       <div>
-        <div class="brand-name">Job_Find</div>
+        <div class="brand-name">Freelance Matching Online</div>
         <div class="brand-sub">หางานที่ใช่ ได้งานที่ชอบ</div>
       </div>
     </a>
@@ -724,7 +724,7 @@ if(isset($_POST['login'])){
     <div class="brand-copy">
       <div class="brand-kicker"><i class="bi bi-shield-check"></i> Account Workspace</div>
       <h1>กลับเข้าสู่พื้นที่ทำงานของคุณ</h1>
-      <p>เข้าสู่ระบบเพื่อจัดการโปรไฟล์ ติดตามงาน สมัครงาน หรือดูผู้สมัครในพื้นที่เดียวของ Job_Find</p>
+      <p>เข้าสู่ระบบเพื่อจัดการโปรไฟล์ ติดตามงาน สมัครงาน หรือดูผู้สมัครในพื้นที่เดียวของ Freelance Matching Online</p>
     </div>
 
     <div class="signal-list" aria-label="Account areas">
@@ -750,10 +750,10 @@ if(isset($_POST['login'])){
 
   <section class="form-panel">
     <div class="form-inner">
-      <a class="mobile-brand" href="index.php" aria-label="Job_Find home">
-        <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo"></div>
+      <a class="mobile-brand" href="index.php" aria-label="Freelance Matching Online home">
+        <div class="brand-mark"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=14" alt="Freelance Matching Online logo"></div>
         <div>
-          <div class="brand-name">Job_Find</div>
+          <div class="brand-name">Freelance Matching Online</div>
           <div class="brand-sub">หางานที่ใช่ ได้งานที่ชอบ</div>
         </div>
       </a>

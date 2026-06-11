@@ -115,10 +115,10 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=13">
+<link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Register — Job_Find</title>
+<title>Register — Freelance Matching Online</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.min.css" />
@@ -422,10 +422,10 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 
   <!-- ── Left Panel ── -->
   <div class="left-panel">
-    <a class="brand" href="index.php" aria-label="Job_Find home">
-      <div class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=13" alt="Job_Find logo"></div>
+    <a class="brand" href="index.php" aria-label="Freelance Matching Online home">
+      <div class="brand-icon"><img class="brand-logo-img" src="assets/images/jobfind-logo.png?v=14" alt="Freelance Matching Online logo"></div>
       <div>
-        <div class="brand-name">Job_Find</div>
+        <div class="brand-name">Freelance Matching Online</div>
         <div class="brand-sub">หางานที่ใช่ ได้งานที่ชอบ</div>
       </div>
     </a>

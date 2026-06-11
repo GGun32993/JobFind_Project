@@ -102,7 +102,7 @@ if (!function_exists('jobfind_repair_table_names')) {
         ");
 
         if (!$tables_result) {
-            error_log('Job_Find DB repair: failed reading table list - ' . mysqli_error($conn));
+            error_log('Freelance Matching Online DB repair: failed reading table list - ' . mysqli_error($conn));
             return false;
         }
 
@@ -142,7 +142,7 @@ if (!function_exists('jobfind_repair_table_names')) {
 
         $ok = mysqli_query($conn, 'RENAME TABLE ' . implode(', ', $rename_parts));
         if (!$ok) {
-            error_log('Job_Find DB repair: failed renaming tables - ' . mysqli_error($conn));
+            error_log('Freelance Matching Online DB repair: failed renaming tables - ' . mysqli_error($conn));
         }
 
         return (bool)$ok;
