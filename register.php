@@ -34,8 +34,14 @@ if(isset($_POST['register'])){
     $gender_sql = $gender !== ''
         ? "'" . mysqli_real_escape_string($conn, $gender) . "'"
         : "NULL";
-    $age = jobfind_normalize_age($_POST['age'] ?? '');
+    $birth_date = jobfind_normalize_birth_date(
+        $_POST['birth_day'] ?? '',
+        $_POST['birth_month'] ?? '',
+        $_POST['birth_year'] ?? ''
+    );
+    $age = jobfind_age_from_birth_date($birth_date);
     $age_sql = $age !== null ? (string)$age : "NULL";
+    $birth_date_sql = $birth_date !== '' ? "'" . mysqli_real_escape_string($conn, $birth_date) . "'" : "NULL";
     $address_raw  = trim($_POST['address'] ?? '');
     $province_raw = trim($_POST['province'] ?? '');
     $district_raw = trim($_POST['district'] ?? '');
@@ -79,9 +85,9 @@ if(isset($_POST['register'])){
         if($user_ok && $user_id > 0 && $role == "freelancer"){
             $profile_ok = mysqli_query($conn,"
                 INSERT INTO Freelancer_Profile
-                    (user_id,skill,experience,age,location,address,province,district,postal_code,latitude,longitude,preferred_radius_km)
+                    (user_id,skill,experience,age,birth_date,location,address,province,district,postal_code,latitude,longitude,preferred_radius_km)
                 VALUES
-                    ('$user_id','','',$age_sql,'$location','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql,$radius_sql)
+                    ('$user_id','','',$age_sql,$birth_date_sql,'$location','$address','$province','$district','$postal_code',$latitude_sql,$longitude_sql,$radius_sql)
             ");
         }
         if($user_ok && $user_id > 0 && $role == "employer"){
@@ -110,7 +116,11 @@ if(isset($_POST['register'])){
 $selected_role = $_POST['role'] ?? ($_GET['role'] ?? 'freelancer');
 $selected_role = in_array($selected_role, ['freelancer', 'employer'], true) ? $selected_role : 'freelancer';
 $selected_gender = $selected_role === 'freelancer' ? jobfind_normalize_gender($_POST['gender'] ?? '') : '';
-$selected_age = jobfind_normalize_age($_POST['age'] ?? '');
+$selected_birth_parts = [
+    'day' => preg_replace('/\D+/', '', (string)($_POST['birth_day'] ?? '')),
+    'month' => preg_replace('/\D+/', '', (string)($_POST['birth_month'] ?? '')),
+    'year' => preg_replace('/\D+/', '', (string)($_POST['birth_year'] ?? '')),
+];
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -262,6 +272,8 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
   .input-wrap i.prefix { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:15px; color:var(--muted); pointer-events:none; }
   .form-input { width:100%; padding:11px 14px 11px 38px; border:1px solid var(--border); border-radius:10px; font-family:'Sora',sans-serif; font-size:13.5px; color:var(--text); outline:none; transition:border-color .15s,box-shadow .15s; }
   .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.12); }
+  .dob-grid { display:grid; grid-template-columns:1fr 1fr 1.2fr; gap:8px; }
+  .dob-grid .form-input { padding-left:12px; }
   .toggle-pw { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--muted); cursor:pointer; border:none; background:none; padding:0; }
   .toggle-pw:hover { color:var(--accent); }
   .has-toggle { padding-right:38px; }
@@ -330,6 +342,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
   @media(max-width:700px){
     .right-panel { padding:32px 24px; }
     .two-col { grid-template-columns:1fr; }
+    .dob-grid { grid-template-columns:1fr; }
     .role-select-wrap { grid-template-columns:1fr; }
     .map-modal { padding:0; }
     .map-container { width:100%; height:100%; max-height:none; border-radius:0; }
@@ -579,14 +592,44 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
         </div>
       </div>
 
-      <div class="field-group freelancer-only" id="freelancer-age-field">
+      <div class="field-group freelancer-only" id="freelancer-birth-date-field">
+        <label>วันเดือนปีเกิด <span>เช่น 23/03/2005</span></label>
+        <div class="dob-grid">
+          <select name="birth_day" class="form-input">
+            <option value="">วัน</option>
+            <?php for($day = 1; $day <= 31; $day++): $day_value = sprintf('%02d', $day); ?>
+              <option value="<?php echo $day_value; ?>" <?php echo (int)($selected_birth_parts['day'] ?? 0) === $day ? 'selected' : ''; ?>>
+                <?php echo $day_value; ?>
+              </option>
+            <?php endfor; ?>
+          </select>
+          <select name="birth_month" class="form-input">
+            <option value="">เดือน</option>
+            <?php for($month = 1; $month <= 12; $month++): $month_value = sprintf('%02d', $month); ?>
+              <option value="<?php echo $month_value; ?>" <?php echo (int)($selected_birth_parts['month'] ?? 0) === $month ? 'selected' : ''; ?>>
+                <?php echo $month_value; ?>
+              </option>
+            <?php endfor; ?>
+          </select>
+          <select name="birth_year" class="form-input">
+            <option value="">ปี</option>
+            <?php for($year = (int)date('Y'); $year >= ((int)date('Y') - 120); $year--): ?>
+              <option value="<?php echo $year; ?>" <?php echo (int)($selected_birth_parts['year'] ?? 0) === $year ? 'selected' : ''; ?>>
+                <?php echo $year; ?>
+              </option>
+            <?php endfor; ?>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group freelancer-only is-hidden" id="freelancer-age-field" style="display:none;">
         <label>อายุ</label>
         <div class="input-wrap">
           <i class="bi bi-calendar3 prefix"></i>
-          <input type="number" name="age" class="form-input"
+          <input type="number" name="_legacy_age" class="form-input"
                  min="1" max="120" inputmode="numeric"
                  placeholder="เช่น 25"
-                 value="<?php echo htmlspecialchars($selected_age ?? ''); ?>">
+                 value="">
         </div>
       </div>
 

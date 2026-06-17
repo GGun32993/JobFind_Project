@@ -96,6 +96,79 @@ function jobfind_normalize_age($age)
     return ($age >= 1 && $age <= 120) ? $age : null;
 }
 
+function jobfind_normalize_birth_date($day, $month, $year)
+{
+    $day = trim((string)$day);
+    $month = trim((string)$month);
+    $year = trim((string)$year);
+
+    if ($day === '' || $month === '' || $year === '') {
+        return '';
+    }
+
+    if (!ctype_digit($day) || !ctype_digit($month) || !ctype_digit($year)) {
+        return '';
+    }
+
+    $day = (int)$day;
+    $month = (int)$month;
+    $year = (int)$year;
+    $current_year = (int)date('Y');
+
+    if ($year < ($current_year - 120) || $year > $current_year || !checkdate($month, $day, $year)) {
+        return '';
+    }
+
+    $birth_date = sprintf('%04d-%02d-%02d', $year, $month, $day);
+    return $birth_date <= date('Y-m-d') ? $birth_date : '';
+}
+
+function jobfind_birth_date_parts($birth_date)
+{
+    $birth_date = trim((string)$birth_date);
+    if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $birth_date, $matches)) {
+        return ['day' => '', 'month' => '', 'year' => ''];
+    }
+
+    return [
+        'day' => $matches[3],
+        'month' => $matches[2],
+        'year' => $matches[1],
+    ];
+}
+
+function jobfind_age_from_birth_date($birth_date)
+{
+    $birth_date = trim((string)$birth_date);
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $birth_date)) {
+        return null;
+    }
+
+    try {
+        $birth = new DateTimeImmutable($birth_date);
+        $today = new DateTimeImmutable('today');
+    } catch (Exception $exception) {
+        return null;
+    }
+
+    if ($birth > $today) {
+        return null;
+    }
+
+    $age = (int)$birth->diff($today)->y;
+    return ($age >= 0 && $age <= 120) ? $age : null;
+}
+
+function jobfind_format_birth_date($birth_date)
+{
+    $parts = jobfind_birth_date_parts($birth_date);
+    if ($parts['day'] === '' || $parts['month'] === '' || $parts['year'] === '') {
+        return '';
+    }
+
+    return $parts['day'] . '/' . $parts['month'] . '/' . $parts['year'];
+}
+
 function jobfind_employment_type_options()
 {
     return [
@@ -129,6 +202,7 @@ function ensure_location_schema($conn)
 
     if (jobfind_table_exists($conn, 'Freelancer_Profile')) {
         jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'age', 'INT DEFAULT NULL AFTER `experience`');
+        jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'birth_date', 'DATE DEFAULT NULL AFTER `age`');
         jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'address', 'VARCHAR(255) DEFAULT NULL AFTER `location`');
         jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'province', 'VARCHAR(100) DEFAULT NULL AFTER `address`');
         jobfind_add_column_if_missing($conn, 'Freelancer_Profile', 'district', 'VARCHAR(100) DEFAULT NULL AFTER `province`');

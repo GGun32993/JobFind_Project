@@ -26,6 +26,7 @@ if(!$profile_data){
         "skill"=>"",
         "experience"=>"",
         "age"=>null,
+        "birth_date"=>null,
         "location"=>"",
         "address"=>"",
         "province"=>"",
@@ -38,6 +39,9 @@ if(!$profile_data){
 }
 if(!array_key_exists('age', $profile_data)){
     $profile_data['age'] = null;
+}
+if(!array_key_exists('birth_date', $profile_data)){
+    $profile_data['birth_date'] = null;
 }
 if(empty($profile_data['latitude']) && !empty($user_data['latitude'])){
     $profile_data['latitude'] = $user_data['latitude'];
@@ -78,8 +82,14 @@ if(isset($_POST['update'])){
         : "NULL";
     $skill        = mysqli_real_escape_string($conn, $_POST['skill']);
     $experience   = mysqli_real_escape_string($conn, $_POST['experience']);
-    $age          = jobfind_normalize_age($_POST['age'] ?? '');
+    $birth_date   = jobfind_normalize_birth_date(
+        $_POST['birth_day'] ?? '',
+        $_POST['birth_month'] ?? '',
+        $_POST['birth_year'] ?? ''
+    );
+    $age          = jobfind_age_from_birth_date($birth_date);
     $age_sql      = $age !== null ? (string)$age : "NULL";
+    $birth_date_sql = $birth_date !== '' ? "'" . mysqli_real_escape_string($conn, $birth_date) . "'" : "NULL";
     $address_raw  = trim($_POST['address'] ?? '');
     $province_raw = trim($_POST['province'] ?? '');
     $district_raw = trim($_POST['district'] ?? '');
@@ -139,7 +149,7 @@ if(isset($_POST['update'])){
         if($profile_exists){
             mysqli_query($conn,"
                 UPDATE Freelancer_Profile
-                SET skill='$skill', experience='$experience', age=$age_sql, location='$location',
+                SET skill='$skill', experience='$experience', age=$age_sql, birth_date=$birth_date_sql, location='$location',
                     address='$address', province='$province', district='$district', postal_code='$postal_code',
                     latitude=$latitude_sql, longitude=$longitude_sql, preferred_radius_km=$radius_sql
                 WHERE user_id='$user_id'
@@ -147,9 +157,9 @@ if(isset($_POST['update'])){
         } else {
             mysqli_query($conn,"
                 INSERT INTO Freelancer_Profile
-                    (user_id, skill, experience, age, location, address, province, district, postal_code, latitude, longitude, preferred_radius_km)
+                    (user_id, skill, experience, age, birth_date, location, address, province, district, postal_code, latitude, longitude, preferred_radius_km)
                 VALUES
-                    ('$user_id', '$skill', '$experience', $age_sql, '$location', '$address', '$province', '$district', '$postal_code', $latitude_sql, $longitude_sql, $radius_sql)
+                    ('$user_id', '$skill', '$experience', $age_sql, $birth_date_sql, '$location', '$address', '$province', '$district', '$postal_code', $latitude_sql, $longitude_sql, $radius_sql)
             ");
         }
         $_SESSION['username'] = $new_username;
@@ -166,9 +176,16 @@ if(isset($_POST['update'])){
 if(isset($_POST['update']) && ($dup_err || $image_err !== '')){
     $selected_gender = jobfind_normalize_gender($_POST['gender'] ?? '');
     $gender_label = jobfind_gender_label($selected_gender);
-    $profile_data['age'] = jobfind_normalize_age($_POST['age'] ?? '');
+    $profile_data['birth_date'] = jobfind_normalize_birth_date(
+        $_POST['birth_day'] ?? '',
+        $_POST['birth_month'] ?? '',
+        $_POST['birth_year'] ?? ''
+    );
+    $profile_data['age'] = jobfind_age_from_birth_date($profile_data['birth_date']);
 }
 
+$birth_date_parts = jobfind_birth_date_parts($profile_data['birth_date'] ?? '');
+$birth_date_display = jobfind_format_birth_date($profile_data['birth_date'] ?? '');
 $initials = profile_initials($user_data['fullname'] ?: $username);
 ?>
 <!DOCTYPE html>
@@ -300,6 +317,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
     display:block; font-size:13px; font-weight:500;
     color:var(--text); margin-bottom:6px;
   }
+  .field-group:has(input[name="_legacy_age"]) { display:none; }
   .field-group label span { color:var(--muted); font-weight:400; font-size:12px; }
 
   .form-input {
@@ -313,6 +331,9 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
     border-color:var(--accent);
     box-shadow:0 0 0 3px rgba(99,102,241,.12);
   }
+  .dob-grid { display:grid; grid-template-columns:1fr 1fr 1.2fr; gap:10px; }
+  .dob-grid .form-input { padding-left:12px; }
+  .field-group:has(.dob-grid) + .section-title { display:none; }
   .form-input[readonly] {
     background:var(--light); color:var(--muted); cursor:not-allowed;
   }
@@ -394,6 +415,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
     .sidebar { display:none; }
     .main { margin-left:0; padding:20px 16px; }
     .two-col { grid-template-columns:1fr; }
+    .dob-grid { grid-template-columns:1fr; }
     .profile-banner { flex-wrap:wrap; }
     .profile-image-editor { grid-template-columns:1fr; justify-items:start; }
     .profile-actions { align-items:stretch; flex-direction:column; }
@@ -487,8 +509,8 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
         <?php if($gender_label !== ''): ?>
         <span class="btag"><i class="bi bi-gender-ambiguous"></i><?php echo htmlspecialchars($gender_label); ?></span>
         <?php endif; ?>
-        <?php if(!empty($profile_data['age'])): ?>
-        <span class="btag"><i class="bi bi-calendar3"></i><?php echo htmlspecialchars($profile_data['age']); ?> ปี</span>
+        <?php if($birth_date_display !== '' || !empty($profile_data['age'])): ?>
+        <span class="btag"><i class="bi bi-calendar3"></i><?php echo $birth_date_display !== '' ? htmlspecialchars($birth_date_display) : htmlspecialchars($profile_data['age'] . ' ปี'); ?></span>
         <?php endif; ?>
       </div>
     </div>
@@ -587,12 +609,42 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
 
     <!-- Freelancer info -->
     <div class="section-title" style="margin-top:8px;"><i class="bi bi-tools"></i> ข้อมูล Freelancer</div>
+    <div class="field-group">
+      <label>วันเดือนปีเกิด <span>เช่น 23/03/2005</span></label>
+      <div class="dob-grid">
+        <select name="birth_day" class="form-input">
+          <option value="">วัน</option>
+          <?php for($day = 1; $day <= 31; $day++): $day_value = sprintf('%02d', $day); ?>
+            <option value="<?php echo $day_value; ?>" <?php echo (int)($birth_date_parts['day'] ?? 0) === $day ? 'selected' : ''; ?>>
+              <?php echo $day_value; ?>
+            </option>
+          <?php endfor; ?>
+        </select>
+        <select name="birth_month" class="form-input">
+          <option value="">เดือน</option>
+          <?php for($month = 1; $month <= 12; $month++): $month_value = sprintf('%02d', $month); ?>
+            <option value="<?php echo $month_value; ?>" <?php echo (int)($birth_date_parts['month'] ?? 0) === $month ? 'selected' : ''; ?>>
+              <?php echo $month_value; ?>
+            </option>
+          <?php endfor; ?>
+        </select>
+        <select name="birth_year" class="form-input">
+          <option value="">ปี</option>
+          <?php for($year = (int)date('Y'); $year >= ((int)date('Y') - 120); $year--): ?>
+            <option value="<?php echo $year; ?>" <?php echo (int)($birth_date_parts['year'] ?? 0) === $year ? 'selected' : ''; ?>>
+              <?php echo $year; ?>
+            </option>
+          <?php endfor; ?>
+        </select>
+      </div>
+    </div>
+    <div class="section-title" style="margin-top:8px;"><i class="bi bi-tools"></i> ข้อมูล Freelancer</div>
 
     <div class="field-group">
       <label>อายุ</label>
       <div class="input-icon-wrap">
         <i class="bi bi-calendar3"></i>
-        <input class="form-input" type="number" name="age"
+        <input class="form-input" type="number" name="_legacy_age"
                min="1" max="120" inputmode="numeric"
                value="<?php echo htmlspecialchars($profile_data['age'] ?? ''); ?>"
                placeholder="เช่น 25">
