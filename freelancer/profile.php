@@ -725,7 +725,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
 </main>
 
 <script src="../assets/vendor/leaflet/leaflet.min.js"></script>
-<script src="../assets/js/location-map-picker.js"></script>
+<script src="../assets/js/location-map-picker.js?v=map-search-20260617"></script>
 <script src="../assets/js/thai-location-selects.js"></script>
 <script>
 initThaiProvinceDistrictSelects({

@@ -688,7 +688,7 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
 </div>
 
 <script src="assets/vendor/leaflet/leaflet.min.js"></script>
-<script src="assets/js/location-map-picker.js"></script>
+<script src="assets/js/location-map-picker.js?v=map-search-20260617"></script>
 <script>
   function togglePw(){
     const input = document.getElementById('pw-input');

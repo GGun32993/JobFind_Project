@@ -488,7 +488,7 @@ $selected_employment_type = jobfind_normalize_employment_type($_POST['employment
 </main>
 
 <script src="../assets/vendor/leaflet/leaflet.min.js"></script>
-<script src="../assets/js/location-map-picker.js"></script>
+<script src="../assets/js/location-map-picker.js?v=map-search-20260617"></script>
 <script>
   function updateCount(){
     const ta = document.getElementById('desc-input');
