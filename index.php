@@ -1950,7 +1950,7 @@ $pinStatusText = $hasLocationPin
   </div>
 </div>
 <script src="assets/vendor/leaflet/leaflet.min.js"></script>
-<script src="assets/js/location-map-picker.js?v=map-search-20260617"></script>
+<script src="assets/js/location-map-picker.js?v=geoapify-search-20260617" data-geoapify-key="<?php echo jobfind_geoapify_api_key_attr(); ?>"></script>
 <script>
 document.querySelectorAll('[data-category-showcase]').forEach((showcase) => {
   const tabsWrap = showcase.querySelector('.category-tabs');

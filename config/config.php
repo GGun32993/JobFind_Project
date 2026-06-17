@@ -165,6 +165,18 @@ if (is_file($local_config)) {
     require $local_config;
 }
 
+if (!defined('JOBFIND_GEOAPIFY_API_KEY')) {
+    $geoapify_api_key = $geoapify_api_key ?? (getenv('JOBFIND_GEOAPIFY_API_KEY') ?: '');
+    define('JOBFIND_GEOAPIFY_API_KEY', (string)$geoapify_api_key);
+}
+
+if (!function_exists('jobfind_geoapify_api_key_attr')) {
+    function jobfind_geoapify_api_key_attr()
+    {
+        return htmlspecialchars(JOBFIND_GEOAPIFY_API_KEY, ENT_QUOTES, 'UTF-8');
+    }
+}
+
 $conn = @mysqli_connect($host, $user, $pass, $db);
 $db_error = "";
 

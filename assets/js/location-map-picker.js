@@ -1,9 +1,51 @@
 (function () {
   const SEARCH_STYLE_ID = 'jobfind-map-search-style';
+  const scriptElement = document.currentScript;
+  const defaultGeoapifyApiKey = scriptElement?.dataset?.geoapifyKey || '';
 
   function clampNumber(value, fallback) {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
+  }
+
+  function getResultLatitude(result) {
+    return Number(result.lat ?? result.properties?.lat ?? result.geometry?.coordinates?.[1]);
+  }
+
+  function getResultLongitude(result) {
+    return Number(result.lon ?? result.lng ?? result.properties?.lon ?? result.geometry?.coordinates?.[0]);
+  }
+
+  function getResultName(result) {
+    const properties = result.properties || result;
+    return properties.name ||
+      properties.address_line1 ||
+      properties.formatted ||
+      properties.display_name ||
+      properties.city ||
+      properties.county ||
+      properties.state ||
+      properties.country ||
+      '';
+  }
+
+  function getResultDetail(result) {
+    const properties = result.properties || result;
+    const name = getResultName(result);
+    const detail = properties.address_line2 ||
+      properties.formatted ||
+      properties.display_name ||
+      [properties.city, properties.state, properties.country].filter(Boolean).join(', ');
+
+    return detail && detail !== name ? detail : '';
+  }
+
+  function getResultInputValue(result) {
+    const properties = result.properties || result;
+    return properties.formatted ||
+      properties.display_name ||
+      [getResultName(result), getResultDetail(result)].filter(Boolean).join(', ') ||
+      getResultName(result);
   }
 
   function ensureSearchStyles() {
@@ -106,11 +148,6 @@
       setResultsVisible(true);
     }
 
-    function formatResultName(result) {
-      const address = result.address || {};
-      return address.name || address.road || address.suburb || address.city || address.town || address.village || result.name || result.display_name;
-    }
-
     function renderResults(items) {
       results.replaceChildren();
 
@@ -119,9 +156,11 @@
         return;
       }
 
+      let renderedCount = 0;
+
       items.forEach(function (item) {
-        const lat = Number(item.lat);
-        const lng = Number(item.lon);
+        const lat = getResultLatitude(item);
+        const lng = getResultLongitude(item);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
           return;
         }
@@ -131,16 +170,18 @@
         resultButton.className = 'jobfind-map-search-result';
 
         const name = document.createElement('span');
-        name.textContent = formatResultName(item);
+        name.textContent = getResultName(item);
 
         const detail = document.createElement('small');
-        detail.textContent = item.display_name || '';
+        detail.textContent = getResultDetail(item);
 
         resultButton.appendChild(name);
-        resultButton.appendChild(detail);
+        if (detail.textContent) {
+          resultButton.appendChild(detail);
+        }
         resultButton.addEventListener('click', function () {
           setMarker(lat, lng);
-          input.value = item.display_name || formatResultName(item);
+          input.value = getResultInputValue(item);
           clearResults();
 
           if (options.showCircle) {
@@ -151,9 +192,15 @@
         });
 
         results.appendChild(resultButton);
+        renderedCount += 1;
       });
 
-      setResultsVisible(results.children.length > 0);
+      if (renderedCount === 0) {
+        showMessage(options.noResultsText);
+        return;
+      }
+
+      setResultsVisible(true);
     }
 
     function searchPlaces(query) {
@@ -167,24 +214,33 @@
         activeController.abort();
       }
 
+      if (!options.geoapifyApiKey) {
+        showMessage(options.missingApiKeyText);
+        return;
+      }
+
       const controller = new AbortController();
       activeController = controller;
       button.disabled = true;
       showMessage(options.loadingText);
 
       const params = new URLSearchParams({
-        format: 'jsonv2',
-        q: trimmed,
-        limit: '6',
-        addressdetails: '1',
-        'accept-language': options.searchLanguage
+        text: trimmed,
+        format: 'json',
+        limit: String(options.searchLimit),
+        lang: options.searchLanguage,
+        apiKey: options.geoapifyApiKey
       });
 
       if (options.searchCountryCodes) {
-        params.set('countrycodes', options.searchCountryCodes);
+        params.set('filter', 'countrycode:' + options.searchCountryCodes);
       }
 
-      fetch('https://nominatim.openstreetmap.org/search?' + params.toString(), {
+      if (Number.isFinite(options.lat) && Number.isFinite(options.lng)) {
+        params.set('bias', 'proximity:' + options.lng + ',' + options.lat);
+      }
+
+      fetch('https://api.geoapify.com/v1/geocode/autocomplete?' + params.toString(), {
         signal: controller.signal
       })
         .then(function (response) {
@@ -194,7 +250,10 @@
           return response.json();
         })
         .then(function (data) {
-          renderResults(Array.isArray(data) ? data : []);
+          const items = Array.isArray(data?.results)
+            ? data.results
+            : (Array.isArray(data?.features) ? data.features : []);
+          renderResults(items);
         })
         .catch(function (error) {
           if (error.name !== 'AbortError') {
@@ -263,12 +322,15 @@
       radiusKm: clampNumber(config.radiusKm, 30),
       showCircle: !!config.showCircle,
       search: config.search !== false,
+      geoapifyApiKey: config.geoapifyApiKey || defaultGeoapifyApiKey || window.JOBFIND_GEOAPIFY_API_KEY || '',
+      searchLimit: clampNumber(config.searchLimit, 6),
       searchPlaceholder: config.searchPlaceholder || 'ค้นหาสถานที่',
       searchButtonText: config.searchButtonText || 'ค้นหา',
       searchLanguage: config.searchLanguage || 'th',
       searchCountryCodes: config.searchCountryCodes || 'th',
       loadingText: config.loadingText || 'กำลังค้นหา...',
       noResultsText: config.noResultsText || 'ไม่พบสถานที่ที่ค้นหา',
+      missingApiKeyText: config.missingApiKeyText || 'กรุณาตั้งค่า Geoapify API key ก่อนใช้งานค้นหา',
       errorText: config.errorText || 'ค้นหาไม่สำเร็จ กรุณาลองใหม่',
       onChange: typeof config.onChange === 'function' ? config.onChange : function () {}
     };

@@ -4,3 +4,4 @@ $host = "sql205.infinityfree.com";
 $user = "if0_42031060";
 $pass = "put-your-real-mysql-password-here";
 $db = "if0_42031060_jobfind";
+$geoapify_api_key = "put-your-geoapify-api-key-here";
