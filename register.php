@@ -26,7 +26,7 @@ if(isset($_POST['register'])){
     $email    = mysqli_real_escape_string($conn, trim($_POST['email']));
     $password_plain = $_POST['password'] ?? '';
     $fullname = mysqli_real_escape_string($conn, trim($_POST['fullname']));
-    $phone    = mysqli_real_escape_string($conn, trim($_POST['phone']));
+    $phone    = mysqli_real_escape_string($conn, jobfind_digits_only($_POST['phone'] ?? ''));
     $role_raw = $_POST['role'] ?? 'freelancer';
     $role     = in_array($role_raw, ['freelancer', 'employer'], true) ? $role_raw : 'freelancer';
     $gender_raw = $_POST['gender'] ?? '';
@@ -533,7 +533,9 @@ $selected_age = jobfind_normalize_age($_POST['age'] ?? '');
           <div class="input-wrap">
             <i class="bi bi-telephone prefix"></i>
             <input type="text" name="phone" class="form-input"
-                   placeholder="0xx-xxx-xxxx"
+                   inputmode="numeric" pattern="[0-9]*" maxlength="20"
+                   oninput="this.value=this.value.replace(/\D/g,'')"
+                   placeholder="0xxxxxxxxx"
                    value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
           </div>
         </div>

@@ -68,7 +68,7 @@ if(!$is_public && isset($_POST['update'])){
     $new_username = mysqli_real_escape_string($conn, trim($_POST['username']));
     $fullname     = mysqli_real_escape_string($conn, $_POST['fullname']);
     $email        = mysqli_real_escape_string($conn, trim($_POST['email']));
-    $phone        = mysqli_real_escape_string($conn, $_POST['phone']);
+    $phone        = mysqli_real_escape_string($conn, jobfind_digits_only($_POST['phone'] ?? ''));
     $description  = mysqli_real_escape_string($conn, $_POST['description']);
     $address      = mysqli_real_escape_string($conn, $_POST['address'] ?? '');
     $province     = mysqli_real_escape_string($conn, $_POST['province'] ?? '');
@@ -514,7 +514,10 @@ if($is_public){
       <label>เบอร์โทรศัพท์ <span>(ไม่บังคับ)</span></label>
       <div class="input-icon-wrap">
         <i class="bi bi-telephone"></i>
-        <input type="text" name="phone" class="form-input" value="<?php echo htmlspecialchars($user['phone']); ?>">
+        <input type="text" name="phone" class="form-input"
+               inputmode="numeric" pattern="[0-9]*" maxlength="20"
+               oninput="this.value=this.value.replace(/\D/g,'')"
+               value="<?php echo htmlspecialchars($user['phone']); ?>">
       </div>
     </div>
 

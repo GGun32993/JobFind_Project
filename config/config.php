@@ -44,6 +44,13 @@ if (!function_exists('jobfind_url')) {
     }
 }
 
+if (!function_exists('jobfind_digits_only')) {
+    function jobfind_digits_only($value)
+    {
+        return preg_replace('/\D+/', '', (string)$value);
+    }
+}
+
 if (!function_exists('jobfind_db_table_name_map')) {
     function jobfind_db_table_name_map()
     {

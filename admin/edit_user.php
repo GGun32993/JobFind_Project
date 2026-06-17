@@ -22,7 +22,7 @@ $edit_user_id = $_GET['id'] ?? 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = mysqli_real_escape_string($conn, trim($_POST['username']));
     $email = mysqli_real_escape_string($conn, trim($_POST['email']));
-    $phone = mysqli_real_escape_string($conn, trim($_POST['phone']));
+    $phone = mysqli_real_escape_string($conn, jobfind_digits_only($_POST['phone'] ?? ''));
     $fullname = mysqli_real_escape_string($conn, trim($_POST['fullname']));
     $role = mysqli_real_escape_string($conn, trim($_POST['role']));
     
@@ -322,6 +322,8 @@ if(isset($_GET['toast'])):
           <label>เบอร์โทรศัพท์</label>
           <input type="text" name="phone" class="form-input"
                  value="<?php echo htmlspecialchars($user_data['phone'] ?? ''); ?>"
+                 inputmode="numeric" pattern="[0-9]*"
+                 oninput="this.value=this.value.replace(/\D/g,'')"
                  placeholder="เช่น 0812345678" maxlength="20">
         </div>
 

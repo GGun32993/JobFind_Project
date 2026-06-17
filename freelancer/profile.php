@@ -71,7 +71,7 @@ if(isset($_POST['update'])){
     $new_username = mysqli_real_escape_string($conn, trim($_POST['username']));
     $email        = mysqli_real_escape_string($conn, trim($_POST['email']));
     $fullname     = mysqli_real_escape_string($conn, $_POST['fullname']);
-    $phone        = mysqli_real_escape_string($conn, $_POST['phone']);
+    $phone        = mysqli_real_escape_string($conn, jobfind_digits_only($_POST['phone'] ?? ''));
     $gender       = jobfind_normalize_gender($_POST['gender'] ?? '');
     $gender_sql   = $gender !== ''
         ? "'" . mysqli_real_escape_string($conn, $gender) . "'"
@@ -551,8 +551,10 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
         <div class="input-icon-wrap">
           <i class="bi bi-telephone"></i>
           <input class="form-input" type="text" name="phone"
+                 inputmode="numeric" pattern="[0-9]*" maxlength="20"
+                 oninput="this.value=this.value.replace(/\D/g,'')"
                  value="<?php echo htmlspecialchars($user_data['phone']); ?>"
-                 placeholder="0xx-xxx-xxxx">
+                 placeholder="0xxxxxxxxx">
         </div>
       </div>
     </div>

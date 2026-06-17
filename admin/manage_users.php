@@ -209,7 +209,7 @@ if(isset($_POST['add_user'])){
     $em   = mysqli_real_escape_string($conn, trim($_POST['email']));
     $password_plain = $_POST['password'] ?? '';
     $fn   = mysqli_real_escape_string($conn, trim($_POST['fullname']));
-    $ph   = mysqli_real_escape_string($conn, trim($_POST['phone']));
+    $ph   = mysqli_real_escape_string($conn, jobfind_digits_only($_POST['phone'] ?? ''));
     $role_raw = $_POST['role'] ?? 'freelancer';
     $role = in_array($role_raw, ['admin', 'employer', 'freelancer'], true) ? $role_raw : 'freelancer';
     $role = mysqli_real_escape_string($conn, $role);
@@ -479,7 +479,10 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
         </div>
         <div class="add-field" style="margin-bottom:0;">
           <label>เบอร์โทรศัพท์</label>
-          <input type="text" name="phone" class="add-input" placeholder="0xx-xxx-xxxx">
+          <input type="text" name="phone" class="add-input"
+                 inputmode="numeric" pattern="[0-9]*" maxlength="20"
+                 oninput="this.value=this.value.replace(/\D/g,'')"
+                 placeholder="0xxxxxxxxx">
         </div>
       </div>
       <div class="add-field" style="margin-top:12px;">
