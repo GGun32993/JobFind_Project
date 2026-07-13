@@ -333,8 +333,17 @@
     };
 
     const map = L.map(element).setView([options.lat, options.lng], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
+    
+    const tileUrl = options.longdoApiKey
+      ? 'https://ms.longdo.com/mmmap/tile.php?zoom={z}&x={x}&y={y}&key=' + encodeURIComponent(options.longdoApiKey) + '&proj=epsg3857&HD=1'
+      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      
+    const tileAttribution = options.longdoApiKey
+      ? '&copy; Longdo Map'
+      : '&copy; OpenStreetMap contributors';
+
+    L.tileLayer(tileUrl, {
+      attribution: tileAttribution,
       maxZoom: 19
     }).addTo(map);
 
