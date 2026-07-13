@@ -184,6 +184,18 @@ if (!function_exists('jobfind_geoapify_api_key_attr')) {
     }
 }
 
+if (!defined('JOBFIND_LONGDO_API_KEY')) {
+    $longdo_api_key = $longdo_api_key ?? (getenv('JOBFIND_LONGDO_API_KEY') ?: '');
+    define('JOBFIND_LONGDO_API_KEY', (string)$longdo_api_key);
+}
+
+if (!function_exists('jobfind_longdo_api_key_attr')) {
+    function jobfind_longdo_api_key_attr()
+    {
+        return htmlspecialchars(JOBFIND_LONGDO_API_KEY, ENT_QUOTES, 'UTF-8');
+    }
+}
+
 $conn = @mysqli_connect($host, $user, $pass, $db);
 $db_error = "";
 

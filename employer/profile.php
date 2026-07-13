@@ -644,7 +644,7 @@ if($is_public){
 </main>
 
 <script src="../assets/vendor/leaflet/leaflet.min.js"></script>
-<script src="../assets/js/location-map-picker.js?v=geoapify-search-20260617" data-geoapify-key="<?php echo jobfind_geoapify_api_key_attr(); ?>"></script>
+<script src="../assets/js/location-map-picker.js?v=longdo-search-20260713" data-longdo-key="<?php echo jobfind_longdo_api_key_attr(); ?>"></script>
 <script src="../assets/js/thai-location-selects.js"></script>
 <script>
 initThaiProvinceDistrictSelects({

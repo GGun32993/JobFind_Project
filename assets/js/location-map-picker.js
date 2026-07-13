@@ -1,7 +1,7 @@
 (function () {
   const SEARCH_STYLE_ID = 'jobfind-map-search-style';
   const scriptElement = document.currentScript;
-  const defaultGeoapifyApiKey = scriptElement?.dataset?.geoapifyKey || '';
+  const defaultLongdoApiKey = scriptElement?.dataset?.longdoKey || scriptElement?.dataset?.geoapifyKey || '';
 
   function clampNumber(value, fallback) {
     const number = Number(value);
@@ -32,17 +32,19 @@
   function getResultDetail(result) {
     const properties = result.properties || result;
     const name = getResultName(result);
-    const detail = properties.address_line2 ||
+    const detail = properties.address ||
+      properties.address_line2 ||
       properties.formatted ||
       properties.display_name ||
-      [properties.city, properties.state, properties.country].filter(Boolean).join(', ');
+      [properties.subdistrict, properties.district, properties.province, properties.city, properties.state, properties.country].filter(Boolean).join(', ');
 
     return detail && detail !== name ? detail : '';
   }
 
   function getResultInputValue(result) {
     const properties = result.properties || result;
-    return properties.formatted ||
+    return properties.address ||
+      properties.formatted ||
       properties.display_name ||
       [getResultName(result), getResultDetail(result)].filter(Boolean).join(', ') ||
       getResultName(result);
@@ -214,7 +216,7 @@
         activeController.abort();
       }
 
-      if (!options.geoapifyApiKey) {
+      if (!options.longdoApiKey) {
         showMessage(options.missingApiKeyText);
         return;
       }
@@ -225,22 +227,19 @@
       showMessage(options.loadingText);
 
       const params = new URLSearchParams({
-        text: trimmed,
-        format: 'json',
+        keyword: trimmed,
         limit: String(options.searchLimit),
-        lang: options.searchLanguage,
-        apiKey: options.geoapifyApiKey
+        locale: options.searchLanguage,
+        key: options.longdoApiKey
       });
 
-      if (options.searchCountryCodes) {
-        params.set('filter', 'countrycode:' + options.searchCountryCodes);
+      const currentCenter = map.getCenter();
+      if (currentCenter && Number.isFinite(currentCenter.lat) && Number.isFinite(currentCenter.lng)) {
+        params.set('lat', String(currentCenter.lat));
+        params.set('lon', String(currentCenter.lng));
       }
 
-      if (Number.isFinite(options.lat) && Number.isFinite(options.lng)) {
-        params.set('bias', 'proximity:' + options.lng + ',' + options.lat);
-      }
-
-      fetch('https://api.geoapify.com/v1/geocode/autocomplete?' + params.toString(), {
+      fetch('https://search.longdo.com/mapsearch/json/search?' + params.toString(), {
         signal: controller.signal
       })
         .then(function (response) {
@@ -250,9 +249,7 @@
           return response.json();
         })
         .then(function (data) {
-          const items = Array.isArray(data?.results)
-            ? data.results
-            : (Array.isArray(data?.features) ? data.features : []);
+          const items = Array.isArray(data?.data) ? data.data : [];
           renderResults(items);
         })
         .catch(function (error) {
@@ -322,7 +319,7 @@
       radiusKm: clampNumber(config.radiusKm, 30),
       showCircle: !!config.showCircle,
       search: config.search !== false,
-      geoapifyApiKey: config.geoapifyApiKey || defaultGeoapifyApiKey || window.JOBFIND_GEOAPIFY_API_KEY || '',
+      longdoApiKey: config.longdoApiKey || config.geoapifyApiKey || defaultLongdoApiKey || window.JOBFIND_LONGDO_API_KEY || window.JOBFIND_GEOAPIFY_API_KEY || '',
       searchLimit: clampNumber(config.searchLimit, 6),
       searchPlaceholder: config.searchPlaceholder || 'ค้นหาสถานที่',
       searchButtonText: config.searchButtonText || 'ค้นหา',
@@ -330,7 +327,7 @@
       searchCountryCodes: config.searchCountryCodes || 'th',
       loadingText: config.loadingText || 'กำลังค้นหา...',
       noResultsText: config.noResultsText || 'ไม่พบสถานที่ที่ค้นหา',
-      missingApiKeyText: config.missingApiKeyText || 'กรุณาตั้งค่า Geoapify API key ก่อนใช้งานค้นหา',
+      missingApiKeyText: config.missingApiKeyText || 'กรุณาตั้งค่า Longdo Map API key ก่อนใช้งานค้นหา',
       errorText: config.errorText || 'ค้นหาไม่สำเร็จ กรุณาลองใหม่',
       onChange: typeof config.onChange === 'function' ? config.onChange : function () {}
     };

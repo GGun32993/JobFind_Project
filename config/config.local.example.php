@@ -5,3 +5,4 @@ $user = "if0_42031060";
 $pass = "put-your-real-mysql-password-here";
 $db = "if0_42031060_jobfind";
 $geoapify_api_key = "put-your-geoapify-api-key-here";
+$longdo_api_key = "put-your-longdo-api-key-here";
