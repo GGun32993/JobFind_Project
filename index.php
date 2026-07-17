@@ -484,7 +484,7 @@ if($titleSearch !== ''){
 }
 
 $isSearchActive = $titleSearch !== '' || $locationSearch !== '' || $hasLocationPin;
-$heroStyle = "--hero-bg: #f1f5f9;";
+$heroStyle = "--hero-bg: linear-gradient(225deg, #EEF2FF 0%, #FFFFFF 100%);";
 $defaultPinStatusText = 'ยังไม่ได้ปักหมุดพื้นที่หางาน';
 $pinStatusText = $hasLocationPin
     ? 'ปักหมุดแล้ว รัศมี ' . number_format($searchRadiusKm, 0) . ' กม.'
