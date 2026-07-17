@@ -4,6 +4,7 @@ require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/support_helpers.php";
 require_once __DIR__ . "/../services/admin_job_service.php";
+require_once __DIR__ . "/../helpers/category_helpers.php";
 
 $admin_id_for_badge = jobfind_require_role('admin');
 $admin_unread_support = admin_unread_support_count($conn, $admin_id_for_badge);
@@ -286,10 +287,11 @@ while($r = mysqli_fetch_assoc($result)){
   <!-- Job cards -->
   <div id="job-list">
   <?php
-  $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
+  $category_icons_map = jobfind_get_category_icons_map($conn);
   foreach($rows as $row):
     $status    = $row['admin_status'];
-    $icon      = $icons[crc32($row['title']) % count($icons)];
+    $category  = trim($row['category'] ?? '');
+    $icon      = $category_icons_map[$category] ?? '💼';
     $sp_class  = match($status){ 'approved'=>'sp-approved','rejected'=>'sp-rejected',default=>'sp-pending' };
     $sp_label  = match($status){ 'approved'=>'Approved','rejected'=>'Rejected',default=>'Pending' };
     $sp_icon   = match($status){ 'approved'=>'bi-check-circle-fill','rejected'=>'bi-x-circle-fill',default=>'bi-hourglass-split' };

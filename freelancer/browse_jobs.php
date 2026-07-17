@@ -446,7 +446,7 @@ $result = mysqli_query($conn, $query);
   <!-- Job list (PHP render) -->
   <div id="job-list">
   <?php
-  $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
+  $category_icons_map = jobfind_get_category_icons_map($conn);
   $total = 0;
 
   if(mysqli_num_rows($result) == 0){
@@ -465,12 +465,12 @@ $result = mysqli_query($conn, $query);
       $avg_rating   = round($rating_data['avg_rating'], 1);
       $total_reviews= $rating_data['total_reviews'];
 
-      $icon = $icons[crc32($row['title']) % count($icons)];
       $job_image = trim($row['image_path'] ?? '');
 
       // ---- category: ดึงจาก DB (ถ้ามี field 'category') หรือ fallback ว่าง
       $cat_raw = isset($row['category']) ? trim((string)$row['category']) : '';
       $cat = htmlspecialchars($cat_raw);
+      $icon = $category_icons_map[$cat_raw] ?? '💼';
       $job_subcategory_raw = trim((string)($row['job_subcategory'] ?? ''));
       $job_subcategory_display = htmlspecialchars($job_subcategory_raw);
       $employment_type_label = jobfind_employment_type_label($row['employment_type'] ?? '');

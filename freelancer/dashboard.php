@@ -800,16 +800,16 @@ $most_applied_count = count($most_applied_jobs_list);
   </div>
 
   <?php
+    $category_icons_map = jobfind_get_category_icons_map($conn);
     $hasJobs = false;
     if (is_array($recommend)) {
       foreach ($recommend as $job):
         $hasJobs = true;
-        $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
-        $icon  = $icons[crc32($job['title'] ?? 'Job') % count($icons)];
+        $cat = trim($job['category'] ?? '');
+        $icon = $category_icons_map[$cat] ?? '💼';
         $match_score = $job['match_score'] ?? 0;
         $distance_km = $job['distance_km'] ?? null;
         $job_image = trim($job['image_path'] ?? '');
-        $cat = trim($job['category'] ?? '');
         $status = trim($job['status'] ?? '');
         if ($status === '') {
           $status = 'open';

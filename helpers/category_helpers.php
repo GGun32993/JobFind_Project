@@ -337,4 +337,14 @@ function jobfind_category_subcategory_map($categories)
     return $map;
 }
 
+function jobfind_get_category_icons_map($conn)
+{
+    $cats = jobfind_get_categories_with_subcategories($conn);
+    $map = [];
+    foreach ($cats as $cat) {
+        $map[$cat['name']] = $cat['icon'];
+    }
+    return $map;
+}
+
 ?>

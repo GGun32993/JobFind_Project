@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../helpers/auth_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
+require_once __DIR__ . "/../helpers/category_helpers.php";
 require_once __DIR__ . "/../helpers/employer_sidebar_helpers.php";
 
 
@@ -313,19 +314,10 @@ while($r = mysqli_fetch_assoc($result)){
   <?php else: ?>
 
   <?php
-  $categoryIcons = [
-    'IT & Software' => '💻',
-    'Design' => '🎨',
-    'Marketing' => '📢',
-    'Writing' => '✍️',
-    'Finance' => '💰',
-    'Education' => '🎓',
-    'Other' => '📦',
-  ];
-  $icons = ['💼','🖥️','📐','📊','🚀','🎨','⚙️','📱','✍️','📢','🎓','💰'];
+  $category_icons_map = jobfind_get_category_icons_map($conn);
   foreach($rows as $row):
     $category   = trim($row['category'] ?? '');
-    $icon       = $categoryIcons[$category] ?? $icons[crc32($row['title']) % count($icons)] ?? '💼';
+    $icon       = $category_icons_map[$category] ?? '💼';
     if($icon === '') $icon = '💼';
     $job_image  = trim($row['image_path'] ?? '');
     $adm        = $row['admin_status'];
