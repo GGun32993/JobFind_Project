@@ -30,8 +30,15 @@ if ($check_seed && mysqli_num_rows($check_seed) > 0) {
 
 // 2. Seed 20 category groups and subcategories to ensure DB tables have them
 ensure_category_schema($conn);
+mysqli_query($conn, "DELETE FROM Job_Subcategories");
+mysqli_query($conn, "DELETE FROM Categories");
+if (mysqli_query($conn, "SHOW TABLES LIKE 'Category_Seed_Runs'")) {
+    mysqli_query($conn, "DELETE FROM Category_Seed_Runs");
+}
+mysqli_query($conn, "ALTER TABLE Categories AUTO_INCREMENT = 1");
+mysqli_query($conn, "ALTER TABLE Job_Subcategories AUTO_INCREMENT = 1");
 ensure_default_job_categories($conn);
-echo "<p style='color:green;'>ตรวจสอบ/อัปเดตตารางหมวดหมู่หลักและหมวดหมู่ย่อยเรียบร้อยแล้ว</p>";
+echo "<p style='color:green;'>ล้างข้อมูลตารางเก่าและสร้างหมวดหมู่หลักพร้อมหมวดหมู่ย่อยเรียบร้อยแล้ว</p>";
 
 $mock_data = [
     1 => [
@@ -274,27 +281,66 @@ foreach ($mock_data as $i => $data) {
 }
 echo "</ul>";
 
-// 3. Update any pre-existing jobs to Dec 2026 deadline & Bangkok locations
-$pre_jobs = mysqli_query($conn, "SELECT job_id, title FROM Job WHERE employer_id NOT IN (SELECT user_id FROM Users WHERE email LIKE '%@jobfind.com')");
+// 3. Update any pre-existing jobs to Dec 2026 deadline, Bangkok locations, and valid categories/subcategories
+$pre_jobs = mysqli_query($conn, "SELECT job_id, title, category, job_subcategory FROM Job WHERE employer_id NOT IN (SELECT user_id FROM Users WHERE email LIKE '%@jobfind.com')");
 if ($pre_jobs && mysqli_num_rows($pre_jobs) > 0) {
     echo "<h3>กำลังอัปเดตงานเก่าที่มีอยู่เดิม...</h3><ul>";
     $idx = 0;
+    $valid_map = jobfind_category_subcategory_map($cats);
+    
     while ($row = mysqli_fetch_assoc($pre_jobs)) {
         $job_id = intval($row['job_id']);
+        $title = $row['title'];
+        $cat = trim($row['category'] ?? '');
+        $sub = trim($row['job_subcategory'] ?? '');
+        
         $district = $bangkok_districts[$idx % count($bangkok_districts)];
         $loc_name = mysqli_real_escape_string($conn, $district['name']);
         $lat = $district['lat'];
         $lng = $district['lng'];
-
+        
+        // Auto-correct category and subcategory if invalid
+        if ($cat === '' || !isset($valid_map[$cat])) {
+            $cat = 'อื่นๆ';
+        }
+        
+        $valid_subs = $valid_map[$cat] ?? ['อื่นๆ'];
+        if ($sub === '' || !in_array($sub, $valid_subs)) {
+            // Find best subcategory matching title keywords
+            $new_sub = $valid_subs[0];
+            $title_lower = mb_strtolower($title);
+            foreach ($valid_subs as $vs) {
+                $vs_lower = mb_strtolower($vs);
+                if (mb_strpos($title_lower, $vs_lower) !== false) {
+                    $new_sub = $vs;
+                    break;
+                }
+            }
+            
+            // Custom matching logic for repair jobs
+            if ($cat === 'งานช่างและซ่อมบำรุง') {
+                if (mb_strpos($title, 'ไฟ') !== false) $new_sub = 'ช่างไฟฟ้า';
+                elseif (mb_strpos($title, 'ประปา') !== false) $new_sub = 'ช่างประปา';
+                elseif (mb_strpos($title, 'แอร์') !== false) $new_sub = 'ซ่อมแอร์';
+                elseif (mb_strpos($title, 'คอม') !== false) $new_sub = 'ซ่อมคอมพิวเตอร์';
+            }
+            $sub = $new_sub;
+        }
+        
+        $cat_esc = mysqli_real_escape_string($conn, $cat);
+        $sub_esc = mysqli_real_escape_string($conn, $sub);
+        
         mysqli_query($conn, "
             UPDATE Job 
             SET deadline = '2026-12-31', 
                 location = '$loc_name', 
                 latitude = $lat, 
-                longitude = $lng 
+                longitude = $lng,
+                category = '$cat_esc',
+                job_subcategory = '$sub_esc'
             WHERE job_id = $job_id
         ");
-        echo "<li style='color:blue;'>อัปเดตงาน #$job_id \"{$row['title']}\" -> $loc_name</li>";
+        echo "<li style='color:blue;'>อัปเดตงาน #$job_id \"$title\" -> $loc_name [หมวดหมู่: $cat / งานย่อย: $sub]</li>";
         $idx++;
     }
     echo "</ul>";
