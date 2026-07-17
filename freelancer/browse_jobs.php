@@ -12,15 +12,8 @@ ensure_default_job_categories($conn);
 // ตรวจสอบ category จาก URL parameter
 $selected_category = isset($_GET['category']) ? trim($_GET['category']) : '';
 
-// ดึง categories จาก DB
-$browse_cats = [];
-if(jobfind_category_table_exists($conn, 'Categories')){
-    $cat_res = mysqli_query($conn,"SELECT * FROM Categories ORDER BY " . jobfind_category_order_clause($conn));
-    while($c = mysqli_fetch_assoc($cat_res)) $browse_cats[] = $c;
-}
-if(empty($browse_cats)){
-    $browse_cats = jobfind_default_job_categories();
-}
+// ดึง categories พร้อม subcategories
+$browse_cats = jobfind_get_categories_with_subcategories($conn);
 
 // ── ปิดงานที่ deadline ผ่านแล้วอัตโนมัติ (ทุกครั้งที่หน้าโหลด) ──
 mysqli_query($conn,"
@@ -150,23 +143,58 @@ $result = mysqli_query($conn, $query);
     box-shadow: 0 0 0 3px rgba(99,102,241,.12);
   }
 
-  /* ── Category pills ── */
-  .category-bar {
-    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+  /* ── Category & Subcategory Filter Selects ── */
+  .filter-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
   }
-  .cat-pill {
-    padding: 7px 16px; border-radius: 30px;
-    border: 1px solid var(--border); background: var(--white);
-    font-size: 13px; font-weight: 500; color: var(--muted);
-    cursor: pointer; transition: all .15s;
-    display: flex; align-items: center; gap: 6px;
+  .filter-select-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
   }
-  .cat-pill:hover { border-color: var(--accent2); color: var(--accent); }
-  .cat-pill.active {
-    background: var(--accent); border-color: var(--accent);
-    color: #fff;
+  .filter-select-wrap .select-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 17px;
+    color: var(--muted);
+    pointer-events: none;
+    z-index: 2;
   }
-  .cat-pill i { font-size: 14px; }
+  .filter-select-wrap select {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    background: var(--white);
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    transition: border-color .15s, box-shadow .15s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 12px;
+  }
+  .filter-select-wrap select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  }
+  .filter-select-wrap select:disabled {
+    background-color: var(--light);
+    color: var(--muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
 
   /* ── Results bar ── */
   .results-bar {
@@ -352,16 +380,35 @@ $result = mysqli_query($conn, $query);
            oninput="filterJobs()" />
   </div>
 
-  <!-- Category pills (ดึงจาก DB — Admin จัดการได้) -->
-  <div class="category-bar" id="cat-bar">
-    <button class="cat-pill active" data-cat="" onclick="setCategory(this)">
-      <i class="bi bi-grid-3x3-gap"></i> ทั้งหมด
-    </button>
-    <?php foreach($browse_cats as $bc): ?>
-    <button class="cat-pill" data-cat="<?php echo htmlspecialchars($bc['name']); ?>" onclick="setCategory(this)">
-      <?php echo $bc['icon'].' '.htmlspecialchars($bc['name']); ?>
-    </button>
-    <?php endforeach; ?>
+  <!-- Category & Subcategory Select Dropdowns -->
+  <div class="filter-row">
+    <div class="filter-select-wrap">
+      <i class="bi bi-tag select-icon"></i>
+      <select id="category-select" onchange="onCategorySelectChange(this.value)">
+        <option value="">-- เลือกหมวดหมู่หลัก (ทั้งหมด) --</option>
+        <?php foreach($browse_cats as $bc): 
+          $subs = [];
+          foreach(($bc['subcategories'] ?? []) as $sub) {
+              $subs[] = is_array($sub) ? ($sub['name'] ?? '') : $sub;
+          }
+          $subs_json = json_encode($subs, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP);
+          $cat_name = $bc['name'];
+          $cat_icon = $bc['icon'];
+        ?>
+        <option value="<?php echo htmlspecialchars($cat_name); ?>" 
+                data-subs="<?php echo htmlspecialchars($subs_json); ?>">
+          <?php echo $cat_icon . ' ' . htmlspecialchars($cat_name); ?>
+        </option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+
+    <div class="filter-select-wrap">
+      <i class="bi bi-diagram-3 select-icon"></i>
+      <select id="subcategory-select" onchange="onSubcategorySelectChange(this.value)" disabled>
+        <option value="">-- เลือกหมวดหมู่ย่อย (ทั้งหมด) --</option>
+      </select>
+    </div>
   </div>
 
   <!-- Salary range filter -->
@@ -525,6 +572,7 @@ $result = mysqli_query($conn, $query);
 
 <script>
   let currentCat = <?php echo json_encode($selected_category, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
+  let currentSubcat = '';
   let salMin = 0, salMax = 0; // 0,0 = ทั้งหมด
   const cards = document.querySelectorAll('.job-card');
   const countEl = document.getElementById('result-count');
@@ -534,27 +582,84 @@ $result = mysqli_query($conn, $query);
 
   // เมื่อหน้า load ให้อัปเดต UI ตาม URL parameter
   document.addEventListener('DOMContentLoaded', function(){
+    const urlParams = new URLSearchParams(window.location.search);
+    const subParam = urlParams.get('subcategory') || '';
+    if (subParam) {
+      currentSubcat = subParam;
+    }
+
     if(currentCat){
-      const activePill = Array.from(document.querySelectorAll('.cat-pill')).find(p => p.dataset.cat === currentCat);
-      if(activePill){
-        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-        activePill.classList.add('active');
+      const catSelect = document.getElementById('category-select');
+      catSelect.value = currentCat;
+      
+      // ดึง subcategories
+      const selectedOption = catSelect.options[catSelect.selectedIndex];
+      if (selectedOption) {
+        const subs = JSON.parse(selectedOption.dataset.subs || '[]');
+        populateSubcategories(subs);
+        
+        if (currentSubcat) {
+          document.getElementById('subcategory-select').value = currentSubcat;
+        }
       }
     }
     filterJobs();
   });
 
-  function setCategory(el) {
-    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-    el.classList.add('active');
-    currentCat = el.dataset.cat;
+  function onCategorySelectChange(val) {
+    currentCat = val;
+    currentSubcat = ''; // reset subcategory on category change
+    
+    const catSelect = document.getElementById('category-select');
+    const subcatSelect = document.getElementById('subcategory-select');
+    
+    // Update URL parameters
     const url = new URL(window.location.href);
     if(currentCat){
       url.searchParams.set('category', currentCat);
+      
+      const selectedOption = catSelect.options[catSelect.selectedIndex];
+      const subs = JSON.parse(selectedOption.dataset.subs || '[]');
+      populateSubcategories(subs);
     } else {
       url.searchParams.delete('category');
+      subcatSelect.innerHTML = '<option value="">-- เลือกหมวดหมู่ย่อย (ทั้งหมด) --</option>';
+      subcatSelect.disabled = true;
+    }
+    url.searchParams.delete('subcategory');
+    window.history.replaceState({}, '', url);
+    
+    filterJobs();
+  }
+
+  function populateSubcategories(subs) {
+    const subcatSelect = document.getElementById('subcategory-select');
+    subcatSelect.innerHTML = '<option value="">-- เลือกหมวดหมู่ย่อย (ทั้งหมด) --</option>';
+    
+    if (subs && subs.length > 0) {
+      subs.forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub;
+        opt.textContent = sub;
+        subcatSelect.appendChild(opt);
+      });
+      subcatSelect.disabled = false;
+    } else {
+      subcatSelect.disabled = true;
+    }
+  }
+
+  function onSubcategorySelectChange(val) {
+    currentSubcat = val;
+    
+    const url = new URL(window.location.href);
+    if(currentSubcat) {
+      url.searchParams.set('subcategory', currentSubcat);
+    } else {
+      url.searchParams.delete('subcategory');
     }
     window.history.replaceState({}, '', url);
+    
     filterJobs();
   }
 
@@ -601,6 +706,9 @@ $result = mysqli_query($conn, $query);
 
       const matchCat = !currentCat || card.dataset.cat === currentCat;
 
+      const cardSub = (card.dataset.subcategory || '').toLowerCase().trim();
+      const matchSub = !currentSubcat || cardSub === currentSubcat.toLowerCase().trim();
+
       // salary filter: salMin=0,salMax=0 = ไม่กรอง
       const s = parseInt(card.dataset.salary) || 0;
       let matchSal = true;
@@ -616,7 +724,7 @@ $result = mysqli_query($conn, $query);
       // ถ้างานไม่ระบุเงินเดือน (salary=0) ให้โชว์เสมอยกเว้นกรอง preset
       if(s === 0 && (salMin > 0 || salMax > 0)) matchSal = false;
 
-      if(matchKw && matchCat && matchSal){
+      if(matchKw && matchCat && matchSub && matchSal){
         card.classList.remove('hidden');
         visible++;
       } else {
