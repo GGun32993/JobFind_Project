@@ -272,6 +272,17 @@ $selected_birth_parts = [
   .input-wrap i.prefix { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:15px; color:var(--muted); pointer-events:none; }
   .form-input { width:100%; padding:11px 14px 11px 38px; border:1px solid var(--border); border-radius:10px; font-family:'Sora',sans-serif; font-size:13.5px; color:var(--text); outline:none; transition:border-color .15s,box-shadow .15s; }
   .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.12); }
+  .input-wrap select.form-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 11px;
+    padding-right: 36px;
+    cursor: pointer;
+  }
   .dob-grid { display:grid; grid-template-columns:1fr 1fr 1.2fr; gap:8px; }
   .dob-grid .form-input { padding-left:12px; }
   .toggle-pw { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--muted); cursor:pointer; border:none; background:none; padding:0; }
@@ -649,18 +660,18 @@ $selected_birth_parts = [
           <label>จังหวัด</label>
           <div class="input-wrap">
             <i class="bi bi-building prefix"></i>
-            <input type="text" name="province" class="form-input"
-                   placeholder="เช่น กรุงเทพมหานคร"
-                   value="<?php echo htmlspecialchars($_POST['province'] ?? ''); ?>">
+            <select name="province" id="register-province" class="form-input">
+              <option value="">เลือกจังหวัด</option>
+            </select>
           </div>
         </div>
         <div class="field-group">
           <label>อำเภอ / เขต</label>
           <div class="input-wrap">
             <i class="bi bi-pin-map prefix"></i>
-            <input type="text" name="district" class="form-input"
-                   placeholder="เช่น วัฒนา"
-                   value="<?php echo htmlspecialchars($_POST['district'] ?? ''); ?>">
+            <select name="district" id="register-district" class="form-input" disabled>
+              <option value="">เลือกจังหวัดก่อน</option>
+            </select>
           </div>
         </div>
       </div>
@@ -669,7 +680,7 @@ $selected_birth_parts = [
         <label>รหัสไปรษณีย์</label>
         <div class="input-wrap">
           <i class="bi bi-mailbox prefix"></i>
-          <input type="text" name="postal_code" class="form-input"
+          <input type="text" name="postal_code" id="register-postal-code" class="form-input"
                  placeholder="10110"
                  value="<?php echo htmlspecialchars($_POST['postal_code'] ?? ''); ?>">
         </div>
@@ -734,6 +745,7 @@ $selected_birth_parts = [
 
 <script src="assets/vendor/leaflet/leaflet.min.js"></script>
 <script src="assets/js/location-map-picker.js?v=longdo-search-20260713" data-longdo-key="<?php echo jobfind_longdo_api_key_attr(); ?>"></script>
+<script src="assets/js/thai-location-selects.js"></script>
 <script>
   function togglePw(){
     const input = document.getElementById('pw-input');
@@ -861,6 +873,14 @@ $selected_birth_parts = [
   if (hasSelectedPin) {
     document.getElementById('location-status').innerHTML = '<i class="bi bi-check-circle"></i> ปักหมุดแล้ว';
   }
+
+  initThaiProvinceDistrictSelects({
+    provinceId: 'register-province',
+    districtId: 'register-district',
+    postalCodeId: 'register-postal-code',
+    currentProvince: <?php echo json_encode($_POST['province'] ?? '', JSON_UNESCAPED_UNICODE); ?>,
+    currentDistrict: <?php echo json_encode($_POST['district'] ?? '', JSON_UNESCAPED_UNICODE); ?>
+  });
 </script>
 </body>
 </html>
