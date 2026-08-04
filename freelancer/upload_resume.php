@@ -87,6 +87,7 @@ if($data){
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Upload Resume</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -301,8 +302,14 @@ if($data){
 <div class="content-wrap">
 
   <div class="topbar">
-    <h2>Upload Resume</h2>
-    <p>อัปโหลดไฟล์ Resume ของคุณในรูปแบบ PDF</p>
+    <div>
+      <h2>Upload Resume</h2>
+      <p>อัปโหลดไฟล์ Resume ของคุณในรูปแบบ PDF</p>
+    </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <!-- Upload card -->
@@ -389,5 +396,6 @@ if($data){
     showFileName(fi);
   });
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>

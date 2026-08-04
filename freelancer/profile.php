@@ -193,10 +193,12 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Profile</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.min.css" />
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
@@ -485,6 +487,10 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
       <h2>My Profile</h2>
       <p>จัดการข้อมูลส่วนตัวและทักษะของคุณ</p>
     </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <!-- Avatar banner -->
@@ -869,5 +875,6 @@ document.getElementById('mapModal').addEventListener('click', function(e) {
 
 updateRadiusLabel(selectedRadiusKm);
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>

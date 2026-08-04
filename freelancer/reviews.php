@@ -44,10 +44,12 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Reviews</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
 
@@ -217,6 +219,10 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
       <h2>My Reviews</h2>
       <p>รีวิวที่ได้รับจาก Employer ทั้งหมด</p>
     </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <?php if($total > 0): ?>
@@ -363,5 +369,6 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
     document.getElementById('empty-filter').style.display = visible === 0 ? 'block' : 'none';
   }
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>

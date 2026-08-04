@@ -44,6 +44,7 @@ $dashboard = $role === "employer" ? "../employer/dashboard.php" : "../freelancer
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Support Chat</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -297,8 +298,14 @@ $dashboard = $role === "employer" ? "../employer/dashboard.php" : "../freelancer
 <main class="main">
 
   <div class="topbar">
-    <h2>Support Chat</h2>
-    <p>ติดต่อ Admin เพื่อขอความช่วยเหลือ</p>
+    <div>
+      <h2>Support Chat</h2>
+      <p>ติดต่อ Admin เพื่อขอความช่วยเหลือ</p>
+    </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <div class="chat-wrap">
@@ -385,5 +392,6 @@ $dashboard = $role === "employer" ? "../employer/dashboard.php" : "../freelancer
     }
   });
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>
