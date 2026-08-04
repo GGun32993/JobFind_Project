@@ -1451,47 +1451,297 @@ html[data-theme="dark"] .bubble.other {
   color: #f8fafc !important;
 }
 
-/* Theme Switcher Button Styling */
+/* ── Theme Switcher: Premium Pill Toggle ─────────────────────── */
 .theme-toggle-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 12px;
-  background: rgba(91, 95, 244, .10);
-  color: var(--accent);
-  border: 1px solid rgba(91, 95, 244, .20);
-  font-size: 13.5px;
-  font-weight: 600;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(91, 95, 244, .22);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(91, 95, 244, .12) 0%, transparent 72%),
+    rgba(255, 255, 255, .92);
+  color: #5b5ff4;
   cursor: pointer;
-  transition: all .2s ease;
+  transition:
+    background .35s cubic-bezier(.4, 0, .2, 1),
+    border-color .35s ease,
+    box-shadow .35s ease,
+    transform .18s ease;
   user-select: none;
+  overflow: hidden;
+  backdrop-filter: blur(6px);
+  box-shadow:
+    0 2px 8px rgba(91, 95, 244, .10),
+    0 0 0 0 rgba(91, 95, 244, 0);
+  flex-shrink: 0;
 }
 
 .theme-toggle-btn:hover {
-  background: rgba(91, 95, 244, .20);
-  color: var(--accent2);
-  transform: translateY(-1px);
+  transform: scale(1.08);
+  border-color: rgba(91, 95, 244, .38);
+  box-shadow:
+    0 4px 18px rgba(91, 95, 244, .18),
+    0 0 0 4px rgba(91, 95, 244, .08);
 }
 
+.theme-toggle-btn:active {
+  transform: scale(.95);
+  transition-duration: .08s;
+}
+
+/* Icon */
+.theme-toggle-btn .theme-toggle-icon {
+  font-size: 20px;
+  line-height: 1;
+  transition:
+    transform .45s cubic-bezier(.4, 0, .2, 1),
+    color .3s ease;
+}
+
+.theme-toggle-btn:hover .theme-toggle-icon {
+  transform: rotate(25deg) scale(1.12);
+}
+
+/* Hide text label — icon only */
+.theme-toggle-btn .theme-toggle-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Dark Mode variant ── */
 html[data-theme="dark"] .theme-toggle-btn {
-  background: rgba(245, 158, 11, .15);
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, .30);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(250, 204, 21, .14) 0%, transparent 72%),
+    rgba(30, 41, 59, .92);
+  border-color: rgba(250, 204, 21, .28);
+  color: #facc15;
+  box-shadow:
+    0 2px 8px rgba(250, 204, 21, .10),
+    0 0 0 0 rgba(250, 204, 21, 0);
 }
 
 html[data-theme="dark"] .theme-toggle-btn:hover {
-  background: rgba(245, 158, 11, .25);
-  color: #fbbf24;
+  border-color: rgba(250, 204, 21, .48);
+  box-shadow:
+    0 4px 18px rgba(250, 204, 21, .22),
+    0 0 0 4px rgba(250, 204, 21, .08);
 }
 
-.theme-toggle-btn i {
-  font-size: 16px;
-  transition: transform .3s ease;
+/* ── Dark Mode: Auth pages (Login / Register) ──────────────── */
+html[data-theme="dark"] .auth-shell,
+html[data-theme="dark"] .register-wrap {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
 }
 
-.theme-toggle-btn:hover i {
-  transform: rotate(15deg) scale(1.1);
+html[data-theme="dark"] .form-panel {
+  background: #1e293b !important;
+}
+
+html[data-theme="dark"] .form-inner h2 {
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .subtitle,
+html[data-theme="dark"] .field-group label {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .form-input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .form-input:focus {
+  border-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .form-input::placeholder {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .input-icon {
+  background: #1e293b !important;
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .alert-err {
+  background: rgba(239, 68, 68, .12) !important;
+  border-color: rgba(239, 68, 68, .25) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .alert-icon {
+  background: rgba(239, 68, 68, .18) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .pw-extras,
+html[data-theme="dark"] .pw-extras a,
+html[data-theme="dark"] .signup-link {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .pw-extras a:hover,
+html[data-theme="dark"] .signup-link a {
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .divider span {
+  background: #1e293b !important;
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .divider::before,
+html[data-theme="dark"] .divider::after {
+  background: #334155 !important;
+}
+
+/* ── Dark Mode: Dashboard shared inline styles ─────────────── */
+html[data-theme="dark"] .main {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, #070d17 0%, #0b1220 58%, #070d17 100%) !important;
+  border-right-color: rgba(100, 116, 139, .16) !important;
+}
+
+html[data-theme="dark"] .topbar h2,
+html[data-theme="dark"] .topbar-greeting h2 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .topbar p,
+html[data-theme="dark"] .topbar-greeting p {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .stat-card .value,
+html[data-theme="dark"] .stat-info .value {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .stat-card .label,
+html[data-theme="dark"] .stat-info .label {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .stat-icon.si-purple {
+  background: rgba(99, 102, 241, .14) !important;
+}
+html[data-theme="dark"] .stat-icon.si-green {
+  background: rgba(16, 185, 129, .14) !important;
+}
+html[data-theme="dark"] .stat-icon.si-yellow {
+  background: rgba(245, 158, 11, .14) !important;
+}
+html[data-theme="dark"] .stat-icon.si-blue {
+  background: rgba(14, 165, 233, .14) !important;
+}
+
+html[data-theme="dark"] .admin-chip {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .quick-card,
+html[data-theme="dark"] .table-card,
+html[data-theme="dark"] .chart-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .quick-card h4,
+html[data-theme="dark"] .table-card h4,
+html[data-theme="dark"] .chart-card h4,
+html[data-theme="dark"] .section-header h4 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .section-header p {
+  color: #64748b !important;
+}
+
+/* ── Dark Mode: Freelancer dashboard specifics ──────────────── */
+html[data-theme="dark"] .topbar-chip {
+  background: rgba(30, 41, 59, .9) !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .hero-action {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .hero-action.primary {
+  background: #6366f1 !important;
+  border-color: #6366f1 !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .job-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .job-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .job-desc,
+html[data-theme="dark"] .job-meta {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .tag-cat {
+  background: rgba(99, 102, 241, .14) !important;
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .badge-count {
+  background: rgba(99, 102, 241, .14) !important;
+  border-color: rgba(99, 102, 241, .25) !important;
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .job-logo {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+/* ── Dark Mode: Register page specifics ──────────────────── */
+html[data-theme="dark"] .step-item.active .step-num {
+  background: #6366f1 !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .step-item .step-label {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .step-item.active .step-label {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .right-panel {
+  background: #1e293b !important;
 }
 

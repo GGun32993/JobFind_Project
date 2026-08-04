@@ -42,10 +42,35 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || getCurrentTheme();
-    const nextTheme = current === 'dark' ? 'light' : 'dark';
+    var current = document.documentElement.getAttribute('data-theme') || getCurrentTheme();
+    var nextTheme = current === 'dark' ? 'light' : 'dark';
     localStorage.setItem('jobfind_theme', nextTheme);
-    applyTheme(nextTheme);
+
+    // Animate the icon spin on toggle
+    var buttons = document.querySelectorAll('.theme-toggle-btn .theme-toggle-icon');
+    buttons.forEach(function (icon) {
+      icon.style.transform = 'rotate(360deg) scale(0.5)';
+      icon.style.opacity = '0.3';
+    });
+
+    // Add smooth body transition class
+    document.documentElement.style.transition = 'background .4s ease, color .4s ease';
+    document.body.style.transition = 'background .4s ease, color .4s ease';
+
+    setTimeout(function () {
+      applyTheme(nextTheme);
+
+      buttons.forEach(function (icon) {
+        icon.style.transform = '';
+        icon.style.opacity = '';
+      });
+
+      // Remove the inline transition after animation completes
+      setTimeout(function () {
+        document.documentElement.style.transition = '';
+        document.body.style.transition = '';
+      }, 450);
+    }, 150);
   }
 
   // Initial sync of button UI
