@@ -1539,8 +1539,12 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="dark"] body {
-  background: linear-gradient(180deg, #0b1220 0, #111c31 420px, #0b1220 100%) !important;
+  background: #0b1220 !important;
   color: var(--jf-ink) !important;
+}
+
+html[data-theme="dark"] .shell {
+  background: #0b1220 !important;
 }
 
 html[data-theme="dark"] .shell .top-nav {
@@ -1548,6 +1552,37 @@ html[data-theme="dark"] .shell .top-nav {
   border-bottom-color: rgba(38, 54, 79, .86) !important;
 }
 
+/* ── Hero Section Dark Mode ── */
+html[data-theme="dark"] .shell .hero {
+  background:
+    linear-gradient(90deg, rgba(79, 70, 229, .12), transparent 34%),
+    linear-gradient(180deg, #0b1220 0%, #111c31 100%) !important;
+  border-bottom-color: #26364f !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shell .hero::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .04) 1px, transparent 1px) !important;
+}
+
+html[data-theme="dark"] .shell .eyebrow {
+  background: rgba(99, 102, 241, .16) !important;
+  border-color: rgba(99, 102, 241, .3) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .shell .hero h1,
+html[data-theme="dark"] .shell .hero-title-part {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shell .hero-copy {
+  color: #cbd5e1 !important;
+}
+
+/* ── Search Strip ── */
 html[data-theme="dark"] .shell .search-strip {
   background: rgba(23, 36, 57, .94) !important;
   border-color: #26364f !important;
@@ -1589,6 +1624,47 @@ html[data-theme="dark"] .shell .btn-pin {
   border-color: rgba(99, 102, 241, .28) !important;
 }
 
+/* ── Metrics ── */
+html[data-theme="dark"] .shell .hero-metrics .metric {
+  background: #172439 !important;
+  border-color: #26364f !important;
+}
+
+html[data-theme="dark"] .shell .hero-metrics .metric strong {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shell .hero-metrics .metric span {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .shell .hero-logo-showcase {
+  background: #172439 !important;
+  border-color: #26364f !important;
+}
+
+/* ── Section Bands & Titles ── */
+html[data-theme="dark"] .shell .categories-band,
+html[data-theme="dark"] .shell .jobs-band,
+html[data-theme="dark"] .shell .companies-band {
+  background: #0b1220 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shell .section-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shell .section-desc {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .shell .section-kicker {
+  background: rgba(99, 102, 241, .16) !important;
+  color: #818cf8 !important;
+}
+
+/* ── Category Showcase & Tiles ── */
 html[data-theme="dark"] .shell .category-showcase {
   background-color: #172439 !important;
   border-color: #26364f !important;
@@ -1607,6 +1683,21 @@ html[data-theme="dark"] .shell .category-tab.active {
   color: #818cf8 !important;
 }
 
+html[data-theme="dark"] .shell .category-tile {
+  background: #111c31 !important;
+  border-color: #26364f !important;
+}
+
+html[data-theme="dark"] .shell .category-tile-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shell .category-tile:hover {
+  background: #172439 !important;
+  border-color: #6366f1 !important;
+}
+
+/* ── Role Choice Panel ── */
 html[data-theme="dark"] .shell .role-choice-panel {
   background-color: #172439 !important;
   border-color: #26364f !important;
@@ -1631,6 +1722,7 @@ html[data-theme="dark"] .shell .role-choice-card p {
   color: #94a3b8 !important;
 }
 
+/* ── Job Cards & Media ── */
 html[data-theme="dark"] .shell .job-card-item {
   background-color: #172439 !important;
   border-color: #26364f !important;
@@ -1640,6 +1732,13 @@ html[data-theme="dark"] .shell .job-card-item {
 html[data-theme="dark"] .shell .job-card-item:hover {
   border-color: #6366f1 !important;
   box-shadow: 0 12px 32px rgba(0, 0, 0, .4) !important;
+}
+
+html[data-theme="dark"] .shell .job-card-banner,
+html[data-theme="dark"] .shell .job-card-media,
+html[data-theme="dark"] .shell .job-logo {
+  background: #111c31 !important;
+  border-color: #26364f !important;
 }
 
 html[data-theme="dark"] .shell .job-card-title {
@@ -1652,6 +1751,30 @@ html[data-theme="dark"] .shell .job-card-meta {
   color: #94a3b8 !important;
 }
 
+html[data-theme="dark"] .shell .job-card-tag,
+html[data-theme="dark"] .shell .job-badge {
+  background: rgba(99, 102, 241, .16) !important;
+  color: #818cf8 !important;
+  border-color: rgba(99, 102, 241, .28) !important;
+}
+
+/* ── Company / Employer Cards ── */
+html[data-theme="dark"] .shell .company-card {
+  background: #172439 !important;
+  border-color: #26364f !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shell .company-name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .shell .company-desc,
+html[data-theme="dark"] .shell .company-meta {
+  color: #94a3b8 !important;
+}
+
+/* ── Buttons & Modals ── */
 html[data-theme="dark"] .shell .btn-ghost,
 html[data-theme="dark"] .shell .btn-secondary {
   background: rgba(255, 255, 255, .08) !important;
@@ -1663,6 +1786,12 @@ html[data-theme="dark"] .shell .btn-ghost:hover,
 html[data-theme="dark"] .shell .btn-secondary:hover {
   background: rgba(255, 255, 255, .15) !important;
   border-color: rgba(255, 255, 255, .3) !important;
+}
+
+html[data-theme="dark"] .shell .map-modal-card {
+  background: #172439 !important;
+  border-color: #26364f !important;
+  color: #f8fafc !important;
 }
 
 html[data-theme="dark"] .shell .footer-modern {
