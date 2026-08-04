@@ -1918,3 +1918,51 @@ html[data-theme="dark"] .job-image-gallery img {
   border-color: #334155 !important;
 }
 
+/* ── Dark Mode: My Applications page specifics ──────────────── */
+html[data-theme="dark"] .ftab {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .ftab:hover {
+  border-color: #6366f1 !important;
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .ftab.active {
+  background: #6366f1 !important;
+  border-color: #6366f1 !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .app-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .app-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .app-meta {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .btn-view {
+  background: #111c31 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-view:hover {
+  background: #6366f1 !important;
+  border-color: #6366f1 !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .empty-all {
+  color: #94a3b8 !important;
+}
+

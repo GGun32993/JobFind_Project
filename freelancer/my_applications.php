@@ -42,6 +42,7 @@ while($r = mysqli_fetch_assoc($result)) {
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Applications</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -214,6 +215,10 @@ while($r = mysqli_fetch_assoc($result)) {
       <h2>My Applications</h2>
       <p>ติดตามสถานะการสมัครงานทั้งหมดของคุณ</p>
     </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <!-- Stat cards -->
@@ -378,5 +383,6 @@ while($r = mysqli_fetch_assoc($result)) {
     if(emp) emp.style.display = visible === 0 ? 'block' : 'none';
   }
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>
