@@ -1,0 +1,632 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Host: sql205.infinityfree.com
+-- Generation Time: May 22, 2026 at 10:58 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `if0_42031060_jobfind`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Categories`
+--
+
+CREATE TABLE `Categories` (
+  `category_id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `icon` varchar(20) DEFAULT '📦',
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Categories`
+--
+
+INSERT INTO `Categories` (`category_id`, `name`, `icon`, `description`, `created_at`) VALUES
+(1, 'IT', '💻', 'งานเกี่ยวกับ Computer', '2026-02-25 12:41:43'),
+(2, 'Design', '🎨', 'Graphic and UI jobs', '2026-02-25 12:42:16'),
+(3, 'Marketing', '📢', 'Marketing jobs', '2026-02-25 12:42:46'),
+(4, 'Accounting', '💰', 'Finance jobs', '2026-02-25 12:43:10');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Job_Subcategories`
+--
+
+CREATE TABLE `Job_Subcategories` (
+  `subcategory_id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_id` int(11) NOT NULL,
+  `name` varchar(120) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`subcategory_id`),
+  UNIQUE KEY `uq_job_subcategory` (`category_id`,`name`),
+  KEY `idx_job_subcategory_category` (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Category_Seed_Runs`
+--
+
+CREATE TABLE `Category_Seed_Runs` (
+  `seed_key` varchar(100) NOT NULL,
+  `applied_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`seed_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Chat_Messages`
+--
+
+CREATE TABLE `Chat_Messages` (
+  `message_id` int(11) NOT NULL,
+  `sender_id` int(11) DEFAULT NULL,
+  `receiver_id` int(11) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `sent_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_read` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Chat_Messages`
+--
+
+INSERT INTO `Chat_Messages` (`message_id`, `sender_id`, `receiver_id`, `message`, `sent_at`, `is_read`) VALUES
+(1, 1, 1, 'แอดดดดดดดด', '2026-02-25 14:13:46', 0),
+(2, 3, 0, '', '2026-02-25 14:15:18', 0),
+(3, 3, 0, '', '2026-02-25 14:15:18', 0),
+(4, 1, 1, 'testtttt', '2026-02-25 14:17:53', 0),
+(5, 3, 1, 'ad test', '2026-02-25 14:18:27', 0),
+(6, 1, 1, 'ๅ/-ๅ/-ๅ', '2026-02-25 14:23:46', 0),
+(7, 0, 3, '2342342', '2026-02-25 14:24:06', 0),
+(8, 0, 3, '23423', '2026-02-25 14:24:09', 0),
+(9, 2, 1, '123333', '2026-02-26 13:03:42', 0),
+(10, 1, 1, 'test1', '2026-03-05 07:44:45', 0),
+(11, 3, 1, 'test3', '2026-03-05 07:45:07', 0),
+(12, 2, 1, '12313', '2026-03-10 04:04:23', 0),
+(13, 3, 1, 'แอดพิมพ์', '2026-05-12 08:50:15', 0),
+(14, 3, 1, 'แอดพิมพ์', '2026-05-13 07:33:43', 0),
+(15, 2, 3, 'ะ', '2026-05-13 07:38:05', 1),
+(16, 2, 3, 'test2พิมพ์', '2026-05-13 07:38:25', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Employer_Profile`
+--
+
+CREATE TABLE `Employer_Profile` (
+  `employer_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `employer_name` varchar(100) DEFAULT NULL,
+  `employer_description` text DEFAULT NULL,
+  `like_count` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Employer_Profile`
+--
+
+INSERT INTO `Employer_Profile` (`employer_id`, `user_id`, `employer_name`, `employer_description`, `like_count`, `created_at`) VALUES
+(1, 2, 'Guntinan Company', 'บริษัทของกันต์', 0, '2026-05-16 13:39:30');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Employer_Rating`
+--
+
+CREATE TABLE `Employer_Rating` (
+  `rating_id` int(11) NOT NULL,
+  `employer_id` int(11) DEFAULT NULL,
+  `freelancer_id` int(11) DEFAULT NULL,
+  `score` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Employer_Review`
+--
+
+CREATE TABLE `Employer_Review` (
+  `review_id` int(11) NOT NULL,
+  `employer_id` int(11) DEFAULT NULL,
+  `freelancer_id` int(11) DEFAULT NULL,
+  `job_id` int(11) DEFAULT NULL,
+  `rating` int(11) NOT NULL,
+  `comment` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Employer_Review`
+--
+
+INSERT INTO `Employer_Review` (`review_id`, `employer_id`, `freelancer_id`, `job_id`, `rating`, `comment`, `created_at`) VALUES
+(2, 2, 1, NULL, 5, 'บริษัทดี', '2026-05-22 06:20:28'),
+(3, 2, 1, 8, 5, 'งานดีๆ', '2026-05-22 07:29:45');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Freelancer_Profile`
+--
+
+CREATE TABLE `Freelancer_Profile` (
+  `freelancer_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `skill` text DEFAULT NULL,
+  `experience` text DEFAULT NULL,
+  `age` int(11) DEFAULT NULL,
+  `location` varchar(100) DEFAULT NULL,
+  `rating` float DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Freelancer_Profile`
+--
+
+INSERT INTO `Freelancer_Profile` (`freelancer_id`, `user_id`, `skill`, `experience`, `age`, `location`, `rating`, `created_at`) VALUES
+(1, 3, 'PHP, Web Developmen', '2 Years', NULL, 'Banhkok', 0, '2026-02-25 13:25:20'),
+(2, 1, 'ซ่อมท่อ, PHP, Java', '1 years', NULL, 'Bangkok', 0, '2026-02-25 13:41:09'),
+(3, 4, 'ไม่มี', '-', NULL, 'Chiang Mai', 0, '2026-02-25 13:53:33'),
+(4, 5, '', '', NULL, '', 0, '2026-02-26 12:51:18'),
+(5, 6, '', '', NULL, '', 0, '2026-05-18 05:59:00');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Freelancer_Rating`
+--
+
+CREATE TABLE `Freelancer_Rating` (
+  `rating_id` int(11) NOT NULL,
+  `freelancer_id` int(11) DEFAULT NULL,
+  `employer_id` int(11) DEFAULT NULL,
+  `score` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Freelancer_Rating`
+--
+
+INSERT INTO `Freelancer_Rating` (`rating_id`, `freelancer_id`, `employer_id`, `score`, `created_at`) VALUES
+(1, 1, 2, 5, '2026-02-25 13:05:37');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Freelancer_Review`
+--
+
+CREATE TABLE `Freelancer_Review` (
+  `review_id` int(11) NOT NULL,
+  `freelancer_id` int(11) DEFAULT NULL,
+  `job_id` int(11) NOT NULL,
+  `employer_id` int(11) DEFAULT NULL,
+  `comment` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `rating` int(11) DEFAULT NULL,
+  `review` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Freelancer_Review`
+--
+
+INSERT INTO `Freelancer_Review` (`review_id`, `freelancer_id`, `job_id`, `employer_id`, `comment`, `created_at`, `rating`, `review`) VALUES
+(2, 1, 0, 2, NULL, '2026-02-25 17:05:14', 5, 'dddddd'),
+(3, 1, 6, 2, 'เก่ง', '2026-05-17 06:45:28', 5, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Job`
+--
+
+CREATE TABLE `Job` (
+  `job_id` int(11) NOT NULL,
+  `employer_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `location` varchar(255) NOT NULL,
+  `salary` decimal(10,2) DEFAULT 0.00,
+  `latitude` double DEFAULT NULL,
+  `longitude` double DEFAULT NULL,
+  `deadline` datetime DEFAULT NULL,
+  `status` enum('open','in_progress','completed','closed') DEFAULT 'open',
+  `admin_status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `category` varchar(100) DEFAULT NULL,
+  `job_subcategory` varchar(120) DEFAULT NULL,
+  `employment_type` varchar(40) DEFAULT NULL,
+  `image_path` varchar(255) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Job`
+--
+
+INSERT INTO `Job` (`job_id`, `employer_id`, `title`, `description`, `location`, `salary`, `latitude`, `longitude`, `deadline`, `status`, `admin_status`, `created_at`, `category`, `image_path`, `updated_at`) VALUES
+(8, 2, 'แก้ไขข้อมูลการรับสมัครงาน', 'เพิ่มปุ่มแก้ไขที่ตัวงาน', '', 2000.00, NULL, NULL, '2026-05-26 00:00:00', 'closed', 'approved', '2026-05-21 05:41:22', 'IT', NULL, '2026-05-21 06:39:14'),
+(9, 2, 'Graphic', 'กินเงินเดือน', '', 20000.00, NULL, NULL, '2026-05-25 00:00:00', 'closed', 'approved', '2026-05-22 05:41:27', 'Design', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Job_Images`
+--
+
+CREATE TABLE `Job_Images` (
+  `image_id` int(11) NOT NULL,
+  `job_id` int(11) NOT NULL,
+  `image_path` varchar(255) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Job_Application`
+--
+
+CREATE TABLE `Job_Application` (
+  `application_id` int(11) NOT NULL,
+  `job_id` int(11) DEFAULT NULL,
+  `freelancer_id` int(11) DEFAULT NULL,
+  `apply_date` timestamp NOT NULL DEFAULT current_timestamp(),
+  `status` varchar(50) DEFAULT 'pending'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Job_Application`
+--
+
+INSERT INTO `Job_Application` (`application_id`, `job_id`, `freelancer_id`, `apply_date`, `status`) VALUES
+(1, 5, 1, '2026-05-17 05:28:17', 'accepted'),
+(2, 5, 4, '2026-05-17 05:46:56', 'rejected'),
+(3, 6, 1, '2026-05-17 06:43:42', 'accepted'),
+(4, 6, 4, '2026-05-17 06:43:58', 'rejected'),
+(5, 7, 1, '2026-05-19 03:53:27', 'pending'),
+(6, 8, 1, '2026-05-21 06:55:45', 'accepted'),
+(7, 9, 1, '2026-05-22 08:55:26', 'accepted');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Like_Employer`
+--
+
+CREATE TABLE `Like_Employer` (
+  `like_id` int(11) NOT NULL,
+  `freelancer_id` int(11) DEFAULT NULL,
+  `employer_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Like_Employer`
+--
+
+INSERT INTO `Like_Employer` (`like_id`, `freelancer_id`, `employer_id`, `created_at`) VALUES
+(1, 1, 2, '2026-02-25 13:11:18');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Resume`
+--
+
+CREATE TABLE `Resume` (
+  `resume_id` int(11) NOT NULL,
+  `freelancer_id` int(11) DEFAULT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `upload_date` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Resume`
+--
+
+INSERT INTO `Resume` (`resume_id`, `freelancer_id`, `file_name`, `upload_date`) VALUES
+(1, 1, '1131w-xkDELtpQH94.webp', '2026-02-25 10:36:50'),
+(3, 1, '1772095318_004 กันตินันท์.pdf', '2026-02-26 08:41:58');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Saved_Freelancers`
+--
+
+CREATE TABLE `Saved_Freelancers` (
+  `id` int(11) NOT NULL,
+  `employer_id` int(11) NOT NULL,
+  `freelancer_id` int(11) NOT NULL,
+  `saved_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Users`
+--
+
+CREATE TABLE `Users` (
+  `user_id` int(11) NOT NULL,
+  `username` varchar(50) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `fullname` varchar(100) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `gender` varchar(20) DEFAULT NULL,
+  `role` enum('admin','employer','freelancer') DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `latitude` double DEFAULT NULL,
+  `longitude` double DEFAULT NULL,
+  `company_details` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Users`
+--
+
+INSERT INTO `Users` (`user_id`, `username`, `email`, `password`, `fullname`, `phone`, `gender`, `role`, `created_at`, `latitude`, `longitude`, `company_details`) VALUES
+(1, 'NonFreelance', 'non@non.com', '1234', 'Non', '1234567890', NULL, 'freelancer', '2026-02-25 10:05:27', 13.7563, 100.5018, NULL),
+(2, 'GuntinanCompany', 'gun@company.com', '1234', 'Guntinan Company', '1234567890', NULL, 'employer', '2026-02-25 10:08:15', NULL, NULL, NULL),
+(3, 'Admin', 'admin@admin.com', '1234', 'tester3', '1234567890', NULL, 'admin', '2026-02-25 10:13:45', NULL, NULL, NULL),
+(4, 'test4', 'test@test4.com', '1234', 'tester4', '1234567890', NULL, 'freelancer', '2026-02-25 13:53:32', NULL, NULL, NULL);
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `Categories`
+--
+ALTER TABLE `Categories`
+  ADD PRIMARY KEY (`category_id`);
+
+--
+-- Indexes for table `Chat_Messages`
+--
+ALTER TABLE `Chat_Messages`
+  ADD PRIMARY KEY (`message_id`);
+
+--
+-- Indexes for table `Employer_Profile`
+--
+ALTER TABLE `Employer_Profile`
+  ADD PRIMARY KEY (`employer_id`);
+
+--
+-- Indexes for table `Employer_Rating`
+--
+ALTER TABLE `Employer_Rating`
+  ADD PRIMARY KEY (`rating_id`);
+
+--
+-- Indexes for table `Employer_Review`
+--
+ALTER TABLE `Employer_Review`
+  ADD PRIMARY KEY (`review_id`),
+  ADD KEY `job_id` (`job_id`);
+
+--
+-- Indexes for table `Freelancer_Profile`
+--
+ALTER TABLE `Freelancer_Profile`
+  ADD PRIMARY KEY (`freelancer_id`);
+
+--
+-- Indexes for table `Freelancer_Rating`
+--
+ALTER TABLE `Freelancer_Rating`
+  ADD PRIMARY KEY (`rating_id`);
+
+--
+-- Indexes for table `Freelancer_Review`
+--
+ALTER TABLE `Freelancer_Review`
+  ADD PRIMARY KEY (`review_id`);
+
+--
+-- Indexes for table `Job`
+--
+ALTER TABLE `Job`
+  ADD PRIMARY KEY (`job_id`),
+  ADD KEY `employer_id` (`employer_id`);
+
+--
+-- Indexes for table `Job_Images`
+--
+ALTER TABLE `Job_Images`
+  ADD PRIMARY KEY (`image_id`),
+  ADD KEY `job_id` (`job_id`);
+
+--
+-- Indexes for table `Job_Application`
+--
+ALTER TABLE `Job_Application`
+  ADD PRIMARY KEY (`application_id`);
+
+--
+-- Indexes for table `Like_Employer`
+--
+ALTER TABLE `Like_Employer`
+  ADD PRIMARY KEY (`like_id`);
+
+--
+-- Indexes for table `Resume`
+--
+ALTER TABLE `Resume`
+  ADD PRIMARY KEY (`resume_id`);
+
+--
+-- Indexes for table `Saved_Freelancers`
+--
+ALTER TABLE `Saved_Freelancers`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_save` (`employer_id`,`freelancer_id`),
+  ADD KEY `freelancer_id` (`freelancer_id`);
+
+--
+-- Indexes for table `Users`
+--
+ALTER TABLE `Users`
+  ADD PRIMARY KEY (`user_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `Categories`
+--
+ALTER TABLE `Categories`
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `Chat_Messages`
+--
+ALTER TABLE `Chat_Messages`
+  MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
+--
+-- AUTO_INCREMENT for table `Employer_Profile`
+--
+ALTER TABLE `Employer_Profile`
+  MODIFY `employer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `Employer_Rating`
+--
+ALTER TABLE `Employer_Rating`
+  MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Employer_Review`
+--
+ALTER TABLE `Employer_Review`
+  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `Freelancer_Profile`
+--
+ALTER TABLE `Freelancer_Profile`
+  MODIFY `freelancer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `Freelancer_Rating`
+--
+ALTER TABLE `Freelancer_Rating`
+  MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `Freelancer_Review`
+--
+ALTER TABLE `Freelancer_Review`
+  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `Job`
+--
+ALTER TABLE `Job`
+  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `Job_Images`
+--
+ALTER TABLE `Job_Images`
+  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Job_Application`
+--
+ALTER TABLE `Job_Application`
+  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT for table `Like_Employer`
+--
+ALTER TABLE `Like_Employer`
+  MODIFY `like_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `Resume`
+--
+ALTER TABLE `Resume`
+  MODIFY `resume_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `Saved_Freelancers`
+--
+ALTER TABLE `Saved_Freelancers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `Users`
+--
+ALTER TABLE `Users`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `Employer_Review`
+--
+ALTER TABLE `Employer_Review`
+  ADD CONSTRAINT `employer_review_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `Job` (`job_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `Job`
+--
+ALTER TABLE `Job`
+  ADD CONSTRAINT `job_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `Job_Images`
+--
+ALTER TABLE `Job_Images`
+  ADD CONSTRAINT `job_images_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `Job` (`job_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `Saved_Freelancers`
+--
+ALTER TABLE `Saved_Freelancers`
+  ADD CONSTRAINT `saved_freelancers_ibfk_1` FOREIGN KEY (`employer_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `saved_freelancers_ibfk_2` FOREIGN KEY (`freelancer_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

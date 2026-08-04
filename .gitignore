@@ -1,0 +1,5 @@
+config.local.php
+database_check.php
+database_repair.php
+uploads/
+_deploy/
