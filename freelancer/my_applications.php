@@ -115,7 +115,7 @@ while($r = mysqli_fetch_assoc($result)) {
   /* ── App card ── */
   .app-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:22px 24px; margin-bottom:12px; display:flex; gap:18px; transition:box-shadow .2s,border-color .2s; }
   .app-card:hover { box-shadow:0 4px 20px rgba(0,0,0,.07); border-color:#c7d2fe; }
-  .app-card.hidden { display:none; }
+  .app-card.hidden { display:none !important; }
 
   .app-icon { width:52px; height:52px; flex-shrink:0; border-radius:12px; background:var(--light); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; overflow:hidden; }
   .app-icon.has-image { background:var(--white); }
@@ -287,7 +287,21 @@ while($r = mysqli_fetch_assoc($result)) {
     $jobBadgeClass = ($job_status === 'completed') ? 'bp-completed' : (($job_status === 'closed') ? 'bp-completed' : 'bp-other');
 
     // data-filter for JS
-    $filterVal = ($app_status === 'accepted' || $app_status === 'approved') ? 'accepted' : $app_status;
+    $filterTags = [];
+    if($app_status === 'pending') {
+      $filterTags[] = 'pending';
+    } elseif($app_status === 'accepted' || $app_status === 'approved') {
+      $filterTags[] = 'accepted';
+    } elseif($app_status === 'rejected') {
+      $filterTags[] = 'rejected';
+    }
+    if($job_status === 'completed' || $app_status === 'completed') {
+      $filterTags[] = 'completed';
+    }
+    if(empty($filterTags) && $app_status !== '') {
+      $filterTags[] = $app_status;
+    }
+    $filterVal = implode(' ', array_unique($filterTags));
   ?>
   <div class="app-card" data-filter="<?php echo htmlspecialchars($filterVal); ?>">
     <div class="app-icon <?php echo $job_image !== '' ? 'has-image' : ''; ?>">
@@ -369,18 +383,25 @@ while($r = mysqli_fetch_assoc($result)) {
   function setFilter(el) {
     document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
-    currentFilter = el.dataset.filter;
+    currentFilter = (el.dataset.filter || '').toLowerCase().trim();
 
     const cards = document.querySelectorAll('.app-card');
     let visible = 0;
     cards.forEach(c => {
-      const match = !currentFilter || c.dataset.filter === currentFilter;
-      c.classList.toggle('hidden', !match);
-      if(match) visible++;
+      const cardFilters = (c.dataset.filter || '').toLowerCase().trim().split(/\s+/);
+      const match = !currentFilter || cardFilters.includes(currentFilter);
+      if (match) {
+        c.style.display = '';
+        c.classList.remove('hidden');
+        visible++;
+      } else {
+        c.style.display = 'none';
+        c.classList.add('hidden');
+      }
     });
 
     const emp = document.getElementById('empty-filter');
-    if(emp) emp.style.display = visible === 0 ? 'block' : 'none';
+    if (emp) emp.style.display = visible === 0 ? 'block' : 'none';
   }
 </script>
 <script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
