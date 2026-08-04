@@ -284,7 +284,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
     padding:16px;
     border:1px solid var(--border);
     border-radius:12px;
-    background:#f8fafc;
+    background:var(--light);
     margin-bottom:18px;
   }
   .profile-image-preview {
@@ -381,7 +381,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
   /* ── Map Modal ── */
   .map-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
   .map-modal.active { display:flex; }
-  .map-container { background:white; border-radius:16px; width:90%; max-width:900px; height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .map-container { background:var(--white); border-radius:16px; width:90%; max-width:900px; height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.3); }
   .map-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
   .map-header h3 { margin:0; font-size:18px; font-weight:600; }
   .map-close { background:none; border:none; font-size:24px; cursor:pointer; color:var(--muted); }
@@ -392,10 +392,10 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
   .btn-map-confirm { background:var(--accent); color:white; }
   .btn-map-confirm:hover { background:#4f46e5; }
   .btn-map-cancel { background:var(--light); color:var(--text); }
-  .btn-map-cancel:hover { background:#e2e8f0; }
-  .map-info { padding:12px 16px; background:#eef2ff; border-radius:8px; font-size:13px; margin-bottom:12px; }
-  .btn-open-map { display:inline-flex; align-items:center; gap:6px; background:#eef2ff; color:var(--accent); border:1px solid #c7d2fe; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; }
-  .btn-open-map:hover { background:#c7d2fe; color:var(--accent); }
+  .btn-map-cancel:hover { background:var(--border); }
+  .map-info { padding:12px 16px; background:var(--light); color:var(--text); border-radius:8px; font-size:13px; margin-bottom:12px; }
+  .btn-open-map { display:inline-flex; align-items:center; gap:6px; background:var(--light); color:var(--accent); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; }
+  .btn-open-map:hover { background:var(--border); color:var(--accent); }
   .coord-display { font-size:12px; color:var(--muted); margin-top:6px; }
   .radius-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
   .radius-row span { font-size:12px; color:var(--muted); }
@@ -407,7 +407,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
     padding:14px 16px;
     border:1px solid var(--border);
     border-radius:12px;
-    background:#f8fafc;
+    background:var(--light);
     box-shadow:0 8px 18px rgba(15,23,42,.05);
   }
   .map-radius-control .radius-slider { height:28px; cursor:pointer; }
@@ -424,7 +424,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
     .map-container { width:100%; height:100%; max-width:none; border-radius:0; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v4">
 
 </head>
 <body>
@@ -874,6 +874,6 @@ document.getElementById('mapModal').addEventListener('click', function(e) {
 
 updateRadiusLabel(selectedRadiusKm);
 </script>
-<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v4"></script>
 </body>
 </html>

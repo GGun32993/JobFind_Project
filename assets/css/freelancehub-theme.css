@@ -24,6 +24,22 @@
   --focus-ring: 0 0 0 4px rgba(91, 95, 244, .16);
 }
 
+html[data-theme="dark"] {
+  --navy: #070d17 !important;
+  --navy2: #0b1220 !important;
+  --navy3: #1e293b !important;
+  --accent: #6366f1 !important;
+  --accent2: #818cf8 !important;
+  --blue: #38bdf8 !important;
+  --green: #34d399 !important;
+  --yellow: #fbbf24 !important;
+  --light: #0f172a !important;
+  --white: #1e293b !important;
+  --text: #f8fafc !important;
+  --muted: #94a3b8 !important;
+  --border: #334155 !important;
+}
+
 *,
 *::before,
 *::after {

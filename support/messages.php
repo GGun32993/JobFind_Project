@@ -244,7 +244,7 @@ $dashboard = $role === "employer" ? "../employer/dashboard.php" : "../freelancer
     .bubble  { max-width:80%; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v4">
 
 </head>
 <body>
@@ -392,6 +392,6 @@ $dashboard = $role === "employer" ? "../employer/dashboard.php" : "../freelancer
     }
   });
 </script>
-<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v4"></script>
 </body>
 </html>

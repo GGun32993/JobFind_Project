@@ -175,7 +175,7 @@ if($data){
   }
   .drop-zone:hover, .drop-zone.drag-over {
     border-color:var(--accent);
-    background:#f5f3ff;
+    background:var(--light);
   }
   .drop-zone input[type="file"] {
     position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
@@ -258,7 +258,7 @@ if($data){
     .main { margin-left:0; padding:20px 16px; display:block; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v4">
 
 </head>
 <body>
@@ -396,6 +396,6 @@ if($data){
     showFileName(fi);
   });
 </script>
-<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v4"></script>
 </body>
 </html>

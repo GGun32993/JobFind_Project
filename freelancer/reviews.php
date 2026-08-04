@@ -179,7 +179,7 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
     .avg-block { width:100%; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v4">
 
 </head>
 <body>
@@ -368,6 +368,6 @@ $avg = $total > 0 ? round($sum_rating / $total, 1) : 0;
     document.getElementById('empty-filter').style.display = visible === 0 ? 'block' : 'none';
   }
 </script>
-<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v4"></script>
 </body>
 </html>
