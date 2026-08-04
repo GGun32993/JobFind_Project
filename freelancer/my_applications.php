@@ -23,26 +23,28 @@ $result = mysqli_query($conn,"
     ORDER BY Job_Application.application_id DESC
 ");
 
-$total      = mysqli_num_rows($result);
+$total      = ($result && $result !== true) ? mysqli_num_rows($result) : 0;
 $pending    = 0; $accepted = 0; $rejected = 0; $completed = 0;
 
 // pre-fetch all rows to count stats
 $rows = [];
-while($r = mysqli_fetch_assoc($result)) {
-    $rows[] = $r;
-    $s  = strtolower(trim($r['status'] ?? ''));
-    $js = strtolower(trim($r['job_status'] ?? ''));
+if ($result && $result !== true) {
+    while($r = mysqli_fetch_assoc($result)) {
+        $rows[] = $r;
+        $s  = strtolower(trim($r['status'] ?? ''));
+        $js = strtolower(trim($r['job_status'] ?? ''));
 
-    if (in_array($s, ['pending', 'wait', 'waiting'])) {
-        $pending++;
-    } elseif (in_array($s, ['accepted', 'approved', 'hired'])) {
-        $accepted++;
-    } elseif (in_array($s, ['rejected', 'declined'])) {
-        $rejected++;
-    }
+        if (in_array($s, ['pending', 'wait', 'waiting'])) {
+            $pending++;
+        } elseif (in_array($s, ['accepted', 'approved', 'hired'])) {
+            $accepted++;
+        } elseif (in_array($s, ['rejected', 'declined'])) {
+            $rejected++;
+        }
 
-    if (in_array($js, ['completed', 'closed', 'done']) || in_array($s, ['completed', 'done'])) {
-        $completed++;
+        if (in_array($js, ['completed', 'closed', 'done']) || in_array($s, ['completed', 'done'])) {
+            $completed++;
+        }
     }
 }
 ?>
@@ -215,11 +217,6 @@ while($r = mysqli_fetch_assoc($result)) {
 
 <!-- ── Main ─ -->
 <main class="main">
-
-  <!-- ✅ ปุ่มย้อนกลับ -->
-  <a href="job_review.php" class="btn-back" style="display:inline-flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:500;text-decoration:none;margin-bottom:16px;transition:background .15s;">
-    <i class="bi bi-arrow-left"></i> กลับไปรีวิวงาน
-  </a>
 
   <div class="topbar">
     <div>
