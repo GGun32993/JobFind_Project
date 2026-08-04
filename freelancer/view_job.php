@@ -117,6 +117,7 @@ $employer_js_data = [
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
     <meta charset="UTF-8">
+    <script src="../assets/js/theme-init.js?v=20260804-v2"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($job['title']); ?> - Freelance Matching Online</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -1122,10 +1123,14 @@ $employer_js_data = [
 <!-- Main Content -->
 <main class="main">
     <div class="content-container">
-        <div class="page-header">
+        <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
             <a href="<?php echo htmlspecialchars($back_url, ENT_QUOTES, 'UTF-8'); ?>" class="btn-back">
                 <i class="bi bi-arrow-left"></i> <?php echo htmlspecialchars($back_label, ENT_QUOTES, 'UTF-8'); ?>
             </a>
+            <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+                <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+                <span class="theme-toggle-text">โหมดมืด</span>
+            </button>
         </div>
 
         <div class="job-detail">
@@ -1428,6 +1433,7 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeEmployerModal();
 });
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 
 </body>
 </html>

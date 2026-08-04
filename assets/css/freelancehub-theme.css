@@ -1816,3 +1816,105 @@ html[data-theme="dark"] .empty-state {
   color: #94a3b8 !important;
 }
 
+/* ── Dark Mode: View Job page specifics ─────────────────────── */
+html[data-theme="dark"] .job-detail {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .job-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .meta-item {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .meta-item strong {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .job-status {
+  background: #111c31 !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .salary-highlight {
+  background: linear-gradient(135deg, rgba(99, 102, 241, .15) 0%, rgba(139, 92, 246, .15) 100%) !important;
+  border-color: #334155 !important;
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .section-title {
+  color: #f8fafc !important;
+  border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .section-content {
+  background: #111c31 !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .info-card {
+  background: #111c31 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .info-card:hover {
+  background: #172439 !important;
+  border-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .info-value {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-back {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-back:hover {
+  background: #111c31 !important;
+  border-color: #6366f1 !important;
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .modal-box {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .modal-info-box,
+html[data-theme="dark"] .review-card {
+  background: #111c31 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .review-card:hover {
+  background: #172439 !important;
+}
+
+html[data-theme="dark"] .reviewer-name,
+html[data-theme="dark"] .review-comment,
+html[data-theme="dark"] .modal-info-box .val {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .modal-info-box .lbl,
+html[data-theme="dark"] .review-date {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .job-image-section,
+html[data-theme="dark"] .job-image-gallery img {
+  background: #111c31 !important;
+  border-color: #334155 !important;
+}
+
