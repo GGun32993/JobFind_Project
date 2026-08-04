@@ -391,17 +391,23 @@ while($r = mysqli_fetch_assoc($result)) {
       const cardFilters = (c.dataset.filter || '').toLowerCase().trim().split(/\s+/);
       const match = !currentFilter || cardFilters.includes(currentFilter);
       if (match) {
-        c.style.display = '';
+        c.style.setProperty('display', 'flex', 'important');
         c.classList.remove('hidden');
         visible++;
       } else {
-        c.style.display = 'none';
+        c.style.setProperty('display', 'none', 'important');
         c.classList.add('hidden');
       }
     });
 
     const emp = document.getElementById('empty-filter');
-    if (emp) emp.style.display = visible === 0 ? 'block' : 'none';
+    if (emp) {
+      if (visible === 0) {
+        emp.style.setProperty('display', 'block', 'important');
+      } else {
+        emp.style.setProperty('display', 'none', 'important');
+      }
+    }
   }
 </script>
 <script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
