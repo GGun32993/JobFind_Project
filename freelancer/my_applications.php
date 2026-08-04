@@ -30,11 +30,20 @@ $pending    = 0; $accepted = 0; $rejected = 0; $completed = 0;
 $rows = [];
 while($r = mysqli_fetch_assoc($result)) {
     $rows[] = $r;
-    $s = strtolower($r['status']);
-    if($s === 'pending')   $pending++;
-    elseif($s === 'accepted' || $s === 'approved') $accepted++;
-    elseif($s === 'rejected') $rejected++;
-    if(strtolower($r['job_status']) === 'completed') $completed++;
+    $s  = strtolower(trim($r['status'] ?? ''));
+    $js = strtolower(trim($r['job_status'] ?? ''));
+
+    if (in_array($s, ['pending', 'wait', 'waiting'])) {
+        $pending++;
+    } elseif (in_array($s, ['accepted', 'approved', 'hired'])) {
+        $accepted++;
+    } elseif (in_array($s, ['rejected', 'declined'])) {
+        $rejected++;
+    }
+
+    if (in_array($js, ['completed', 'closed', 'done']) || in_array($s, ['completed', 'done'])) {
+        $completed++;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -98,7 +107,9 @@ while($r = mysqli_fetch_assoc($result)) {
 
   /* ── Stat cards ── */
   .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
-  .stat-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; }
+  .stat-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; cursor:pointer; transition:transform .15s, border-color .15s, box-shadow .15s; }
+  .stat-card:hover { transform:translateY(-2px); border-color:var(--accent); box-shadow:0 4px 14px rgba(99,102,241,.15); }
+  .stat-card.active-stat { border-color:var(--accent) !important; box-shadow:0 0 0 2px var(--accent) !important; }
   .stat-card .label { font-size:12px; color:var(--muted); margin-bottom:6px; }
   .stat-card .value { font-size:26px; font-weight:600; line-height:1; }
   .stat-card.s-total  .value { color:var(--accent); }
@@ -223,19 +234,19 @@ while($r = mysqli_fetch_assoc($result)) {
 
   <!-- Stat cards -->
   <div class="stat-grid">
-    <div class="stat-card s-total">
+    <div class="stat-card s-total active-stat" onclick="filterByTag('')">
       <div class="label"><i class="bi bi-collection"></i> ทั้งหมด</div>
       <div class="value"><?php echo $total; ?></div>
     </div>
-    <div class="stat-card s-pend">
+    <div class="stat-card s-pend" onclick="filterByTag('pending')">
       <div class="label"><i class="bi bi-hourglass-split"></i> รอพิจารณา</div>
       <div class="value"><?php echo $pending; ?></div>
     </div>
-    <div class="stat-card s-ok">
+    <div class="stat-card s-ok" onclick="filterByTag('accepted')">
       <div class="label"><i class="bi bi-check-circle"></i> ผ่านการคัดเลือก</div>
       <div class="value"><?php echo $accepted; ?></div>
     </div>
-    <div class="stat-card s-done">
+    <div class="stat-card s-done" onclick="filterByTag('completed')">
       <div class="label"><i class="bi bi-flag"></i> งานเสร็จสิ้น</div>
       <div class="value"><?php echo $completed; ?></div>
     </div>
@@ -380,10 +391,29 @@ while($r = mysqli_fetch_assoc($result)) {
 <script>
   let currentFilter = '';
 
+  function filterByTag(tag) {
+    const btn = document.querySelector(`.ftab[data-filter="${tag}"]`);
+    if (btn) {
+      setFilter(btn);
+    }
+  }
+
   function setFilter(el) {
     document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.stat-card').forEach(s => s.classList.remove('active-stat'));
+
     el.classList.add('active');
     currentFilter = (el.dataset.filter || '').toLowerCase().trim();
+
+    if (currentFilter === '') {
+      document.querySelector('.stat-card.s-total')?.classList.add('active-stat');
+    } else if (currentFilter === 'pending') {
+      document.querySelector('.stat-card.s-pend')?.classList.add('active-stat');
+    } else if (currentFilter === 'accepted') {
+      document.querySelector('.stat-card.s-ok')?.classList.add('active-stat');
+    } else if (currentFilter === 'completed') {
+      document.querySelector('.stat-card.s-done')?.classList.add('active-stat');
+    }
 
     const cards = document.querySelectorAll('.app-card');
     let visible = 0;
