@@ -38,6 +38,7 @@ $result = mysqli_query($conn, $query);
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Browse Jobs</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -370,6 +371,10 @@ $result = mysqli_query($conn, $query);
       <h2>Browse Jobs</h2>
       <p>ค้นหางานที่ใช่สำหรับคุณ</p>
     </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <!-- Search -->
@@ -736,5 +741,6 @@ $result = mysqli_query($conn, $query);
     emptyEl.style.display = visible === 0 ? 'block' : 'none';
   }
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>

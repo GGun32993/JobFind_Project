@@ -1745,3 +1745,74 @@ html[data-theme="dark"] .right-panel {
   background: #1e293b !important;
 }
 
+/* ── Dark Mode: Browse Jobs page specifics ──────────────────── */
+html[data-theme="dark"] .search-wrap {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .search-wrap i {
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .search-wrap input {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .search-wrap input::placeholder {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .filter-select-wrap select {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .filter-select-wrap select option {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .select-icon {
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .salary-pill {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .salary-pill:hover {
+  border-color: #6366f1 !important;
+  color: #818cf8 !important;
+}
+
+html[data-theme="dark"] .salary-pill.active {
+  background: #6366f1 !important;
+  border-color: #6366f1 !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .salary-input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-salary-clear {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .salary-badge {
+  background: rgba(16, 185, 129, .15) !important;
+  color: #34d399 !important;
+}
+
+html[data-theme="dark"] .empty-state {
+  color: #94a3b8 !important;
+}
+
