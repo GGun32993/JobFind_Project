@@ -104,11 +104,11 @@ if(isset($_POST['login'])){
 <head>
 <link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
-<script src="assets/js/theme-init.js"></script>
+<script src="assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - Freelance Matching Online</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css?v=20260804-v2">
 <style>
   *,
   *::before,
@@ -832,6 +832,6 @@ if(isset($_POST['login'])){
     });
   }
 </script>
-<script src="assets/js/theme-toggle.js"></script>
+<script src="assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>

@@ -35,7 +35,7 @@ $recent_users = admin_dashboard_recent_users($conn);
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
-<script src="../assets/js/theme-init.js"></script>
+<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -144,7 +144,7 @@ $recent_users = admin_dashboard_recent_users($conn);
   @media(max-width:1100px){ .stat-grid { grid-template-columns:repeat(2,1fr); } .quick-grid { grid-template-columns:repeat(2,1fr); } }
   @media(max-width:768px) { .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col { grid-template-columns:1fr; } }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 </head>
 <body>
@@ -354,6 +354,6 @@ $recent_users = admin_dashboard_recent_users($conn);
   </div>
 
 </main>
-<script src="../assets/js/theme-toggle.js"></script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>

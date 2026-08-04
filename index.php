@@ -495,13 +495,13 @@ $pinStatusText = $hasLocationPin
 <head>
 <link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
-<script src="assets/js/theme-init.js"></script>
+<script src="assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Freelance Matching Online แพลตฟอร์มหางานฟรีแลนซ์และจ้างงานแบบเป็นระบบ">
 <title>Freelance Matching Online - หางานฟรีแลนซ์และจ้างงาน</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.min.css">
-<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css?v=20260804-v2">
 <?php /* Legacy inline landing stylesheet intentionally disabled; assets/css/index-modern.css owns this page. ?>
 <style>
   :root {
@@ -1635,7 +1635,7 @@ $pinStatusText = $hasLocationPin
   }
 </style>
 <?php */ ?>
-<link rel="stylesheet" href="assets/css/index-modern.css?v=20260608-layout2">
+<link rel="stylesheet" href="assets/css/index-modern.css?v=20260804-v2">
 </head>
 <body>
 <div class="shell">
@@ -2090,6 +2090,6 @@ document.getElementById('indexMapModal').addEventListener('click', function(even
 
 updateIndexRadius(indexSelectedRadiusKm);
 </script>
-<script src="assets/js/theme-toggle.js"></script>
+<script src="assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>

@@ -313,7 +313,7 @@ $stmt2->close();
 
   @media(max-width:768px){.sidebar{display:none;}.main{margin-left:0;padding:20px 16px;}.info-grid{grid-template-columns:1fr;}.review-summary{grid-template-columns:1fr;}.modal-actions{grid-template-columns:1fr;}}
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 </head>
 <body>

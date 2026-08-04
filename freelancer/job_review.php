@@ -163,7 +163,7 @@ if(isset($_POST['submit']) && !$already){
     .btn-company-review { width:100%; justify-content:center; margin-top:14px; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 </head>
 <body>

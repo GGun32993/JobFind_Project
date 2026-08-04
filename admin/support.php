@@ -257,7 +257,7 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
     .user-panel { width:200px; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 </head>
 <body>

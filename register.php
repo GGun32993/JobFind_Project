@@ -127,13 +127,13 @@ $selected_birth_parts = [
 <head>
 <link rel="icon" type="image/png" href="assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
-<script src="assets/js/theme-init.js"></script>
+<script src="assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register — Freelance Matching Online</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.min.css" />
-<link rel="stylesheet" href="assets/css/freelancehub-theme.css" />
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css?v=20260804-v2" />
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
 
@@ -361,7 +361,7 @@ $selected_birth_parts = [
     .map-container { width:100%; height:100%; max-height:none; border-radius:0; }
   }
 </style>
-<link rel="stylesheet" href="assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="assets/css/freelancehub-theme.css?v=20260804-v2">
 <style>
   .register-wrap > .left-panel {
     background:var(--navy) !important;
@@ -890,6 +890,6 @@ $selected_birth_parts = [
     currentDistrict: <?php echo json_encode($_POST['district'] ?? '', JSON_UNESCAPED_UNICODE); ?>
   });
 </script>
-<script src="assets/js/theme-toggle.js"></script>
+<script src="assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>

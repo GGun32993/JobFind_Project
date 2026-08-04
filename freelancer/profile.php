@@ -423,7 +423,7 @@ $initials = profile_initials($user_data['fullname'] ?: $username);
     .map-container { width:100%; height:100%; max-width:none; border-radius:0; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 </head>
 <body>

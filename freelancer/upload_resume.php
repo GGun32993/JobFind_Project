@@ -257,7 +257,7 @@ if($data){
     .main { margin-left:0; padding:20px 16px; display:block; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 </head>
 <body>

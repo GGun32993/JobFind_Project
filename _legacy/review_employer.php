@@ -52,7 +52,7 @@ box-shadow:0px 0px 10px rgba(0,0,0,0.1);
 }
 
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 
 </head>

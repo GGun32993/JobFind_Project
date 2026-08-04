@@ -265,7 +265,7 @@ unset($saved_freelancer);
     .empty-visual{width:190px;}
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 </head>
 <body>

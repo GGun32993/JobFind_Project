@@ -116,7 +116,7 @@ if(isset($_GET['reject'])){
   @media(max-width:900px){ .detail-grid { grid-template-columns:1fr; } }
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
 
 </head>
 <body>
