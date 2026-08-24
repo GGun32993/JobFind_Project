@@ -1476,15 +1476,21 @@ $pinStatusText = $hasLocationPin
 
   .job-chip {
     flex: 0 0 auto;
-    height: 28px;
     display: inline-flex;
     align-items: center;
-    padding: 0 10px;
-    border-radius: 999px;
-    background: #eef2ff;
-    color: var(--accent);
-    font-size: 11px;
-    font-weight: 900;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .company-name {
@@ -1872,7 +1878,7 @@ $pinStatusText = $hasLocationPin
                   <h3 class="job-title"><?php echo e($job['title']); ?></h3>
                   <p class="company-name"><?php echo e($job['company']); ?></p>
                 </div>
-                <span class="job-chip"><?php echo e($job['category'] ?: 'ทั่วไป'); ?></span>
+                <span class="job-chip"><i class="bi bi-tag-fill"></i> <?php echo e($job['category'] ?: 'ทั่วไป'); ?></span>
               </div>
               <p class="job-desc"><?php echo e($job['description'] ?: 'ไม่มีรายละเอียดเพิ่มเติม'); ?></p>
               <div class="job-meta">
