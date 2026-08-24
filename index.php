@@ -1479,19 +1479,25 @@ $pinStatusText = $hasLocationPin
     display: inline-flex !important;
     align-items: center !important;
     gap: 6px !important;
-    padding: 5px 12px !important;
-    border-radius: 20px !important;
-    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
     color: #ffffff !important;
-    font-size: 11.5px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     letter-spacing: 0.2px !important;
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25) !important;
-    max-width: 160px !important;
+    box-shadow: none !important;
+    border: none !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .job-chip i {
+    font-size: 11px !important;
+    color: #ffffff !important;
+    opacity: 0.9 !important;
   }
 
   .company-name {
