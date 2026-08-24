@@ -1476,21 +1476,22 @@ $pinStatusText = $hasLocationPin
 
   .job-chip {
     flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    color: #ffffff;
-    font-size: 11.5px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
-    max-width: 160px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 5px 12px !important;
+    border-radius: 20px !important;
+    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+    color: #ffffff !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2px !important;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25) !important;
+    max-width: 160px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
   }
 
   .company-name {
@@ -1641,7 +1642,7 @@ $pinStatusText = $hasLocationPin
   }
 </style>
 <?php */ ?>
-<link rel="stylesheet" href="assets/css/index-modern.css?v=20260804-v3">
+<link rel="stylesheet" href="assets/css/index-modern.css?v=<?php echo time(); ?>">
 </head>
 <body>
 <div class="shell">
