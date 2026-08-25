@@ -3470,15 +3470,16 @@ html[data-theme="dark"] .list-head h4 {
 }
 
 html[data-theme="dark"] .cat-item {
+  background: transparent !important;
   border-bottom-color: #334155 !important;
 }
 
 html[data-theme="dark"] .cat-item:hover {
-  background: rgba(99, 102, 241, .06) !important;
+  background: #22324e !important;
 }
 
 html[data-theme="dark"] .cat-item.editing {
-  background: rgba(99, 102, 241, .15) !important;
+  background: rgba(99, 102, 241, .2) !important;
 }
 
 html[data-theme="dark"] .cat-icon-box {
@@ -3490,8 +3491,26 @@ html[data-theme="dark"] .cat-name {
   color: #f8fafc !important;
 }
 
+html[data-theme="dark"] .cat-item:hover .cat-name {
+  color: #ffffff !important;
+}
+
 html[data-theme="dark"] .cat-date {
   color: #64748b !important;
+}
+
+html[data-theme="dark"] .cat-item:hover .cat-date {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .ab-edit {
+  background: rgba(245, 158, 11, .18) !important;
+  color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .ab-delete {
+  background: rgba(239, 68, 68, .18) !important;
+  color: #fca5a5 !important;
 }
 
 html[data-theme="dark"] .emoji-btn {
@@ -3508,7 +3527,12 @@ html[data-theme="dark"] .emoji-btn.selected {
 html[data-theme="dark"] .subcat-chip {
   background: #0f172a !important;
   border-color: #334155 !important;
-  color: #94a3b8 !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .subcat-chip:hover {
+  border-color: #6366f1 !important;
+  color: #f8fafc !important;
 }
 
 html[data-theme="dark"] .subcat-chip.editing {

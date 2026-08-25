@@ -202,12 +202,11 @@ if(isset($_GET['edit_subcategory'])){
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
-<script src="../assets/js/theme-init.js?v=20260825-v1"></script>
+<script src="../assets/js/theme-init.js?v=20260825-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manage Categories</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
 
@@ -329,7 +328,7 @@ if(isset($_GET['edit_subcategory'])){
   @media(max-width:900px){ .layout { grid-template-columns:1fr; } .form-card { position:static; } }
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v2">
 
 </head>
 <body>
@@ -620,6 +619,6 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
     if(e.target===this) closeModal();
   });
 </script>
-<script src="../assets/js/theme-toggle.js?v=20260825-v1"></script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v2"></script>
 </body>
 </html>
