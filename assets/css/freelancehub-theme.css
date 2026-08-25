@@ -2668,3 +2668,92 @@ html[data-theme="dark"] .profile-review-empty {
   color: #94a3b8 !important;
 }
 
+/* ── Dark Mode: Post Job & Edit Job ────────────────────────── */
+html[data-theme="dark"] .file-upload {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .file-upload:hover {
+  background: rgba(99, 102, 241, .12) !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .3) !important;
+}
+
+html[data-theme="dark"] .upload-icon {
+  background: rgba(99, 102, 241, .15) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .upload-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .upload-hint {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .upload-preview {
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .btn-open-map {
+  background: rgba(99, 102, 241, .15) !important;
+  border-color: rgba(99, 102, 241, .3) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .btn-open-map:hover {
+  background: rgba(99, 102, 241, .25) !important;
+}
+
+html[data-theme="dark"] .coord-display {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .info-box {
+  background: rgba(99, 102, 241, .15) !important;
+  border-color: rgba(99, 102, 241, .3) !important;
+}
+
+html[data-theme="dark"] .info-box i {
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .info-box p {
+  color: #c7d2fe !important;
+}
+
+html[data-theme="dark"] .map-container {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .5) !important;
+}
+
+html[data-theme="dark"] .map-header {
+  border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .map-header h3 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .map-close {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .map-footer {
+  border-top-color: #334155 !important;
+}
+
+html[data-theme="dark"] .btn-map-cancel {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+
+html[data-theme="dark"] .map-info {
+  background: rgba(99, 102, 241, .15) !important;
+  color: #c7d2fe !important;
+}
+
