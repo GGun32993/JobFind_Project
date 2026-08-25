@@ -187,10 +187,12 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260825-v1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Edit Job - Freelance Matching Online</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -272,7 +274,7 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
   
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; display:block; } }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 
 </head>
 <body>
@@ -317,14 +319,20 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
 <main class="main">
 <div class="content-wrap">
 
-  <div class="topbar-wrap">
-    <a href="manage_jobs.php" class="btn-back">
-      <i class="bi bi-arrow-left"></i> กลับ
-    </a>
-    <div>
-      <h2>Edit Job</h2>
-      <p>แก้ไขตำแหน่งงาน "<?php echo htmlspecialchars($job['title']); ?>"</p>
+  <div class="topbar-wrap" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <a href="manage_jobs.php" class="btn-back">
+        <i class="bi bi-arrow-left"></i> กลับ
+      </a>
+      <div>
+        <h2>Edit Job</h2>
+        <p>แก้ไขตำแหน่งงาน "<?php echo htmlspecialchars($job['title']); ?>"</p>
+      </div>
     </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <div class="job-badge badge-<?php echo $job['admin_status']; ?>">
@@ -542,5 +550,6 @@ $selected_employment_type = jobfind_normalize_employment_type($job['employment_t
     }
   }
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v1"></script>
 </body>
 </html>

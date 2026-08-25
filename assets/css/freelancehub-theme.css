@@ -2895,3 +2895,45 @@ html[data-theme="dark"] .btn-cancel:hover {
   background: #334155 !important;
 }
 
+/* ── Dark Mode: Edit Job ───────────────────────────────────── */
+html[data-theme="dark"] .image-editor {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .existing-image-card,
+html[data-theme="dark"] .new-image-preview-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .image-editor .file-upload {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .image-editor .file-upload:hover {
+  background: rgba(99, 102, 241, .12) !important;
+  border-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .image-hint {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .job-badge.badge-approved {
+  background: rgba(16, 185, 129, .15) !important;
+  color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] .job-badge.badge-rejected {
+  background: rgba(239, 68, 68, .15) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .job-badge.badge-pending {
+  background: rgba(245, 158, 11, .15) !important;
+  color: #fcd34d !important;
+}
+
