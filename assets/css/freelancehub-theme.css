@@ -2314,3 +2314,97 @@ html[data-theme="dark"] .date-divider span {
   color: #94a3b8 !important;
 }
 
+/* ── Dark Mode: Job Review page ────────────────────────────── */
+html[data-theme="dark"] .company-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .co-name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .co-job {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .co-avatar {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .reviewed-box {
+  background: rgba(16, 185, 129, .15) !important;
+  border-color: rgba(16, 185, 129, .3) !important;
+  color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] .alert-err {
+  background: rgba(239, 68, 68, .15) !important;
+  border-color: rgba(239, 68, 68, .3) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .btn-back {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-back:hover {
+  background: #334155 !important;
+}
+
+html[data-theme="dark"] .btn-company-review {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .btn-company-review:hover {
+  background: rgba(99, 102, 241, .15) !important;
+  border-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .star-rating label {
+  color: #475569 !important;
+}
+
+html[data-theme="dark"] .star-rating label:hover,
+html[data-theme="dark"] .star-rating label:hover ~ label,
+html[data-theme="dark"] .star-rating input:checked ~ label {
+  color: #f59e0b !important;
+}
+
+html[data-theme="dark"] .star-desc {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .section-title {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .section-title::after {
+  background: #334155 !important;
+}
+
+html[data-theme="dark"] .char-count {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .form-input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .form-input::placeholder {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .form-input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .2) !important;
+}
+
