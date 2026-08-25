@@ -130,7 +130,7 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
-<script src="../assets/js/theme-init.js?v=20260825-v2"></script>
+<script src="../assets/js/theme-init.js?v=20260825-v3"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Support Chat</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -276,7 +276,7 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
     .user-panel { width:200px; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v3">
 
 </head>
 <body>
@@ -476,6 +476,6 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
     });
   }
 </script>
-<script src="../assets/js/theme-toggle.js?v=20260825-v2"></script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v3"></script>
 </body>
 </html>
