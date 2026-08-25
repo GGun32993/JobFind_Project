@@ -3084,3 +3084,103 @@ html[data-theme="dark"] .btn-hired-done {
   color: #94a3b8 !important;
 }
 
+/* ── Dark Mode: Saved Freelancers ──────────────────────────── */
+html[data-theme="dark"] .freelancer-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .28) !important;
+}
+
+html[data-theme="dark"] .freelancer-card:hover {
+  border-color: #6366f1 !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .35) !important;
+}
+
+html[data-theme="dark"] .name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .fullname {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .unsave-btn {
+  background: rgba(239, 68, 68, .15) !important;
+  border-color: rgba(239, 68, 68, .3) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .unsave-btn:hover {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .meta-box {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .meta-label {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .meta-value {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .detail {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .detail strong {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .review-btn {
+  background: rgba(245, 158, 11, .15) !important;
+  border-color: rgba(245, 158, 11, .3) !important;
+  color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .review-btn:hover {
+  background: rgba(245, 158, 11, .25) !important;
+}
+
+html[data-theme="dark"] .resume-link {
+  background: rgba(14, 165, 233, .18) !important;
+  color: #7dd3fc !important;
+}
+
+html[data-theme="dark"] .resume-link:hover {
+  background: rgba(14, 165, 233, .28) !important;
+  color: #bae6fd !important;
+}
+
+html[data-theme="dark"] .saved-date {
+  border-top-color: #334155 !important;
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .review-modal {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .5) !important;
+}
+
+html[data-theme="dark"] .review-modal-head {
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] .btn-secondary {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-secondary:hover {
+  border-color: #6366f1 !important;
+  color: #a5b4fc !important;
+}
+
