@@ -3194,3 +3194,36 @@ html[data-theme="dark"] .btn-secondary:hover {
   color: #a5b4fc !important;
 }
 
+/* ── Dark Mode: Employer Profile (Public & Edit View) ──────── */
+html[data-theme="dark"] .company-status {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .desc-box {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .review-card {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-left-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .rev-name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .rev-job {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rev-comment {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .empty-rev {
+  color: #94a3b8 !important;
+}
+

@@ -181,11 +181,13 @@ if($is_public){
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260825-v1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?php echo $is_public ? 'โปรไฟล์บริษัท' : 'แก้ไขโปรไฟล์'; ?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.min.css" />
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -349,7 +351,7 @@ if($is_public){
     background: #eef2ff;
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 
 </head>
 <body>
@@ -407,9 +409,15 @@ if($is_public){
     <a href="<?php echo htmlspecialchars($return_url ?: 'javascript:history.back()', ENT_QUOTES, 'UTF-8'); ?>" class="btn-back"><i class="bi bi-arrow-left"></i> กลับ</a>
   <?php endif; ?>
 
-  <div class="topbar">
-    <h2><?php echo $is_public ? 'โปรไฟล์บริษัท' : 'แก้ไขโปรไฟล์'; ?></h2>
-    <p><?php echo $is_public ? 'ข้อมูลบริษัทและประวัติรีวิว' : 'จัดการข้อมูลบริษัทและช่องทางติดต่อ'; ?></p>
+  <div class="topbar" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+    <div>
+      <h2><?php echo $is_public ? 'โปรไฟล์บริษัท' : 'แก้ไขโปรไฟล์'; ?></h2>
+      <p><?php echo $is_public ? 'ข้อมูลบริษัทและประวัติรีวิว' : 'จัดการข้อมูลบริษัทและช่องทางติดต่อ'; ?></p>
+    </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <div class="profile-banner">
@@ -725,5 +733,6 @@ if (employerMapModal) {
   });
 }
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v1"></script>
 </body>
 </html>
