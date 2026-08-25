@@ -3256,3 +3256,42 @@ html[data-theme="dark"] .star-desc {
   color: #94a3b8 !important;
 }
 
+/* ── Dark Mode: Employer Reviews ───────────────────────────── */
+html[data-theme="dark"] .avg-block .big-num {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .dist-bar-wrap {
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] .tip-block {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+
+html[data-theme="dark"] .tip-block .tip-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .tip-block .tip-text {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .ftab {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .ftab:hover {
+  border-color: #a5b4fc !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .ftab.active {
+  background: #6366f1 !important;
+  border-color: #6366f1 !important;
+  color: #fff !important;
+}
+

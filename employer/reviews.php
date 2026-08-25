@@ -47,10 +47,12 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260825-v1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Reviews</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
 
@@ -150,7 +152,7 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
 
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .summary-card { flex-direction:column; gap:20px; } }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 
 </head>
 <body>
@@ -185,9 +187,15 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
 <!-- ── Main ── -->
 <main class="main">
 
-  <div class="topbar">
-    <h2>รีวิวงาน</h2>
-    <p>รีวิวงานที่ได้รับจาก Freelancer</p>
+  <div class="topbar" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+    <div>
+      <h2>รีวิวงาน</h2>
+      <p>รีวิวงานที่ได้รับจาก Freelancer</p>
+    </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <?php if($total > 0): ?>
@@ -330,5 +338,6 @@ $avg = $total > 0 ? round($sum / $total, 1) : 0;
     if(ef) ef.style.display = visible === 0 ? 'block' : 'none';
   }
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v1"></script>
 </body>
 </html>
