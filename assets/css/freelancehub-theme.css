@@ -3227,3 +3227,32 @@ html[data-theme="dark"] .empty-rev {
   color: #94a3b8 !important;
 }
 
+/* ── Dark Mode: Rate Freelancer ────────────────────────────── */
+html[data-theme="dark"] .fl-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .fl-name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .fl-job {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .fl-avatar {
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .reviewed-box {
+  background: rgba(16, 185, 129, .15) !important;
+  border-color: rgba(16, 185, 129, .3) !important;
+  color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] .star-desc {
+  color: #94a3b8 !important;
+}
+
