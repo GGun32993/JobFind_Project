@@ -3085,6 +3085,16 @@ html[data-theme="dark"] .btn-hired-done {
 }
 
 /* ── Dark Mode: Saved Freelancers ──────────────────────────── */
+html[data-theme="dark"] .count-pill {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .count-pill i {
+  color: #a5b4fc !important;
+}
+
 html[data-theme="dark"] .freelancer-card {
   background: #1e293b !important;
   border-color: #334155 !important;
