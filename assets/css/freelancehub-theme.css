@@ -3295,3 +3295,88 @@ html[data-theme="dark"] .ftab.active {
   color: #fff !important;
 }
 
+/* ── Dark Mode: Admin Manage Users ─────────────────────────── */
+html[data-theme="dark"] .toolbar .search-wrap input,
+html[data-theme="dark"] .filter-sel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .result-info {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .data-table thead th {
+  background: #0f172a !important;
+  border-bottom-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .data-table tbody td {
+  border-bottom-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .data-table tbody tr:hover td {
+  background: rgba(99, 102, 241, .08) !important;
+}
+
+html[data-theme="dark"] .u-name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .u-email {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .profile-main {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .profile-sub,
+html[data-theme="dark"] .profile-loc,
+html[data-theme="dark"] .profile-empty {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .self-lock {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .empty-row td {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .btn-mc {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-mc:hover {
+  background: #1e293b !important;
+}
+
+html[data-theme="dark"] .add-input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .add-field label {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .role-pill label {
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] .role-pill input:checked + label {
+  border-color: #6366f1 !important;
+  background: rgba(99, 102, 241, .18) !important;
+  color: #a5b4fc !important;
+}
+

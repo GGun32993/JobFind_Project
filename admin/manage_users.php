@@ -274,10 +274,12 @@ $count_all = count($rows);
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260825-v1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manage Users</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -412,7 +414,7 @@ $count_all = count($rows);
 
   @media(max-width:768px){.sidebar{display:none;}.main{margin-left:0;padding:20px 16px;}.add-grid{grid-template-columns:1fr;}}
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 
 </head>
 <body>
@@ -532,9 +534,15 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
       <h2>Manage Users</h2>
       <p>จัดการบัญชีผู้ใช้งานทั้งหมดในระบบ</p>
     </div>
-    <button class="btn-add" onclick="document.getElementById('add-modal').classList.add('show')">
-      <i class="bi bi-person-plus"></i> เพิ่มผู้ใช้ใหม่
-    </button>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+        <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+        <span class="theme-toggle-text">โหมดมืด</span>
+      </button>
+      <button class="btn-add" onclick="document.getElementById('add-modal').classList.add('show')">
+        <i class="bi bi-person-plus"></i> เพิ่มผู้ใช้ใหม่
+      </button>
+    </div>
   </div>
 
   <!-- Stats -->
@@ -693,5 +701,6 @@ if(isset($_GET['toast']) && isset($toasts[$_GET['toast']])):
   function closeAddModal(){ document.getElementById('add-modal').classList.remove('show'); }
   document.getElementById('add-modal').addEventListener('click',function(e){ if(e.target===this) closeAddModal(); });
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v1"></script>
 </body>
 </html>
