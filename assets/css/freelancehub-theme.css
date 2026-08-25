@@ -3455,3 +3455,79 @@ html[data-theme="dark"] .btn-done {
   color: #94a3b8 !important;
 }
 
+/* ── Dark Mode: Admin Manage Categories ────────────────────── */
+html[data-theme="dark"] .list-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .list-head {
+  border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .list-head h4 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .cat-item {
+  border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .cat-item:hover {
+  background: rgba(99, 102, 241, .06) !important;
+}
+
+html[data-theme="dark"] .cat-item.editing {
+  background: rgba(99, 102, 241, .15) !important;
+}
+
+html[data-theme="dark"] .cat-icon-box {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .cat-name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .cat-date {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .emoji-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .emoji-btn:hover,
+html[data-theme="dark"] .emoji-btn.selected {
+  background: rgba(99, 102, 241, .18) !important;
+  border-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .subcat-chip {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .subcat-chip.editing {
+  background: rgba(99, 102, 241, .18) !important;
+  border-color: #6366f1 !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .subcat-chip a:hover,
+html[data-theme="dark"] .subcat-chip button:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .subcat-empty {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .sub-form-divider {
+  background: #334155 !important;
+}
+
