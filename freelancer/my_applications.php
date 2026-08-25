@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../helpers/auth_helpers.php";
+require_once __DIR__ . "/../helpers/category_helpers.php";
 require_once __DIR__ . "/../helpers/job_image_helpers.php";
 
 $freelancer_id = jobfind_require_role('freelancer');
 ensure_job_image_schema($conn);
+ensure_category_schema($conn);
 
 $result = mysqli_query($conn,"
     SELECT Job_Application.*,
