@@ -77,10 +77,12 @@ while($r = mysqli_fetch_assoc($result)){
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260825-v1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Jobs</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
 
@@ -207,7 +209,7 @@ while($r = mysqli_fetch_assoc($result)){
 
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 
 </head>
 <body>
@@ -271,9 +273,15 @@ while($r = mysqli_fetch_assoc($result)){
       <h2>Manage Jobs</h2>
       <p>จัดการประกาศรับสมัครงานทั้งหมดของคุณ</p>
     </div>
-    <a href="post_job.php" class="btn-post-new">
-      <i class="bi bi-plus-lg"></i> โพสต์งานใหม่
-    </a>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+        <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+        <span class="theme-toggle-text">โหมดมืด</span>
+      </button>
+      <a href="post_job.php" class="btn-post-new">
+        <i class="bi bi-plus-lg"></i> โพสต์งานใหม่
+      </a>
+    </div>
   </div>
 
   <!-- Stat row -->
@@ -483,5 +491,6 @@ while($r = mysqli_fetch_assoc($result)){
     if(e.target === this) closeModal();
   });
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v1"></script>
 </body>
 </html>

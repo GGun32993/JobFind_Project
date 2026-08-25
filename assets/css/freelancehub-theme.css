@@ -2757,3 +2757,141 @@ html[data-theme="dark"] .map-info {
   color: #c7d2fe !important;
 }
 
+/* ── Dark Mode: Manage Jobs ────────────────────────────────── */
+html[data-theme="dark"] .stat-mini {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .stat-mini:hover {
+  border-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .stat-mini.active-f {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .2) !important;
+}
+
+html[data-theme="dark"] .sm-val {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .sm-lbl {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .si-gray {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .search-wrap input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .search-wrap input::placeholder {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .result-info {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .jc-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .jc-desc {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .jc-meta {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .jc-media {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .jc-footer {
+  border-top-color: #334155 !important;
+}
+
+html[data-theme="dark"] .ab-view {
+  background: rgba(99, 102, 241, .15) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .ab-edit {
+  background: rgba(245, 158, 11, .15) !important;
+  color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .ab-complete {
+  background: rgba(16, 185, 129, .15) !important;
+  color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] .ab-delete {
+  background: rgba(239, 68, 68, .15) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .p-pending {
+  background: rgba(245, 158, 11, .15) !important;
+  color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .p-approved {
+  background: rgba(16, 185, 129, .15) !important;
+  color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] .p-rejected {
+  background: rgba(239, 68, 68, .15) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .p-closed {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .p-completed {
+  background: rgba(99, 102, 241, .18) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .p-apps {
+  background: rgba(14, 165, 233, .18) !important;
+  color: #7dd3fc !important;
+}
+
+html[data-theme="dark"] .modal-box {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .5) !important;
+}
+
+html[data-theme="dark"] .modal-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .modal-sub {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .btn-cancel {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-cancel:hover {
+  background: #334155 !important;
+}
+
