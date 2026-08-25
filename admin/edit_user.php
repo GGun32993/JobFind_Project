@@ -139,10 +139,12 @@ if ($profile_location_display === '' && $profile_address !== '') {
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260825-v1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Edit User - Freelance Matching Online Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
 
@@ -235,7 +237,7 @@ if ($profile_location_display === '' && $profile_address !== '') {
   @media(max-width:900px){ .layout { grid-template-columns:1fr; } .form-card { position:static; } }
   @media(max-width:768px){ .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 
 </head>
 <body>
@@ -285,7 +287,7 @@ if(isset($_GET['toast'])):
 <!-- ── Main ── -->
 <main class="main">
 
-  <div class="topbar">
+  <div class="topbar" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
     <div class="topbar-wrap">
       <a href="manage_users.php" class="btn-back">
         <i class="bi bi-arrow-left"></i> กลับ
@@ -295,6 +297,10 @@ if(isset($_GET['toast'])):
         <p>แก้ไขข้อมูลบัญชีผู้ใช้งานในระบบ (#ID: <?php echo $edit_user_id; ?>)</p>
       </div>
     </div>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+      <span class="theme-toggle-text">โหมดมืด</span>
+    </button>
   </div>
 
   <div class="layout">
@@ -493,5 +499,6 @@ if(isset($_GET['toast'])):
   // เพิ่ม event listener
   document.getElementById('roleSelect').addEventListener('change', toggleRoleSection);
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v1"></script>
 </body>
 </html>

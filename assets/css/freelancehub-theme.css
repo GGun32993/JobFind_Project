@@ -3380,3 +3380,41 @@ html[data-theme="dark"] .role-pill input:checked + label {
   color: #a5b4fc !important;
 }
 
+/* ── Dark Mode: Admin Edit User ────────────────────────────── */
+html[data-theme="dark"] .info-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .info-card h4 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .info-row {
+  border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .info-label {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .info-value {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-cancel-edit {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .btn-cancel-edit:hover {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .section-divider {
+  border-top-color: #334155 !important;
+}
+
