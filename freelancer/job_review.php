@@ -53,6 +53,7 @@ if(isset($_POST['submit']) && !$already){
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>รีวิวงาน</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -167,6 +168,14 @@ if(isset($_POST['submit']) && !$already){
 
 </head>
 <body>
+
+<!-- ── Theme toggle ── -->
+<div style="position: fixed; top: 18px; right: 18px; z-index: 9999;">
+  <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+    <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+    <span class="theme-toggle-text">โหมดมืด</span>
+  </button>
+</div>
 
 <!-- ── Sidebar ─ -->
 <aside class="sidebar">
@@ -303,5 +312,6 @@ if(isset($_POST['submit']) && !$already){
   }
   updateCount();
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
 </body>
 </html>
