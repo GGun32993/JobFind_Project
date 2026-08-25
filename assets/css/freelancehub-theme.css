@@ -2937,3 +2937,150 @@ html[data-theme="dark"] .job-badge.badge-pending {
   color: #fcd34d !important;
 }
 
+/* ── Dark Mode: View Applicants ────────────────────────────── */
+html[data-theme="dark"] .job-banner {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .jb-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .jb-meta {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .cards-grid .app-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .cards-grid .app-card:hover {
+  border-color: #6366f1 !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .3) !important;
+}
+
+html[data-theme="dark"] .card-name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .card-meta {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .skill-tag {
+  background: rgba(99, 102, 241, .18) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .skill-more {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .card-footer {
+  border-top-color: #334155 !important;
+}
+
+html[data-theme="dark"] .card-date {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .modal-head {
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] .modal-section-title {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .modal-section-title::after {
+  background: #334155 !important;
+}
+
+html[data-theme="dark"] .info-grid .info-box {
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] .info-box .lbl {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .info-box .val {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .exp-box {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-left-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .modal-skill {
+  background: rgba(99, 102, 241, .18) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .review-score-card {
+  background: rgba(245, 158, 11, .15) !important;
+  border-color: rgba(245, 158, 11, .3) !important;
+}
+
+html[data-theme="dark"] .review-score-num {
+  color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .review-score-count {
+  color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .review-distribution {
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] .review-dist-row {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .review-dist-bar {
+  background: #334155 !important;
+}
+
+html[data-theme="dark"] .review-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .review-employer {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .review-job {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .review-comment {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .review-date {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .review-empty {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .modal-actions {
+  border-top-color: #334155 !important;
+}
+
+html[data-theme="dark"] .btn-hired-done {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
