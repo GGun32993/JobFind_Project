@@ -17,13 +17,13 @@ if(!$selected_user){
         SELECT u.user_id
         FROM Chat_Messages cm
         JOIN Users u ON (
-            (cm.sender_id='$admin_id' AND u.user_id=cm.receiver_id)
-            OR (cm.receiver_id='$admin_id' AND u.user_id=cm.sender_id)
+            (cm.sender_id IN (SELECT user_id FROM Users WHERE role='admin') AND u.user_id=cm.receiver_id)
+            OR (cm.receiver_id IN (SELECT user_id FROM Users WHERE role='admin') AND u.user_id=cm.sender_id)
         )
-        WHERE (cm.sender_id='$admin_id' OR cm.receiver_id='$admin_id')
-        AND u.user_id != '$admin_id'
+        WHERE (cm.sender_id IN (SELECT user_id FROM Users WHERE role='admin') OR cm.receiver_id IN (SELECT user_id FROM Users WHERE role='admin'))
+        AND u.role != 'admin'
         ORDER BY
-            CASE WHEN cm.receiver_id='$admin_id' AND cm.is_read=0 THEN 0 ELSE 1 END,
+            CASE WHEN cm.receiver_id IN (SELECT user_id FROM Users WHERE role='admin') AND cm.is_read=0 THEN 0 ELSE 1 END,
             cm.sent_at DESC
         LIMIT 1
     "));
@@ -33,12 +33,16 @@ if(!$selected_user){
 }
 
 // ── send message (process BEFORE any output) ──
-if(isset($_POST['message']) && $selected_user){
-    $message = mysqli_real_escape_string($conn, $_POST['message']);
-    mysqli_query($conn,"
-        INSERT INTO Chat_Messages (sender_id, receiver_id, message)
-        VALUES ('$admin_id','$selected_user','$message')
-    ");
+if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && $selected_user > 0){
+    $message = trim($_POST['message']);
+    if($message !== ''){
+        $stmt = $conn->prepare("INSERT INTO Chat_Messages (sender_id, receiver_id, message) VALUES (?, ?, ?)");
+        if($stmt){
+            $stmt->bind_param("iis", $admin_id, $selected_user, $message);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
     header("Location: support.php?user=".$selected_user);
     exit();
 }
@@ -51,58 +55,72 @@ $users = mysqli_query($conn,"
         u.role,
         (
             SELECT message FROM Chat_Messages
-            WHERE (sender_id=u.user_id AND receiver_id='$admin_id')
-               OR (sender_id='$admin_id' AND receiver_id=u.user_id)
+            WHERE (sender_id=u.user_id AND receiver_id IN (SELECT user_id FROM Users WHERE role='admin'))
+               OR (sender_id IN (SELECT user_id FROM Users WHERE role='admin') AND receiver_id=u.user_id)
             ORDER BY sent_at DESC LIMIT 1
         ) AS last_message,
         (
             SELECT sent_at FROM Chat_Messages
-            WHERE (sender_id=u.user_id AND receiver_id='$admin_id')
-               OR (sender_id='$admin_id' AND receiver_id=u.user_id)
+            WHERE (sender_id=u.user_id AND receiver_id IN (SELECT user_id FROM Users WHERE role='admin'))
+               OR (sender_id IN (SELECT user_id FROM Users WHERE role='admin') AND receiver_id=u.user_id)
             ORDER BY sent_at DESC LIMIT 1
         ) AS last_at,
         (
             SELECT COUNT(*) FROM Chat_Messages
             WHERE sender_id=u.user_id
-            AND receiver_id='$admin_id'
+            AND receiver_id IN (SELECT user_id FROM Users WHERE role='admin')
             AND is_read=0
         ) AS unread_count
     FROM Users u
-    WHERE u.user_id != '$admin_id'
+    WHERE u.role != 'admin'
       AND EXISTS (
           SELECT 1 FROM Chat_Messages
-          WHERE (sender_id=u.user_id AND receiver_id='$admin_id')
-             OR (sender_id='$admin_id' AND receiver_id=u.user_id)
+          WHERE (sender_id=u.user_id AND receiver_id IN (SELECT user_id FROM Users WHERE role='admin'))
+             OR (sender_id IN (SELECT user_id FROM Users WHERE role='admin') AND receiver_id=u.user_id)
       )
-    ORDER BY last_at DESC
+    ORDER BY
+        CASE WHEN unread_count > 0 THEN 0 ELSE 1 END,
+        last_at DESC
 ");
 
 // ── get selected user info ──
 $selected_info = null;
-if($selected_user){
-    $si = mysqli_query($conn,"SELECT username, role FROM Users WHERE user_id='$selected_user'");
-    $selected_info = mysqli_fetch_assoc($si);
+if($selected_user > 0){
+    $stmt_u = $conn->prepare("SELECT username, role FROM Users WHERE user_id = ?");
+    if($stmt_u){
+        $stmt_u->bind_param("i", $selected_user);
+        $stmt_u->execute();
+        $res_u = $stmt_u->get_result();
+        $selected_info = $res_u->fetch_assoc();
+        $stmt_u->close();
+    }
 }
 
 // ── get messages ──
 $msg_rows = [];
-if($selected_user){
+if($selected_user > 0 && $selected_info){
     // ── mark as read ทันทีที่ admin เปิดดู ──
     mysqli_query($conn,"
         UPDATE Chat_Messages
         SET is_read = 1
         WHERE sender_id = '$selected_user'
-        AND receiver_id = '$admin_id'
+        AND receiver_id IN (SELECT user_id FROM Users WHERE role='admin')
         AND is_read = 0
     ");
 
-    $msgs = mysqli_query($conn,"
+    $stmt_m = $conn->prepare("
         SELECT * FROM Chat_Messages
-        WHERE (sender_id='$selected_user' AND receiver_id='$admin_id')
-           OR (sender_id='$admin_id'      AND receiver_id='$selected_user')
+        WHERE (sender_id = ? AND receiver_id IN (SELECT user_id FROM Users WHERE role='admin'))
+           OR (sender_id IN (SELECT user_id FROM Users WHERE role='admin') AND receiver_id = ?)
         ORDER BY sent_at ASC
     ");
-    while($m = mysqli_fetch_assoc($msgs)) $msg_rows[] = $m;
+    if($stmt_m){
+        $stmt_m->bind_param("ii", $selected_user, $selected_user);
+        $stmt_m->execute();
+        $res_m = $stmt_m->get_result();
+        while($m = $res_m->fetch_assoc()) $msg_rows[] = $m;
+        $stmt_m->close();
+    }
 }
 
 $admin_unread_support = admin_unread_support_count($conn, $admin_id);
@@ -112,6 +130,7 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
+<script src="../assets/js/theme-init.js?v=20260825-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Support Chat</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -257,7 +276,7 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
     .user-panel { width:200px; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v2">
 
 </head>
 <body>
@@ -295,7 +314,13 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
   <!-- User list panel -->
   <div class="user-panel">
     <div class="panel-header">
-      <h3><i class="bi bi-chat-left-dots"></i> Conversations</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0;"><i class="bi bi-chat-left-dots"></i> Conversations</h3>
+        <button class="theme-toggle-btn" type="button" aria-label="Toggle theme" style="padding:6px 10px; font-size:12px; border-radius:8px;">
+          <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+          <span class="theme-toggle-text" style="display:none;">โหมดมืด</span>
+        </button>
+      </div>
       <div class="search-wrap">
         <i class="bi bi-search"></i>
         <input type="text" id="user-search" placeholder="ค้นหาชื่อ user..." oninput="searchUsers()" />
@@ -366,6 +391,10 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
       <div class="chat-header-actions">
         <span class="chat-chip"><i class="bi bi-person-check"></i> <?php echo ucfirst($cr); ?></span>
         <span class="chat-chip"><i class="bi bi-chat-square-text"></i> <?php echo count($msg_rows); ?> messages</span>
+        <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+          <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+          <span class="theme-toggle-text">โหมดมืด</span>
+        </button>
       </div>
     </div>
 
@@ -447,5 +476,6 @@ $admin_unread_support = admin_unread_support_count($conn, $admin_id);
     });
   }
 </script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v2"></script>
 </body>
 </html>

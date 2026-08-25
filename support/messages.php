@@ -13,17 +13,32 @@ $sidebar_pending_apps = $role === 'employer' ? get_employer_pending_application_
 // ── ดึง admin_id จริงจาก DB (แทนการ hardcode = 1) ──
 $admin_query = mysqli_query($conn, "SELECT user_id FROM Users WHERE role='admin' LIMIT 1");
 $admin_row   = mysqli_fetch_assoc($admin_query);
-$admin_id    = $admin_row['user_id'] ?? 1;
+$admin_id    = (int)($admin_row['user_id'] ?? 1);
 
 // ── send message ──
-if(isset($_POST['send'])){
-    $msg = mysqli_real_escape_string($conn, $_POST['message']);
-    mysqli_query($conn,"
-        INSERT INTO Chat_Messages (sender_id, receiver_id, message)
-        VALUES ('$user_id','$admin_id','$msg')
-    ");
+if(isset($_POST['send']) || (isset($_POST['message']) && $_SERVER['REQUEST_METHOD'] === 'POST')){
+    $msg = trim($_POST['message'] ?? '');
+    if($msg !== '' && $admin_id > 0){
+        $stmt = $conn->prepare("INSERT INTO Chat_Messages (sender_id, receiver_id, message) VALUES (?, ?, ?)");
+        if($stmt){
+            $stmt->bind_param("iis", $user_id, $admin_id, $msg);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
     header("Location: messages.php");
     exit();
+}
+
+// ── mark admin messages as read for this user ──
+if($admin_id > 0){
+    mysqli_query($conn, "
+        UPDATE Chat_Messages
+        SET is_read = 1
+        WHERE sender_id = '$admin_id'
+        AND receiver_id = '$user_id'
+        AND is_read = 0
+    ");
 }
 
 // ── get messages ──
@@ -44,7 +59,7 @@ $dashboard = $role === "employer" ? "../employer/dashboard.php" : "../freelancer
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
-<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
+<script src="../assets/js/theme-init.js?v=20260825-v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Support Chat</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -244,7 +259,7 @@ $dashboard = $role === "employer" ? "../employer/dashboard.php" : "../freelancer
     .bubble  { max-width:80%; }
   }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v4">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v2">
 
 </head>
 <body>
@@ -392,6 +407,6 @@ $dashboard = $role === "employer" ? "../employer/dashboard.php" : "../freelancer
     }
   });
 </script>
-<script src="../assets/js/theme-toggle.js?v=20260804-v4"></script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v2"></script>
 </body>
 </html>
