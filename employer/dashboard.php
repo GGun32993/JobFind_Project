@@ -292,12 +292,12 @@ $most_applied_count = count($most_applied_jobs_list);
 <head>
 <link rel="icon" type="image/png" href="../assets/images/jobfind-logo-icon.png?v=14">
 <meta charset="UTF-8">
-<script src="../assets/js/theme-init.js?v=20260804-v2"></script>
+<script src="../assets/js/theme-init.js?v=20260825-v1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Employer Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap');
 
@@ -451,7 +451,7 @@ $most_applied_count = count($most_applied_jobs_list);
   @media(max-width:1100px){ .stat-grid,.quick-grid,.popular-list { grid-template-columns:repeat(2,1fr); } }
   @media(max-width:768px) { .sidebar { display:none; } .main { margin-left:0; padding:20px 16px; } .two-col,.popular-list,.profile-info-grid { grid-template-columns:1fr; } .profile-info-box.full { grid-column:auto; } }
 </style>
-<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260804-v2">
+<link rel="stylesheet" href="../assets/css/freelancehub-theme.css?v=20260825-v1">
 
 </head>
 <body>
@@ -1015,6 +1015,6 @@ document.addEventListener('keydown', function(e){
   if(e.key === 'Escape') closeFreelancerProfile();
 });
 </script>
-<script src="../assets/js/theme-toggle.js?v=20260804-v2"></script>
+<script src="../assets/js/theme-toggle.js?v=20260825-v1"></script>
 </body>
 </html>

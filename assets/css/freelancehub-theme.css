@@ -2408,3 +2408,263 @@ html[data-theme="dark"] .form-input:focus {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, .2) !important;
 }
 
+/* ── Dark Mode: Dashboard & Popular Elements ───────────────── */
+html[data-theme="dark"] .popular-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .28) !important;
+}
+
+html[data-theme="dark"] .popular-head h4 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .popular-head h4 i {
+  background: rgba(99, 102, 241, .15) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .popular-top-label {
+  background: rgba(99, 102, 241, .15) !important;
+  border-color: rgba(99, 102, 241, .3) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .popular-item,
+html[data-theme="dark"] .application-rank-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .popular-item:hover,
+html[data-theme="dark"] .application-rank-item:hover {
+  border-color: #6366f1 !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, .35) !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .popular-avatar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .popular-name {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .popular-pill {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .popular-pill i {
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .popular-empty {
+  color: #94a3b8 !important;
+}
+
+/* ── Dark Mode: Rating Card ────────────────────────────────── */
+html[data-theme="dark"] .rating-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .rating-big {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .rating-sub {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rating-divider {
+  background: #334155 !important;
+}
+
+html[data-theme="dark"] .rating-tip {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rating-tip strong {
+  color: #f8fafc !important;
+}
+
+/* ── Dark Mode: Quick Grid & Cards ─────────────────────────── */
+html[data-theme="dark"] .quick-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .quick-card:hover {
+  border-color: #6366f1 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .3) !important;
+}
+
+html[data-theme="dark"] .qc-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .qc-sub {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .qc-arrow {
+  color: #475569 !important;
+}
+
+html[data-theme="dark"] .quick-card:hover .qc-arrow {
+  color: #a5b4fc !important;
+}
+
+/* ── Dark Mode: Tables ─────────────────────────────────────── */
+html[data-theme="dark"] .table-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .table-head {
+  border-bottom-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .table-head h4 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .table-head a {
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .mini-table th,
+html[data-theme="dark"] .data-table th,
+html[data-theme="dark"] table th {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+  border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .mini-table td,
+html[data-theme="dark"] .data-table td,
+html[data-theme="dark"] table td {
+  background: transparent !important;
+  color: #f8fafc !important;
+  border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .mini-table tr:hover td,
+html[data-theme="dark"] .data-table tr:hover td,
+html[data-theme="dark"] table tr:hover td {
+  background: #283548 !important;
+}
+
+html[data-theme="dark"] .empty-td {
+  color: #94a3b8 !important;
+}
+
+/* ── Dark Mode: Stat Icons ─────────────────────────────────── */
+html[data-theme="dark"] .si-purple {
+  background: rgba(99, 102, 241, .15) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .si-green {
+  background: rgba(16, 185, 129, .15) !important;
+  color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] .si-yellow,
+html[data-theme="dark"] .si-star {
+  background: rgba(245, 158, 11, .15) !important;
+  color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .si-blue {
+  background: rgba(14, 165, 233, .15) !important;
+  color: #7dd3fc !important;
+}
+
+/* ── Dark Mode: Profile Modal ──────────────────────────────── */
+html[data-theme="dark"] .profile-modal {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .5) !important;
+}
+
+html[data-theme="dark"] .profile-modal-head {
+  background: #0f172a !important;
+}
+
+html[data-theme="dark"] .profile-section-title {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .profile-section-title::after {
+  background: #334155 !important;
+}
+
+html[data-theme="dark"] .profile-info-box {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+
+html[data-theme="dark"] .profile-info-label {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .profile-info-value {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .profile-skill {
+  background: rgba(99, 102, 241, .18) !important;
+  color: #a5b4fc !important;
+}
+
+html[data-theme="dark"] .profile-resume-link {
+  background: rgba(14, 165, 233, .18) !important;
+  color: #7dd3fc !important;
+}
+
+html[data-theme="dark"] .profile-review-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .profile-review-employer {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .profile-review-job {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .profile-review-rating {
+  background: rgba(245, 158, 11, .15) !important;
+  color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .profile-review-comment {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-left-color: #6366f1 !important;
+}
+
+html[data-theme="dark"] .profile-review-date {
+  color: #64748b !important;
+}
+
+html[data-theme="dark"] .profile-review-empty {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
