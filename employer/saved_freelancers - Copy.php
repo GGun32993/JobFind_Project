@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../helpers/auth_helpers.php";
@@ -183,7 +183,7 @@ unset($saved_freelancer);
   .meta-value{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .meta-value i{color:var(--accent);margin-right:5px;}
 
-  .skills-label{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px;}.skills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .skills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
   .skill{background:#eef2ff;color:var(--accent);border-radius:20px;padding:5px 10px;font-size:12px;font-weight:600;}
   .detail-list{display:grid;gap:8px;margin:14px 0;}
   .detail{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;}
@@ -368,7 +368,7 @@ unset($saved_freelancer);
           </div>
 
           <?php if(count($skills) > 0): ?>
-            <div class="skills-label">Skill</div><div class="skills">
+            <div class="skills">
               <?php foreach($skills as $skill): ?>
                 <span class="skill"><?php echo e($skill); ?></span>
               <?php endforeach; ?>
